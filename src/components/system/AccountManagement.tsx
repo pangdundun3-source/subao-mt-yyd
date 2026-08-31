@@ -22,6 +22,8 @@ export const AccountManagement: React.FC<AccountManagementProps> = ({ onShowToas
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAccount, setEditingAccount] = useState<SystemAccountUser | null>(null);
   const [resettingAccount, setResettingAccount] = useState<SystemAccountUser | null>(null);
+  const [deletingAccount, setDeletingAccount] = useState<SystemAccountUser | null>(null);
+  const [batchDeleteModalOpen, setBatchDeleteModalOpen] = useState(false);
   const [viewingPermissionsAccount, setViewingPermissionsAccount] =
     useState<SystemAccountUser | null>(null);
   const [generatedPassword, setGeneratedPassword] = useState('');
@@ -31,7 +33,7 @@ export const AccountManagement: React.FC<AccountManagementProps> = ({ onShowToas
   const [formState, setFormState] = useState<{
     name: string;
     username: string;
-    jobNumber: string;
+    wechat: string;
     gender: 'male' | 'female';
     phone: string;
     email: string;
@@ -44,7 +46,7 @@ export const AccountManagement: React.FC<AccountManagementProps> = ({ onShowToas
   }>({
     name: '',
     username: '',
-    jobNumber: '',
+    wechat: '',
     gender: 'male',
     phone: '',
     email: '',
@@ -67,7 +69,8 @@ export const AccountManagement: React.FC<AccountManagementProps> = ({ onShowToas
     const matchSearch =
       acc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       acc.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      acc.jobNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (acc.wechat && acc.wechat.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (acc.jobNumber && acc.jobNumber.toLowerCase().includes(searchTerm.toLowerCase())) ||
       acc.phone.includes(searchTerm);
 
     const matchRole = selectedRole === 'all' || acc.roleId === selectedRole;
@@ -88,7 +91,7 @@ export const AccountManagement: React.FC<AccountManagementProps> = ({ onShowToas
     setFormState({
       name: '',
       username: '',
-      jobNumber: `MT-${8000 + accounts.length + 1}`,
+      wechat: '',
       gender: 'male',
       phone: '',
       email: '',
@@ -107,7 +110,7 @@ export const AccountManagement: React.FC<AccountManagementProps> = ({ onShowToas
     setFormState({
       name: acc.name,
       username: acc.username,
-      jobNumber: acc.jobNumber,
+      wechat: acc.wechat || '',
       gender: acc.gender,
       phone: acc.phone,
       email: acc.email,
@@ -192,17 +195,42 @@ export const AccountManagement: React.FC<AccountManagementProps> = ({ onShowToas
 
   const handleDeleteAccount = (acc: SystemAccountUser) => {
     if (acc.roleId === 'super_admin') {
-      notify('超级管理员账号不可直接删除！');
+      notify('超级管理员账号受系统核心保护，不可删除！');
       return;
     }
     if (acc.status === 'active') {
-      notify('启用状态不支持删除，请先禁用该账号后再进行删除！');
+      notify('启用状态的账号不支持删除，请先在状态开关中将其禁用！');
       return;
     }
-    if (window.confirm(`确定要永久删除已禁用的账号【${acc.name} (${acc.username})】吗？`)) {
-      setAccounts((prev) => prev.filter((a) => a.id !== acc.id));
-      notify(`已成功删除账号【${acc.name}】`);
+    setDeletingAccount(acc);
+  };
+
+  const handleConfirmDeleteAccount = () => {
+    if (!deletingAccount) return;
+    const target = deletingAccount;
+    setAccounts((prev) => prev.filter((a) => a.id !== target.id));
+    setSelectedAccountIds((prev) => prev.filter((id) => id !== target.id));
+    notify(`已成功永久删除账号【${target.name} (${target.username})】`);
+    setDeletingAccount(null);
+  };
+
+  const handleBatchDeleteDisabled = () => {
+    setBatchDeleteModalOpen(true);
+  };
+
+  const handleConfirmBatchDelete = () => {
+    const disabledSelected = accounts.filter(
+      (a) => selectedAccountIds.includes(a.id) && a.status === 'disabled' && a.roleId !== 'super_admin'
+    );
+    if (disabledSelected.length === 0) {
+      setBatchDeleteModalOpen(false);
+      return;
     }
+    const disabledIds = disabledSelected.map((a) => a.id);
+    setAccounts((prev) => prev.filter((a) => !disabledIds.includes(a.id)));
+    setSelectedAccountIds((prev) => prev.filter((id) => !disabledIds.includes(id)));
+    notify(`已成功批量删除 ${disabledSelected.length} 个已禁用账号`);
+    setBatchDeleteModalOpen(false);
   };
 
   const handleOpenResetPassword = (acc: SystemAccountUser) => {
@@ -364,17 +392,43 @@ export const AccountManagement: React.FC<AccountManagementProps> = ({ onShowToas
                 <span>已选中 {selectedAccountIds.length} 项</span>
                 <button
                   onClick={handleBatchEnable}
-                  className="text-[#1890ff] hover:underline font-medium ml-1"
+                  className="text-[#1890ff] hover:underline font-medium ml-1 cursor-pointer"
                 >
                   批量启用
                 </button>
                 <span className="text-gray-300">|</span>
                 <button
                   onClick={handleBatchDisable}
-                  className="text-amber-600 hover:underline font-medium"
+                  className="text-amber-600 hover:underline font-medium cursor-pointer"
                 >
                   批量冻结
                 </button>
+                {accounts.some(
+                  (a) =>
+                    selectedAccountIds.includes(a.id) &&
+                    a.status === 'disabled' &&
+                    a.roleId !== 'super_admin'
+                ) && (
+                  <>
+                    <span className="text-gray-300">|</span>
+                    <button
+                      onClick={handleBatchDeleteDisabled}
+                      className="text-red-600 hover:underline font-medium cursor-pointer flex items-center gap-0.5"
+                    >
+                      <span className="material-symbols-outlined text-[13px]">delete</span>
+                      批量删除已禁用(
+                      {
+                        accounts.filter(
+                          (a) =>
+                            selectedAccountIds.includes(a.id) &&
+                            a.status === 'disabled' &&
+                            a.roleId !== 'super_admin'
+                        ).length
+                      }
+                      )
+                    </button>
+                  </>
+                )}
               </div>
             )}
 
@@ -456,13 +510,8 @@ export const AccountManagement: React.FC<AccountManagementProps> = ({ onShowToas
                             {acc.name.substring(0, 1)}
                           </div>
                           <div>
-                            <div className="flex items-center gap-1.5">
-                              <span className="font-semibold text-gray-800 text-[13px]">
-                                {acc.name}
-                              </span>
-                              <span className="text-[11px] text-gray-400 font-mono">
-                                ({acc.jobNumber})
-                              </span>
+                            <div className="font-semibold text-gray-800 text-[13px]">
+                              {acc.name}
                             </div>
                             <div className="text-[11px] text-gray-400 mt-0.5 font-mono">
                               {acc.phone}
@@ -471,10 +520,12 @@ export const AccountManagement: React.FC<AccountManagementProps> = ({ onShowToas
                         </div>
                       </td>
 
-                      {/* Username & Email */}
+                      {/* Username & WeChat */}
                       <td className="py-3.5 px-4">
                         <div className="font-mono text-gray-800 font-medium">{acc.username}</div>
-                        <div className="text-[11px] text-gray-400">{acc.email}</div>
+                        <div className="text-[11px] text-gray-400 font-mono">
+                          {acc.wechat ? acc.wechat : '-'}
+                        </div>
                       </td>
 
                       {/* Dept */}
@@ -564,7 +615,7 @@ export const AccountManagement: React.FC<AccountManagementProps> = ({ onShowToas
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => handleOpenEditModal(acc)}
-                            className="text-[#1890ff] hover:text-blue-700 font-medium text-xs cursor-pointer"
+                            className="text-[#1890ff] hover:text-blue-700 font-medium text-xs cursor-pointer px-1 py-0.5 hover:bg-blue-50 rounded"
                           >
                             编辑
                           </button>
@@ -573,15 +624,15 @@ export const AccountManagement: React.FC<AccountManagementProps> = ({ onShowToas
                             disabled={acc.roleId === 'super_admin' || acc.status === 'active'}
                             title={
                               acc.roleId === 'super_admin'
-                                ? '超级管理员账号不可删除'
+                                ? '超级管理员账号受保护，不可删除'
                                 : acc.status === 'active'
-                                ? '启用状态不支持删除，需先禁用账号'
-                                : '删除该账号'
+                                ? '账号正常启用中不可删除，请先在状态列禁用该账号'
+                                : '点击删除已禁用账号'
                             }
-                            className={`text-xs ${
+                            className={`text-xs px-1.5 py-0.5 rounded font-medium transition-colors ${
                               acc.roleId === 'super_admin' || acc.status === 'active'
                                 ? 'text-gray-300 cursor-not-allowed select-none'
-                                : 'text-red-500 hover:text-red-700 cursor-pointer font-medium'
+                                : 'text-red-600 hover:text-red-700 hover:bg-red-50 cursor-pointer'
                             }`}
                           >
                             删除
@@ -681,12 +732,12 @@ export const AccountManagement: React.FC<AccountManagementProps> = ({ onShowToas
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-medium text-gray-700 mb-1">工号编号</label>
+                  <label className="block font-medium text-gray-700 mb-1">微信号 (选填)</label>
                   <input
                     type="text"
-                    value={formState.jobNumber}
-                    onChange={(e) => setFormState({ ...formState, jobNumber: e.target.value })}
-                    placeholder="如：MT-8010"
+                    value={formState.wechat}
+                    onChange={(e) => setFormState({ ...formState, wechat: e.target.value })}
+                    placeholder="如：wx_zhangjg 或绑定的微信号"
                     className="w-full border border-gray-200 rounded-md px-3 py-2 font-mono focus:outline-none focus:border-[#1890ff]"
                   />
                 </div>
@@ -734,19 +785,6 @@ export const AccountManagement: React.FC<AccountManagementProps> = ({ onShowToas
                 </div>
 
                 <div>
-                  <label className="block font-medium text-gray-700 mb-1">电子邮箱</label>
-                  <input
-                    type="email"
-                    value={formState.email}
-                    onChange={(e) => setFormState({ ...formState, email: e.target.value })}
-                    placeholder="name@company.com"
-                    className="w-full border border-gray-200 rounded-md px-3 py-2 focus:outline-none focus:border-[#1890ff]"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
                   <label className="block font-medium text-gray-700 mb-1">所属部门</label>
                   <select
                     value={formState.dept}
@@ -760,28 +798,28 @@ export const AccountManagement: React.FC<AccountManagementProps> = ({ onShowToas
                     ))}
                   </select>
                 </div>
+              </div>
 
-                <div>
-                  <label className="block font-medium text-gray-700 mb-1">
-                    角色权限 <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    value={formState.roleId}
-                    onChange={(e) =>
-                      setFormState({
-                        ...formState,
-                        roleId: e.target.value as SystemRoleType,
-                      })
-                    }
-                    className="w-full border border-gray-200 rounded-md px-3 py-2 focus:outline-none focus:border-[#1890ff] bg-white"
-                  >
-                    {systemRoleOptions.map((role) => (
-                      <option key={role.id} value={role.id}>
-                        {role.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              <div>
+                <label className="block font-medium text-gray-700 mb-1">
+                  角色权限 <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={formState.roleId}
+                  onChange={(e) =>
+                    setFormState({
+                      ...formState,
+                      roleId: e.target.value as SystemRoleType,
+                    })
+                  }
+                  className="w-full border border-gray-200 rounded-md px-3 py-2 focus:outline-none focus:border-[#1890ff] bg-white"
+                >
+                  {systemRoleOptions.map((role) => (
+                    <option key={role.id} value={role.id}>
+                      {role.name}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               {/* Data Scope */}
@@ -856,49 +894,6 @@ export const AccountManagement: React.FC<AccountManagementProps> = ({ onShowToas
                     <span className="text-[11px] text-gray-500">
                       仅可管理其所在区域内的客户机构
                     </span>
-                  </label>
-                </div>
-              </div>
-
-              {/* IP Whitelist & MFA */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block font-medium text-gray-700 mb-1">
-                    登录 IP 白名单限制 (选填)
-                  </label>
-                  <input
-                    type="text"
-                    value={formState.ipWhitelist}
-                    onChange={(e) =>
-                      setFormState({ ...formState, ipWhitelist: e.target.value })
-                    }
-                    placeholder="如：192.168.1.0/24, 10.0.0.0/8"
-                    className="w-full border border-gray-200 rounded-md px-3 py-2 font-mono text-xs focus:outline-none focus:border-[#1890ff]"
-                  />
-                  <p className="text-[10px] text-gray-400 mt-1">
-                    留空则允许公网/企业内网正常登录，填入则仅放行指定 CIDR IP 段
-                  </p>
-                </div>
-
-                <div>
-                  <label className="block font-medium text-gray-700 mb-1">
-                    MFA 双因子认证
-                  </label>
-                  <label className="flex items-center gap-2 p-2.5 border border-gray-200 rounded-md cursor-pointer hover:bg-gray-50">
-                    <input
-                      type="checkbox"
-                      checked={formState.mfaEnabled}
-                      onChange={(e) =>
-                        setFormState({ ...formState, mfaEnabled: e.target.checked })
-                      }
-                      className="rounded border-gray-300 text-[#1890ff] focus:ring-[#1890ff]"
-                    />
-                    <div>
-                      <span className="font-semibold text-gray-800">强制开启 MFA 认证</span>
-                      <p className="text-[10px] text-gray-400">
-                        登录时需输入动态口令或企微核身
-                      </p>
-                    </div>
                   </label>
                 </div>
               </div>
@@ -1082,6 +1077,140 @@ export const AccountManagement: React.FC<AccountManagementProps> = ({ onShowToas
                 className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md font-medium"
               >
                 关闭
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 7. Delete Account Confirmation Modal */}
+      {deletingAccount && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 space-y-4 text-xs">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-red-50 text-red-600 flex items-center justify-center shrink-0">
+                <span className="material-symbols-outlined text-[24px]">delete_forever</span>
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-gray-800">
+                  确认永久删除已禁用账号
+                </h3>
+                <p className="text-xs text-gray-500 mt-0.5">此操作不可撤销，请谨慎核对</p>
+              </div>
+            </div>
+
+            <div className="bg-red-50/60 border border-red-100 rounded-lg p-3.5 space-y-2 text-xs">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-500">账号姓名：</span>
+                <span className="font-semibold text-gray-800 text-[13px]">{deletingAccount.name}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-500">登录账号：</span>
+                <span className="font-mono text-gray-800">{deletingAccount.username}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-500">当前状态：</span>
+                <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-gray-200 text-gray-700">
+                  已冻结/禁用
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-500">所属角色：</span>
+                <span className="text-gray-700 font-medium">{deletingAccount.roleName}</span>
+              </div>
+            </div>
+
+            <p className="text-gray-600 text-xs leading-relaxed">
+              该账号当前已处于【已禁用】状态，确认永久删除后将从管理系统中彻底移除。
+            </p>
+
+            <div className="flex justify-end gap-3 pt-3 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => setDeletingAccount(null)}
+                className="px-4 py-2 border border-gray-200 rounded-md text-gray-600 hover:bg-gray-50 cursor-pointer"
+              >
+                取消
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteAccount}
+                className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md font-medium shadow-sm cursor-pointer flex items-center gap-1"
+              >
+                <span className="material-symbols-outlined text-[16px]">delete</span>
+                确认删除
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 8. Batch Delete Disabled Accounts Modal */}
+      {batchDeleteModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 space-y-4 text-xs">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-red-50 text-red-600 flex items-center justify-center shrink-0">
+                <span className="material-symbols-outlined text-[24px]">auto_delete</span>
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-gray-800">批量删除已禁用账号</h3>
+                <p className="text-xs text-gray-500 mt-0.5">将永久删除选中的已冻结管理员账号</p>
+              </div>
+            </div>
+
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 space-y-2 max-h-48 overflow-y-auto">
+              <div className="text-gray-500 font-medium mb-1">
+                待删除账号列表 (共{' '}
+                {
+                  accounts.filter(
+                    (a) =>
+                      selectedAccountIds.includes(a.id) &&
+                      a.status === 'disabled' &&
+                      a.roleId !== 'super_admin'
+                  ).length
+                }{' '}
+                人)：
+              </div>
+              {accounts
+                .filter(
+                  (a) =>
+                    selectedAccountIds.includes(a.id) &&
+                    a.status === 'disabled' &&
+                    a.roleId !== 'super_admin'
+                )
+                .map((acc) => (
+                  <div
+                    key={acc.id}
+                    className="flex items-center justify-between py-1 px-2 rounded bg-white border border-gray-200 text-xs"
+                  >
+                    <span className="font-semibold text-gray-800">
+                      {acc.name} <span className="font-mono text-gray-500 font-normal">({acc.username})</span>
+                    </span>
+                    <span className="text-[11px] text-gray-400 font-mono">{acc.dept}</span>
+                  </div>
+                ))}
+            </div>
+
+            <p className="text-red-600 text-xs">
+              ⚠️ 注意：仅会删除选中的【已禁用】账号，在用账号与超级管理员不会被误删。
+            </p>
+
+            <div className="flex justify-end gap-3 pt-3 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => setBatchDeleteModalOpen(false)}
+                className="px-4 py-2 border border-gray-200 rounded-md text-gray-600 hover:bg-gray-50 cursor-pointer"
+              >
+                取消
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmBatchDelete}
+                className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md font-medium shadow-sm cursor-pointer flex items-center gap-1"
+              >
+                <span className="material-symbols-outlined text-[16px]">delete</span>
+                确认批量删除
               </button>
             </div>
           </div>

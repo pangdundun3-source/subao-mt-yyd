@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Institution, AuditLog } from '../types';
-import { InstitutionBusinessRulesTab } from './InstitutionBusinessRulesTab';
+import {
+  InstitutionBusinessRulesTab,
+  defaultInstitutionBusinessRules,
+} from './InstitutionBusinessRulesTab';
+import { OtherBusinessConfigTab } from './OtherBusinessConfigTab';
 
 interface InstitutionDetailPageProps {
   institution?: Institution | null;

@@ -194,8 +194,95 @@ export interface QrCodeUsageConfig {
   warningThreshold?: number;
 }
 
+// 微信公众号类型: 平台统配「点点速豹」 vs 客户自有独立微信公众号
+export type WechatMpMode = 'platform_default' | 'custom_official';
+
+export interface WechatMpTemplateConfig {
+  warningTemplateId: string; // 预警速报通知模板ID
+  dispatchTemplateId: string; // 处置流转催办模板ID
+  reviewCompleteTemplateId: string; // 审签办结通报模板ID
+  dailyReportTemplateId: string; // 每日舆情晨报模板ID
+}
+
+export interface WechatMpConfig {
+  mode: WechatMpMode; // 'platform_default' | 'custom_official'
+  mpName: string; // 公众号名称，如 "随州融媒发布" 或 "点点速豹"
+  wechatAccount: string; // 微信号，如 "suizhou_mt_news"
+  originalId: string; // 微信原始ID，如 "gh_a87293b610c4"
+  appId: string; // 开发者 AppID
+  appSecret: string; // 开发者 AppSecret
+  serverUrl: string; // 服务器接入 URL
+  token: string; // Token 令牌
+  encodingAesKey: string; // 消息加解密密钥 EncodingAESKey
+  encryptMode: 'secure' | 'compatible' | 'plain'; // 消息加解密模式
+  authStatus: 'authorized' | 'unauthorized' | 'verifying' | 'abnormal'; // 接口授权与连通状态
+  lastVerifyTime?: string;
+  qrCodeUrl?: string; // 关注带参二维码图片
+  templates: WechatMpTemplateConfig;
+  jsSafeDomains?: string[]; // JS 接口安全域名
+  ipWhitelist?: string; // 白名单 IP
+  remark?: string;
+}
+
+// 公众号人员迁移状态
+export type MpMigrationStatus = 'completed' | 'pending_scan' | 'migrating' | 'failed' | 'not_started';
+
+export interface MpPersonnelMigrationItem {
+  id: string;
+  avatar: string;
+  name: string;
+  nickname: string;
+  department: string;
+  role: string;
+  phone: string;
+  sourceMp: string; // 源公众号, 如 "点点速豹"
+  sourceOpenId: string; // 原公众号 OpenID
+  targetMp: string; // 目标公众号, 如 "随州融媒发布"
+  targetOpenId?: string; // 目标公众号 OpenID
+  unionId?: string; // 微信 UnionID (如打通同一开放平台)
+  status: MpMigrationStatus;
+  matchedVia: 'union_id' | 'wechat_template_card' | 'sms_invite' | 'qr_scan' | 'manual';
+  invitationSentTime?: string;
+  migratedTime?: string;
+  remindCount: number;
+  inheritedRoles: string[];
+  inheritedDraftsCount: number;
+  inheritedPoints: number;
+  lastRemindTime?: string;
+}
+
+export interface MpMigrationTask {
+  id: string;
+  taskBatchNo: string;
+  taskName: string;
+  sourceMpName: string;
+  targetMpName: string;
+  totalPersonnel: number;
+  completedCount: number;
+  pendingCount: number;
+  failedCount: number;
+  channels: ('wechat_card' | 'sms' | 'qr_poster')[];
+  status: 'in_progress' | 'completed' | 'paused';
+  createdAt: string;
+  completedAt?: string;
+  operator: string;
+  progressPercentage: number;
+  remark?: string;
+}
+
+export interface MpMigrationConfig {
+  currentTaskId?: string;
+  enableAutoUnionIdSync: boolean; // 是否开启 UnionID 静默自动匹配
+  enableSmsNotify: boolean; // 是否开启短信提醒
+  enableWechatCardNotify: boolean; // 是否通过原公众号推送换绑卡片
+  personnelList: MpPersonnelMigrationItem[];
+  taskHistory: MpMigrationTask[];
+}
+
 export interface OtherBusinessConfig {
   qrUsage: QrCodeUsageConfig;
+  wechatMp?: WechatMpConfig;
+  migration?: MpMigrationConfig;
 }
 
 export interface InstitutionBusinessRules {
@@ -301,7 +388,8 @@ export interface SystemAccountUser {
   id: string;
   name: string;
   username: string;
-  jobNumber: string;
+  wechat?: string;
+  jobNumber?: string;
   avatar?: string;
   gender: 'male' | 'female';
   phone: string;

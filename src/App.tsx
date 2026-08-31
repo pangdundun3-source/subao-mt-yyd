@@ -18,7 +18,7 @@ import {
 export default function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>(() => {
     const saved = localStorage.getItem('admin_active_tab');
-    return (saved as ActiveTab) || 'system';
+    return (saved as ActiveTab) || 'institutions';
   });
 
   const [systemSubTab, setSystemSubTab] = useState<SystemSubModule>(() => {
@@ -28,13 +28,9 @@ export default function App() {
 
   // Secondary Page State (Selected Institution for Detail/Edit View)
   const [selectedInstitutionId, setSelectedInstitutionId] = useState<number | null>(() => {
-    const savedTab = localStorage.getItem('admin_active_tab');
-    if (savedTab === 'monitoring' || savedTab === 'system' || !savedTab) {
-      return null;
-    }
     const saved = localStorage.getItem('admin_selected_inst_id');
-    if (saved === 'null') return null;
-    return saved ? Number(saved) : null;
+    if (saved === 'null') return 1;
+    return saved ? Number(saved) : 1;
   });
 
   const [isEditingInstitution, setIsEditingInstitution] = useState<boolean>(() => {

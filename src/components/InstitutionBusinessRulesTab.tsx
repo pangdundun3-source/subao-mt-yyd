@@ -14,11 +14,14 @@ import {
   ReviewLevelNode,
   LoginAuthConfig,
   ValueAddedServiceItem,
+  OtherBusinessConfig,
+  QrCodeUsageConfig,
 } from '../types';
 import {
   OtherBusinessConfigTab,
   defaultOtherBusinessConfig,
 } from './OtherBusinessConfigTab';
+import { QrQuotaSection } from './other-config/QrQuotaSection';
 import {
   getGlobalBusinessRules,
   saveGlobalBusinessRules,
@@ -949,6 +952,7 @@ export type BusinessRuleNavKey =
   | 'metrics'
   | 'workflow'
   | 'value_added'
+  | 'qr_code'
   | 'other';
 
 interface NavItem {
@@ -1010,11 +1014,18 @@ const RULE_NAV_ITEMS: NavItem[] = [
     badge: '4项',
   },
   {
+    key: 'qr_code',
+    label: '二维码配置',
+    icon: 'qr_code_2',
+    description: '当前机构专属二维码名额额度管理、增发记录与绑定人员名单',
+    badge: '名额',
+  },
+  {
     key: 'other',
     label: '其他配置',
     icon: 'tune',
-    description: '当前机构二维码使用情况概览与额度增发管理',
-    badge: '名额',
+    description: '微信公众号接入通道与采编人员一键换绑迁移',
+    badge: '公众号',
   },
 ];
 
@@ -1066,17 +1077,32 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
       'metrics',
       'workflow',
       'value_added',
+      'qr_code',
       'other',
     ];
     if (saved && validKeys.includes(saved as BusinessRuleNavKey)) {
       return saved as BusinessRuleNavKey;
     }
-    return 'other';
+    return 'qr_code';
   });
 
   const handleNavChange = (key: BusinessRuleNavKey) => {
     setActiveNav(key);
     localStorage.setItem('admin_business_rule_active_subnav', key);
+  };
+
+  const handleUpdateQrConfig = (qrUsage: QrCodeUsageConfig) => {
+    const otherConfig: OtherBusinessConfig = {
+      ...defaultOtherBusinessConfig,
+      ...(rules.otherConfig || {}),
+      qrUsage,
+    };
+    const updated: InstitutionBusinessRules = {
+      ...rules,
+      otherConfig,
+    };
+    setRules(updated);
+    onSaveRules(updated);
   };
 
   // State for sub-modules
@@ -2918,7 +2944,19 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
           )}
 
           {/* ========================================================= */}
-          {/* 8. 其他配置 (Other Configurations - QR Code Quota & Usage) */}
+          {/* 8. 二维码配置 (QR Code Quota & Bound Personnel Management) */}
+          {/* ========================================================= */}
+          {activeNav === 'qr_code' && (
+            <QrQuotaSection
+              institution={institution}
+              qrConfig={rules.otherConfig?.qrUsage || defaultOtherBusinessConfig.qrUsage}
+              onChangeQrConfig={handleUpdateQrConfig}
+              showToast={showToast}
+            />
+          )}
+
+          {/* ========================================================= */}
+          {/* 9. 其他配置 (Other Configurations - 微信公众号配置 & 人员迁移) */}
           {/* ========================================================= */}
           {activeNav === 'other' && (
             <OtherBusinessConfigTab
