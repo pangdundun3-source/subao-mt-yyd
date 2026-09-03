@@ -55,7 +55,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     if (setSystemSubTab) {
       setSystemSubTab(subId);
     }
-    localStorage.setItem('admin_system_sub_tab', subId);
   };
 
   const handleMainItemClick = (item: NavItem) => {

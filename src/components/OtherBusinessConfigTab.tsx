@@ -1,11 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Institution,
   InstitutionBusinessRules,
   OtherBusinessConfig,
-  WechatMpConfig,
-  MpMigrationConfig,
 } from '../types';
+import { useOtherBusinessConfigViewModel, OtherConfigSubNavKey } from '../viewmodels/useOtherBusinessConfigViewModel';
 import {
   WechatMpConfigSection,
   defaultWechatMpConfig,
@@ -34,8 +33,6 @@ export const defaultOtherBusinessConfig: OtherBusinessConfig = {
     taskHistory: mockMigrationTasks,
   },
 };
-
-export type OtherConfigSubNavKey = 'wechat_mp' | 'mp_migration';
 
 interface NavSegmentItem {
   key: OtherConfigSubNavKey;
@@ -80,51 +77,21 @@ export const OtherBusinessConfigTab: React.FC<OtherBusinessConfigTabProps> = ({
   onSaveRules,
   showToast,
 }) => {
-  // Local active sub-tab inside "其他配置"
-  const [activeSubTab, setActiveSubTab] = useState<OtherConfigSubNavKey>(() => {
-    const saved = localStorage.getItem('admin_other_config_sub_tab');
-    if (saved === 'wechat_mp' || saved === 'mp_migration') {
-      return saved;
-    }
-    return 'wechat_mp';
+  const { state, actions } = useOtherBusinessConfigViewModel({
+    institution,
+    rules,
+    setRules,
+    onSaveRules,
+    defaultOtherBusinessConfig,
+    onShowToast: showToast,
   });
-
-  const [showHelpGuide, setShowHelpGuide] = useState(false);
-
-  const handleSubTabChange = (key: OtherConfigSubNavKey) => {
-    setActiveSubTab(key);
-    localStorage.setItem('admin_other_config_sub_tab', key);
-  };
-
-  // Merged otherConfig
-  const otherConfig: OtherBusinessConfig = {
-    ...defaultOtherBusinessConfig,
-    ...(rules.otherConfig || {}),
-  };
-
-  const handleUpdateWechatMp = (wechatMp: WechatMpConfig) => {
-    const updated: InstitutionBusinessRules = {
-      ...rules,
-      otherConfig: {
-        ...otherConfig,
-        wechatMp,
-      },
-    };
-    setRules(updated);
-    onSaveRules(updated);
-  };
-
-  const handleUpdateMigration = (migration: MpMigrationConfig) => {
-    const updated: InstitutionBusinessRules = {
-      ...rules,
-      otherConfig: {
-        ...otherConfig,
-        migration,
-      },
-    };
-    setRules(updated);
-    onSaveRules(updated);
-  };
+  const { activeSubTab, showHelpGuide, otherConfig, institutionName } = state;
+  const {
+    setShowHelpGuide,
+    handleSubTabChange,
+    handleUpdateWechatMp,
+    handleUpdateMigration,
+  } = actions;
 
   return (
     <div className="space-y-4">

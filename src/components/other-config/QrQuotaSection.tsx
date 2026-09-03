@@ -1,9 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React from 'react';
 import {
   Institution,
   QrQuotaAddRecord,
   QrCodeUsageConfig,
 } from '../../types';
+import { useQrQuotaViewModel } from '../../viewmodels/useQrQuotaViewModel';
 
 export const defaultQuotaHistory: QrQuotaAddRecord[] = [
   {
@@ -69,96 +70,39 @@ export const QrQuotaSection: React.FC<QrQuotaSectionProps> = ({
   onChangeQrConfig,
   showToast,
 }) => {
-  const [totalLimit, setTotalLimit] = useState<number>(qrConfig?.totalLimit ?? 50);
-  const [usedCount, setUsedCount] = useState<number>(qrConfig?.usedCount ?? 18);
-  const [history, setHistory] = useState<QrQuotaAddRecord[]>(
-    qrConfig?.historyRecords && qrConfig.historyRecords.length > 0
-      ? qrConfig.historyRecords
-      : defaultQuotaHistory
-  );
-
-  const [activeSubTab, setActiveSubTab] = useState<'records' | 'personnel'>('records');
-  const [personnelSearch, setPersonnelSearch] = useState<string>('');
-  const [boundPersonnel, setBoundPersonnel] = useState<BoundPersonnel[]>(mockBoundPersonnelList);
-
-  // Modal for adding quota
-  const [showAddModal, setShowAddModal] = useState<boolean>(false);
-  const [addAmount, setAddAmount] = useState<number>(20);
-  const [addReason, setAddReason] = useState<string>('机构采编队伍扩充及下辖网格通讯员扫码入驻');
-  const [operatorName, setOperatorName] = useState<string>('系统管理员');
-
-  const remainingCount = Math.max(0, totalLimit - usedCount);
-  const usagePercentage =
-    totalLimit > 0 ? (Math.round((usedCount / totalLimit) * 1000) / 10).toFixed(1) : '0.0';
-
-  const filteredPersonnel = useMemo(() => {
-    if (!personnelSearch.trim()) return boundPersonnel;
-    const q = personnelSearch.toLowerCase();
-    return boundPersonnel.filter(
-      (p) =>
-        p.name.toLowerCase().includes(q) ||
-        p.department.toLowerCase().includes(q) ||
-        p.role.toLowerCase().includes(q) ||
-        p.phone.includes(q)
-    );
-  }, [boundPersonnel, personnelSearch]);
-
-  const handleUnbindPersonnel = (id: string, name: string) => {
-    setBoundPersonnel((prev) => prev.filter((p) => p.id !== id));
-    const newUsed = Math.max(0, usedCount - 1);
-    setUsedCount(newUsed);
-    onChangeQrConfig({
-      totalLimit,
-      usedCount: newUsed,
-      historyRecords: history,
-    });
-    showToast(`已成功解绑人员【${name}】，二维码使用名额已释放 +1`, 'success');
-  };
-
-  const handleConfirmAddQuota = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (addAmount <= 0) {
-      showToast('请输入有效的增加额度数量（必须大于0）', 'warning');
-      return;
-    }
-
-    const previousLimit = totalLimit;
-    const newTotal = previousLimit + addAmount;
-
-    const newRecord: QrQuotaAddRecord = {
-      id: `REC-${Date.now().toString().slice(-8)}`,
-      addAmount,
-      previousLimit,
-      newLimit: newTotal,
-      reason: addReason.trim() || '机构日常扩容分配',
-      operator: operatorName.trim() || '系统管理员',
-      createdAt: new Date().toLocaleString('zh-CN', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false,
-      }).replace(/\//g, '-'),
-    };
-
-    const updatedHistory = [newRecord, ...history];
-    setTotalLimit(newTotal);
-    setHistory(updatedHistory);
-
-    onChangeQrConfig({
-      totalLimit: newTotal,
-      usedCount,
-      historyRecords: updatedHistory,
-    });
-
-    setShowAddModal(false);
-    showToast(
-      `成功为【${institution?.name || '当前机构'}】增发 ${addAmount} 个二维码名额！当前总额度达 ${newTotal} 个。`,
-      'success'
-    );
-  };
+  const { state, actions } = useQrQuotaViewModel({
+    institution,
+    qrConfig,
+    defaultHistory: defaultQuotaHistory,
+    defaultPersonnel: mockBoundPersonnelList,
+    onChangeQrConfig,
+    showToast,
+  });
+  const {
+    totalLimit,
+    usedCount,
+    history,
+    activeSubTab,
+    personnelSearch,
+    boundPersonnel,
+    showAddModal,
+    addAmount,
+    addReason,
+    operatorName,
+    remainingCount,
+    usagePercentage,
+    filteredPersonnel,
+  } = state;
+  const {
+    setActiveSubTab,
+    setPersonnelSearch,
+    setShowAddModal,
+    setAddAmount,
+    setAddReason,
+    setOperatorName,
+    handleUnbindPersonnel,
+    handleConfirmAddQuota,
+  } = actions;
 
   return (
     <div className="space-y-6 animate-fade-in text-gray-800">

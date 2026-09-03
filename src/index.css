@@ -9,9 +9,21 @@
   }
 }
 
+html,
+body,
+#root {
+  height: 100%;
+}
+
+* {
+  box-sizing: border-box;
+}
+
 body {
   font-family: "PingFang SC", "Microsoft YaHei", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   color: #333333;
+  margin: 0;
+  background: #dfefff;
 }
 
 /* Custom Scrollbar for administrative tables and main area */
@@ -29,4 +41,3 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #999;
 }
-

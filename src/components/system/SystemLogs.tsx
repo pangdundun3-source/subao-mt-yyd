@@ -1,108 +1,35 @@
-import React, { useState } from 'react';
-import { SystemLogCategory, SystemLogItem } from '../../types';
-import { initialSystemLogs } from './systemData';
+import React from 'react';
+import { useSystemLogsViewModel } from '../../viewmodels/useSystemLogsViewModel';
 
 interface SystemLogsProps {
   onShowToast?: (msg: string) => void;
 }
 
 export const SystemLogs: React.FC<SystemLogsProps> = ({ onShowToast }) => {
-  const [activeCategory, setActiveCategory] = useState<'login' | 'audit'>('login');
-  const [logs, setLogs] = useState<SystemLogItem[]>(initialSystemLogs);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedModule, setSelectedModule] = useState<string>('all');
-  const [selectedStatus, setSelectedStatus] = useState<string>('all');
-  const [timeRange, setTimeRange] = useState<'today' | '7days' | '30days' | 'all'>('today');
-
-  // Detail Modal State
-  const [viewingLog, setViewingLog] = useState<SystemLogItem | null>(null);
-
-  const notify = (msg: string) => {
-    if (onShowToast) {
-      onShowToast(msg);
-    }
-  };
-
-  // Filter logs by active category & filters
-  const filteredLogs = logs.filter((log) => {
-    const matchCategory = log.category === activeCategory;
-    const matchSearch =
-      log.operator.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (log.operatorUsername &&
-        log.operatorUsername.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (log.operatorJobNo &&
-        log.operatorJobNo.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      log.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      log.target.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      log.ip.includes(searchTerm) ||
-      log.id.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchModule = selectedModule === 'all' || log.module === selectedModule;
-    const matchStatus = selectedStatus === 'all' || log.status === selectedStatus;
-
-    return matchCategory && matchSearch && matchModule && matchStatus;
-  });
-
-  const categories: {
-    id: 'login' | 'audit';
-    name: string;
-    icon: string;
-    count: number;
-    desc: string;
-  }[] = [
-    {
-      id: 'login',
-      name: '登录日志',
-      icon: 'login',
-      count: logs.filter((l) => l.category === 'login').length,
-      desc: '用户与管理员登录、登出、MFA双因子核验、异地登录预警与高危爆破拦截记录',
-    },
-    {
-      id: 'audit',
-      name: '操作日志',
-      icon: 'manage_search',
-      count: logs.filter((l) => l.category === 'audit').length,
-      desc: '管理员业务配置、机构录入变更、规则调整、账号启禁与数据导出等操作行为轨迹',
-    },
-  ];
-
-  // Distinct modules for filter
-  const availableModules = Array.from(
-    new Set(logs.filter((l) => l.category === activeCategory).map((l) => l.module))
-  );
-
-  const handleExportLogs = () => {
-    // Generate CSV content
-    const headers =
-      activeCategory === 'login'
-        ? '日志编号,登录时间,账号/人员,工号,部门,角色,IP地址,归属地,操作系统,浏览器,执行结果\n'
-        : '日志编号,操作时间,操作人,工号,部门,角色,业务模块,操作动作,操作目标,IP地址,归属地,执行结果,耗时(ms)\n';
-
-    const rows = filteredLogs
-      .map((l) => {
-        if (activeCategory === 'login') {
-          return `"${l.id}","${l.time}","${l.operator}","${l.operatorJobNo || '--'}","${l.department}","${l.role}","${l.ip}","${l.location}","${l.os || '--'}","${l.browser || '--'}","${l.status}"`;
-        }
-        return `"${l.id}","${l.time}","${l.operator}","${l.operatorJobNo || '--'}","${l.department}","${l.role}","${l.module}","${l.action}","${l.target.replace(/"/g, '""')}","${l.ip}","${l.location}","${l.status}","${l.durationMs || 0}"`;
-      })
-      .join('\n');
-
-    const blob = new Blob(['\uFEFF' + headers + rows], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute(
-      'download',
-      `MT_速报系统_${activeCategory === 'login' ? '登录日志' : '操作日志'}_${new Date().toISOString().substring(0, 10)}.csv`
-    );
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    notify(
-      `已成功导出 ${filteredLogs.length} 条【${categories.find((c) => c.id === activeCategory)?.name}】数据文件`
-    );
-  };
+  const { state, actions } = useSystemLogsViewModel(onShowToast);
+  const {
+    activeCategory,
+    logs,
+    searchTerm,
+    selectedModule,
+    selectedStatus,
+    timeRange,
+    viewingLog,
+    filteredLogs,
+    categories,
+    availableModules,
+  } = state;
+  const {
+    setSearchTerm,
+    setSelectedModule,
+    setSelectedStatus,
+    setTimeRange,
+    setViewingLog,
+    handleCategoryChange,
+    handleResetFilters,
+    handleExportLogs,
+    notify,
+  } = actions;
 
   return (
     <div className="space-y-6">
@@ -115,11 +42,7 @@ export const SystemLogs: React.FC<SystemLogsProps> = ({ onShowToast }) => {
             return (
               <button
                 key={cat.id}
-                onClick={() => {
-                  setActiveCategory(cat.id);
-                  setSelectedModule('all');
-                  setSelectedStatus('all');
-                }}
+                onClick={() => handleCategoryChange(cat.id)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
                   isActive
                     ? 'bg-[#1890ff] text-white shadow-xs'
@@ -238,11 +161,7 @@ export const SystemLogs: React.FC<SystemLogsProps> = ({ onShowToast }) => {
 
             {(searchTerm || selectedModule !== 'all' || selectedStatus !== 'all') && (
               <button
-                onClick={() => {
-                  setSearchTerm('');
-                  setSelectedModule('all');
-                  setSelectedStatus('all');
-                }}
+                onClick={handleResetFilters}
                 className="text-xs text-[#1890ff] hover:underline px-2 py-1"
               >
                 重置

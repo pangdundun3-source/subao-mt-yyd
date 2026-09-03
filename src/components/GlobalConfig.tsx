@@ -1,53 +1,37 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { InstitutionBusinessRulesTab } from './InstitutionBusinessRulesTab';
-import {
-  getGlobalBusinessRules,
-  saveGlobalBusinessRules,
-} from '../data/globalBusinessRules';
 import { InstitutionBusinessRules } from '../types';
+import { useGlobalConfigViewModel } from '../viewmodels/useGlobalConfigViewModel';
 
 interface GlobalConfigProps {
   onShowToast?: (msg: string, type?: 'success' | 'warning' | 'info') => void;
 }
 
 export const GlobalConfig: React.FC<GlobalConfigProps> = ({ onShowToast }) => {
-  // Top-level tab state
-  const [activeGlobalTab, setActiveGlobalTab] = useState<'business_rules' | 'system_policy'>('business_rules');
-
-  // Internal toast handler if not provided
-  const [internalToast, setInternalToast] = useState<{ message: string; type: 'success' | 'warning' | 'info' } | null>(null);
-
-  const showToast = (msg: string, type: 'success' | 'warning' | 'info' = 'info') => {
-    if (onShowToast) {
-      onShowToast(msg, type);
-    } else {
-      setInternalToast({ message: msg, type });
-      setTimeout(() => setInternalToast(null), 3000);
-    }
-  };
-
-  // System Policy States
-  const [noticeDays, setNoticeDays] = useState(30);
-  const [maxTrialDays, setMaxTrialDays] = useState(15);
-  const [autoDisableExpired, setAutoDisableExpired] = useState(true);
-  const [smsNotification, setSmsNotification] = useState(true);
-  const [emailNotification, setEmailNotification] = useState(true);
-  const [systemNoticeText, setSystemNoticeText] = useState(
-    '【系统通知】全量媒体速报大数据服务升级完毕，目前运行正常。'
-  );
-  const [savedSuccess, setSavedSuccess] = useState(false);
-
-  const handleSaveSystemPolicy = (e: React.FormEvent) => {
-    e.preventDefault();
-    setSavedSuccess(true);
-    showToast('系统全局运维策略已成功保存！', 'success');
-    setTimeout(() => setSavedSuccess(false), 3000);
-  };
-
-  const handleSaveGlobalRules = (newRules: InstitutionBusinessRules) => {
-    saveGlobalBusinessRules(newRules);
-    showToast('全平台业务规则配置已成功保存并设为基准母版！', 'success');
-  };
+  const { state, actions } = useGlobalConfigViewModel(onShowToast);
+  const {
+    activeGlobalTab,
+    internalToast,
+    noticeDays,
+    maxTrialDays,
+    autoDisableExpired,
+    smsNotification,
+    emailNotification,
+    systemNoticeText,
+    savedSuccess,
+  } = state;
+  const {
+    setActiveGlobalTab,
+    setNoticeDays,
+    setMaxTrialDays,
+    setAutoDisableExpired,
+    setSmsNotification,
+    setEmailNotification,
+    setSystemNoticeText,
+    handleSaveSystemPolicy,
+    handleSaveGlobalRules,
+    showToast,
+  } = actions;
 
   return (
     <div className="p-6 flex-1 flex flex-col gap-4 min-w-[1024px] w-full">

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Institution,
   InstitutionBusinessRules,
@@ -6,10 +6,7 @@ import {
   TemplateFieldItem,
   TemplateFieldType,
   ScoringDimension,
-  ScoringRuleGroup,
-  ScoringLevelItem,
   DictItem,
-  AssessmentRuleItem,
   MetricFormulaConfig,
   ReviewLevelNode,
   LoginAuthConfig,
@@ -23,10 +20,10 @@ import {
 } from './OtherBusinessConfigTab';
 import { QrQuotaSection } from './other-config/QrQuotaSection';
 import {
-  getGlobalBusinessRules,
-  saveGlobalBusinessRules,
   mergeInstitutionRulesWithGlobal,
 } from '../data/globalBusinessRules';
+import { businessRuleStorage } from '../services/businessRuleStorage';
+import { useBusinessRulesViewModel } from '../viewmodels/useBusinessRulesViewModel';
 
 export const defaultValueAddedServices: ValueAddedServiceItem[] = [
   {
@@ -1044,183 +1041,103 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
   onSaveRules,
   showToast,
 }) => {
-  // Merge global default rules with existing institution rules if available
-  const [rules, setRules] = useState<InstitutionBusinessRules>(() => {
-    if (isGlobalScope) {
-      return getGlobalBusinessRules();
-    }
-    const raw = institution?.businessRules;
-    return mergeInstitutionRulesWithGlobal(raw, getGlobalBusinessRules());
+  const { state, actions } = useBusinessRulesViewModel({
+    institution,
+    isGlobalScope,
+    defaultRules: defaultInstitutionBusinessRules,
+    defaultOtherBusinessConfig,
+    defaultValueAddedServices,
+    statMetrics: STAT_METRICS_LIST,
+    readGlobalRules: businessRuleStorage.readGlobalRules,
+    mergeWithGlobal: mergeInstitutionRulesWithGlobal,
+    onSaveRules,
+    showToast,
   });
-
-  // 同步平台全局规则
-  const handleSyncFromGlobal = () => {
-    const globalRules = getGlobalBusinessRules();
-    const merged = mergeInstitutionRulesWithGlobal(rules, globalRules);
-    setRules(merged);
-    showToast('已成功从平台全局业务规则库拉取并同步最新基准配置！', 'success');
-  };
-
-  // 判断条目是否属于全局规则（在单机构模式下不可删除，可切换启用/停用开关）
-  const isGlobalImmutable = (item: { isGlobal?: boolean; isSystem?: boolean; isCustom?: boolean }) => {
-    if (isGlobalScope) return false; // 在全局模式下，超管可以管理全局项
-    return !!(item.isGlobal || item.isSystem) && !item.isCustom;
-  };
-
-  const [activeNav, setActiveNav] = useState<BusinessRuleNavKey>(() => {
-    const saved = localStorage.getItem('admin_business_rule_active_subnav');
-    const validKeys: BusinessRuleNavKey[] = [
-      'templates',
-      'scoring',
-      'dictionary',
-      'assessment',
-      'metrics',
-      'workflow',
-      'value_added',
-      'qr_code',
-      'other',
-    ];
-    if (saved && validKeys.includes(saved as BusinessRuleNavKey)) {
-      return saved as BusinessRuleNavKey;
-    }
-    return 'qr_code';
-  });
-
-  const handleNavChange = (key: BusinessRuleNavKey) => {
-    setActiveNav(key);
-    localStorage.setItem('admin_business_rule_active_subnav', key);
-  };
-
-  const handleUpdateQrConfig = (qrUsage: QrCodeUsageConfig) => {
-    const otherConfig: OtherBusinessConfig = {
-      ...defaultOtherBusinessConfig,
-      ...(rules.otherConfig || {}),
-      qrUsage,
-    };
-    const updated: InstitutionBusinessRules = {
-      ...rules,
-      otherConfig,
-    };
-    setRules(updated);
-    onSaveRules(updated);
-  };
-
-  // State for sub-modules
-  // 1. Template configuration state (Redesigned matching mockups)
-  const [templateFilterType, setTemplateFilterType] = useState<'all' | 'report' | 'active'>('active');
-  const [templateSearchKeyword, setTemplateSearchKeyword] = useState<string>('');
-  const [viewingTemplate, setViewingTemplate] = useState<TemplateConfigItem | null>(null);
-  const [editingTemplate, setEditingTemplate] = useState<TemplateConfigItem | null>(null);
-  const [quickAddFieldType, setQuickAddFieldType] = useState<TemplateFieldType>('text');
-
-  // 2. Scoring rule group state
-  const [scoringSearchKeyword, setScoringSearchKeyword] = useState<string>('');
-  const [viewingScoringRuleGroup, setViewingScoringRuleGroup] = useState<ScoringRuleGroup | null>(null);
-  const [editingScoringRuleGroup, setEditingScoringRuleGroup] = useState<ScoringRuleGroup | null>(null);
-  const [editingDimension, setEditingDimension] = useState<ScoringDimension | null>(null);
-
-  // 3. Dictionary state
-  const [selectedDictType, setSelectedDictType] = useState<string>('reject_reason');
-  const [editingDictItem, setEditingDictItem] = useState<DictItem | null>(null);
-  const [viewingDictItem, setViewingDictItem] = useState<DictItem | null>(null);
-  const [dictSearchKeyword, setDictSearchKeyword] = useState<string>('');
-
-  // 4. Assessment modal
-  const [editingAssessment, setEditingAssessment] = useState<AssessmentRuleItem | null>(null);
-
-  // 5. Statistical Metrics state (31 system metrics)
-  const [metricSearchName, setMetricSearchName] = useState<string>('');
-  const [metricCategoryFilter, setMetricCategoryFilter] = useState<string>('全部');
-  const [metricSearchQuery, setMetricSearchQuery] = useState<{ name: string; category: string }>({
-    name: '',
-    category: '全部',
-  });
-  const [selectedMetric, setSelectedMetric] = useState<StatMetricItem>(STAT_METRICS_LIST[0]);
-
-  // Template count calculations & filtering
-  const allTemplatesCount = (rules.templates || []).length;
-  const reportTemplatesCount = (rules.templates || []).filter((t) => t.type === '报送').length;
-  const activeTemplatesCount = (rules.templates || []).filter((t) => t.type === '激活').length;
-
-  const filteredTemplates = React.useMemo(() => {
-    const list = rules.templates || [];
-    return list.filter((t) => {
-      if (templateFilterType === 'report' && t.type !== '报送') return false;
-      if (templateFilterType === 'active' && t.type !== '激活') return false;
-      if (templateSearchKeyword.trim()) {
-        const kw = templateSearchKeyword.trim().toLowerCase();
-        const matchName = t.name.toLowerCase().includes(kw);
-        const matchDesc = (t.description || '').toLowerCase().includes(kw);
-        const matchType = (t.type || '').toLowerCase().includes(kw);
-        const matchFields = (t.fields || []).some((f) => f.name.toLowerCase().includes(kw));
-        return matchName || matchDesc || matchType || matchFields;
-      }
-      return true;
-    });
-  }, [rules.templates, templateFilterType, templateSearchKeyword]);
-
-  const filteredMetrics = React.useMemo(() => {
-    return STAT_METRICS_LIST.filter((m) => {
-      const matchName =
-        !metricSearchQuery.name.trim() ||
-        m.name.toLowerCase().includes(metricSearchQuery.name.trim().toLowerCase());
-      const matchCat =
-        metricSearchQuery.category === '全部' ||
-        m.category === metricSearchQuery.category;
-      return matchName && matchCat;
-    });
-  }, [metricSearchQuery]);
-
-  const handleMetricSearch = () => {
-    setMetricSearchQuery({
-      name: metricSearchName,
-      category: metricCategoryFilter,
-    });
-  };
-
-  const handleMetricReset = () => {
-    setMetricSearchName('');
-    setMetricCategoryFilter('全部');
-    setMetricSearchQuery({
-      name: '',
-      category: '全部',
-    });
-  };
-
-  // Legacy simulator test state
-  const [simulatorInputs, setSimulatorInputs] = useState({
-    reads: 12500,
-    likes: 680,
-    shares: 2400,
-    comments: 310,
-    isOriginal: true,
-  });
-
-  // Calculate simulated MPI
-  const simulatedMPI = React.useMemo(() => {
-    const f = rules.metricsFormula;
-    const base =
-      simulatorInputs.reads * f.readWeight * 0.05 +
-      simulatorInputs.likes * f.likeWeight * 0.5 +
-      simulatorInputs.shares * f.shareWeight * 1.0 +
-      simulatorInputs.comments * f.commentWeight * 1.5;
-    const originalMultiplier = simulatorInputs.isOriginal ? f.originalBonus : 1.0;
-    return Math.round(base * originalMultiplier);
-  }, [rules.metricsFormula, simulatorInputs]);
-
-  // Save all rules to parent and persist
-  const handleSaveCurrentRules = () => {
-    onSaveRules(rules);
-    showToast('该机构业务规则已成功保存并立即生效！', 'success');
-  };
-
-  const handleResetToDefault = () => {
-    setRules(defaultInstitutionBusinessRules);
-    showToast('已重置为系统标准预设业务规则！', 'info');
-  };
-
-  // Total weight for scoring dimensions
-  const totalScoringWeight = rules.scoringDimensions.reduce((acc, cur) => acc + cur.weight, 0);
+  const {
+    rules,
+    activeNav,
+    templateFilterType,
+    templateSearchKeyword,
+    viewingTemplate,
+    editingTemplate,
+    quickAddFieldType,
+    scoringSearchKeyword,
+    viewingScoringRuleGroup,
+    editingScoringRuleGroup,
+    editingDimension,
+    selectedDictType,
+    editingDictItem,
+    viewingDictItem,
+    dictSearchKeyword,
+    editingAssessment,
+    metricSearchName,
+    metricCategoryFilter,
+    metricSearchQuery,
+    selectedMetric,
+    simulatorInputs,
+    filteredTemplates,
+    filteredMetrics,
+    simulatedMPI,
+    allTemplatesCount,
+    reportTemplatesCount,
+    activeTemplatesCount,
+    totalScoringWeight,
+  } = state;
+  const {
+    setRules,
+    setActiveNav,
+    setTemplateFilterType,
+    setTemplateSearchKeyword,
+    setViewingTemplate,
+    setEditingTemplate,
+    setQuickAddFieldType,
+    setScoringSearchKeyword,
+    setViewingScoringRuleGroup,
+    setEditingScoringRuleGroup,
+    setEditingDimension,
+    setSelectedDictType,
+    setEditingDictItem,
+    setViewingDictItem,
+    setDictSearchKeyword,
+    setEditingAssessment,
+    setMetricSearchName,
+    setMetricCategoryFilter,
+    setMetricSearchQuery,
+    setSelectedMetric,
+    setSimulatorInputs,
+    handleSyncFromGlobal,
+    isGlobalImmutable,
+    handleNavChange,
+    handleUpdateQrConfig,
+    handleMetricSearch,
+    handleMetricReset,
+    createNewTemplate,
+    addTemplateField,
+    toggleTemplateStatus,
+    removeTemplate,
+    createNewScoringRuleGroup,
+    addScoringLevel,
+    toggleScoringRuleGroup,
+    removeScoringRuleGroup,
+    createNewDictItem,
+    toggleDictItem,
+    removeDictItem,
+    createAssessmentRule,
+    setAssessmentCycle,
+    removeAssessmentRule,
+    setWorkflowType,
+    setReviewNodeOption,
+    removeAutoApproveKeyword,
+    setPenaltyEnabled,
+    setFastTrackEnabled,
+    toggleValueAddedService,
+    saveTemplate,
+    saveScoringRuleGroup,
+    saveDictItem,
+    saveAssessmentRule,
+    handleSaveCurrentRules,
+    handleResetToDefault,
+  } = actions;
 
   return (
     <div className="space-y-6 pb-20">
@@ -1320,41 +1237,7 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
                   {/* Add New Template Button */}
                   <button
                     type="button"
-                    onClick={() => {
-                      const newTpl: TemplateConfigItem = {
-                        id: `tpl-${Date.now()}`,
-                        name: '自定义事件上报模板',
-                        type: '报送',
-                        status: true,
-                        isSystem: false,
-                        updatedAt: new Date().toISOString().replace('T', ' ').substring(0, 19),
-                        description: '用于特定业务条线的定制化信息采报通道',
-                        fields: [
-                          {
-                            id: `f-${Date.now()}-1`,
-                            name: '事件主题/标题',
-                            type: 'text',
-                            required: true,
-                            placeholder: '请输入事件主题',
-                          },
-                          {
-                            id: `f-${Date.now()}-2`,
-                            name: '发现时间',
-                            type: 'time',
-                            required: true,
-                            placeholder: '年/月/日 --:--',
-                          },
-                          {
-                            id: `f-${Date.now()}-3`,
-                            name: '现场佐证材料',
-                            type: 'attachment',
-                            required: true,
-                            placeholder: '上传图片或视频证据',
-                          },
-                        ],
-                      };
-                      setEditingTemplate(newTpl);
-                    }}
+                    onClick={createNewTemplate}
                     className="px-4 py-1.5 rounded-lg text-xs font-semibold bg-[#1677ff] text-white hover:bg-blue-600 transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs whitespace-nowrap"
                   >
                     <span className="material-symbols-outlined text-[16px]">add</span>
@@ -1485,16 +1368,7 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
                               </span>
                               <button
                                 type="button"
-                                onClick={() => {
-                                  const updatedTemplates = rules.templates.map((t) =>
-                                    t.id === tpl.id ? { ...t, status: !t.status } : t
-                                  );
-                                  setRules({ ...rules, templates: updatedTemplates });
-                                  showToast(
-                                    `已${!tpl.status ? '启用' : '停用'}模板【${tpl.name}】！`,
-                                    !tpl.status ? 'success' : 'info'
-                                  );
-                                }}
+                                onClick={() => toggleTemplateStatus(tpl)}
                                 className={`w-9 h-5 flex items-center rounded-full p-0.5 transition-colors cursor-pointer ${
                                   tpl.status ? 'bg-green-500' : 'bg-gray-300'
                                 }`}
@@ -1643,13 +1517,7 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
                             ) : (
                               <button
                                 type="button"
-                                onClick={() => {
-                                  setRules({
-                                    ...rules,
-                                    templates: rules.templates.filter((t) => t.id !== tpl.id),
-                                  });
-                                  showToast(`已删除模板【${tpl.name}】！`, 'info');
-                                }}
+                                onClick={() => removeTemplate(tpl)}
                                 title="删除模板"
                                 className="p-1 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
                               >
@@ -1700,28 +1568,7 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
                   </div>
                   <button
                     type="button"
-                    onClick={() => {
-                      const newGroup: ScoringRuleGroup = {
-                        id: `srg-${Date.now()}`,
-                        name: '自定义百分制打分规则组',
-                        scope: '全部上报统一适用',
-                        totalScore: 100,
-                        levelCount: 5,
-                        status: false,
-                        isSystem: false,
-                        isCurrentActive: false,
-                        description: '按审核结果命中一个评分等级，设为启用后替换当前规则',
-                        updatedAt: new Date().toISOString().replace('T', ' ').slice(0, 19),
-                        levels: [
-                          { id: `lvl-${Date.now()}-1`, name: '一等（特优）', score: 100, description: '特优级标准' },
-                          { id: `lvl-${Date.now()}-2`, name: '二等（优秀）', score: 90, description: '优秀级标准' },
-                          { id: `lvl-${Date.now()}-3`, name: '三等（良好）', score: 80, description: '良好级标准' },
-                          { id: `lvl-${Date.now()}-4`, name: '四等（合格）', score: 70, description: '合格级标准' },
-                          { id: `lvl-${Date.now()}-5`, name: '五等（基本）', score: 60, description: '基本级标准' },
-                        ],
-                      };
-                      setEditingScoringRuleGroup(newGroup);
-                    }}
+                    onClick={createNewScoringRuleGroup}
                     className="bg-[#1677ff] hover:bg-blue-600 text-white text-xs font-semibold px-3.5 py-1.5 rounded-lg flex items-center gap-1 transition-all shadow-2xs cursor-pointer shrink-0"
                   >
                     <span className="material-symbols-outlined text-[16px]">add</span>
@@ -1778,24 +1625,7 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
                               </span>
                               <button
                                 type="button"
-                                onClick={() => {
-                                  const currentGroups =
-                                    rules.scoringRuleGroups ||
-                                    defaultInstitutionBusinessRules.scoringRuleGroups ||
-                                    [];
-                                  const updated = currentGroups.map((g) => {
-                                    if (g.id === group.id) {
-                                      const nextStatus = !g.status;
-                                      return { ...g, status: nextStatus, isCurrentActive: nextStatus };
-                                    }
-                                    return g;
-                                  });
-                                  setRules({ ...rules, scoringRuleGroups: updated });
-                                  showToast(
-                                    `已${!group.status ? '启用' : '停用'}【${group.name}】！`,
-                                    'success'
-                                  );
-                                }}
+                                onClick={() => toggleScoringRuleGroup(group)}
                                 className={`w-9 h-5 rounded-full p-0.5 transition-colors duration-200 ease-in-out cursor-pointer relative ${
                                   group.status ? 'bg-[#52c41a]' : 'bg-gray-300'
                                 }`}
@@ -1915,15 +1745,7 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
                             ) : (
                               <button
                                 type="button"
-                                onClick={() => {
-                                  const currentGroups =
-                                    rules.scoringRuleGroups ||
-                                    defaultInstitutionBusinessRules.scoringRuleGroups ||
-                                    [];
-                                  const updated = currentGroups.filter((g) => g.id !== group.id);
-                                  setRules({ ...rules, scoringRuleGroups: updated });
-                                  showToast(`已删除打分规则【${group.name}】！`);
-                                }}
+                                onClick={() => removeScoringRuleGroup(group)}
                                 title="删除规则"
                                 className="text-gray-400 hover:text-red-500 p-1 rounded hover:bg-red-50 transition-colors cursor-pointer"
                               >
@@ -2007,21 +1829,7 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
 
                 <button
                   type="button"
-                  onClick={() => {
-                    const isReject = selectedDictType === 'reject_reason';
-                    const newDict: DictItem = {
-                      id: `d-${Date.now()}`,
-                      dictType: selectedDictType,
-                      label: isReject ? '新驳回原因' : '新人员标签',
-                      value: `custom_${Date.now().toString().slice(-4)}`,
-                      sortOrder: rules.dictItems.filter((d) => d.dictType === selectedDictType).length + 1,
-                      isSystem: false,
-                      status: true,
-                      description: isReject ? '请填写该驳回原因对应的审核员提示说明' : '请填写该人员标签对应的业务职能说明',
-                      updatedAt: new Date().toISOString().replace('T', ' ').slice(0, 19),
-                    };
-                    setEditingDictItem(newDict);
-                  }}
+                  onClick={() => createNewDictItem(selectedDictType)}
                   className="px-4 py-1.5 rounded text-xs font-semibold bg-[#1677ff] hover:bg-blue-600 text-white transition-colors flex items-center gap-1 cursor-pointer shadow-2xs"
                 >
                   <span className="material-symbols-outlined text-[16px]">add</span>
@@ -2097,15 +1905,7 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
                             <div className="flex items-center gap-2">
                               <button
                                 type="button"
-                                onClick={() => {
-                                  setRules({
-                                    ...rules,
-                                    dictItems: rules.dictItems.map((d) =>
-                                      d.id === item.id ? { ...d, status: !d.status } : d
-                                    ),
-                                  });
-                                  showToast(`【${item.label}】已切换为${!item.status ? '启用' : '停用'}！`);
-                                }}
+                                onClick={() => toggleDictItem(item)}
                                 className={`relative inline-flex h-[20px] w-[38px] items-center rounded-full transition-colors cursor-pointer select-none px-[2px] ${
                                   item.status ? 'bg-[#52c41a]' : 'bg-gray-300'
                                 }`}
@@ -2172,13 +1972,7 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
                                 <button
                                   type="button"
                                   title="删除"
-                                  onClick={() => {
-                                    setRules({
-                                      ...rules,
-                                      dictItems: rules.dictItems.filter((d) => d.id !== item.id),
-                                    });
-                                    showToast(`已删除【${item.label}】！`, 'success');
-                                  }}
+                                  onClick={() => removeDictItem(item)}
                                   className="text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
                                 >
                                   <span className="material-symbols-outlined text-[17px]">
@@ -2224,21 +2018,7 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
 
                 <button
                   type="button"
-                  onClick={() => {
-                    const newRule: AssessmentRuleItem = {
-                      id: `ar-${Date.now()}`,
-                      metricName: '自定义考核指标',
-                      targetValue: 100,
-                      unit: '次',
-                      cycle: rules.assessmentCycle,
-                      weight: 20,
-                      rewardPoints: 10,
-                      penaltyPoints: 10,
-                    };
-                    setRules({ ...rules, assessmentRules: [...rules.assessmentRules, newRule] });
-                    setEditingAssessment(newRule);
-                    showToast('已新增考核指标！', 'success');
-                  }}
+                  onClick={createAssessmentRule}
                   className="px-3.5 py-1.5 rounded text-xs font-medium bg-[#1890ff] text-white hover:bg-blue-600 transition-colors flex items-center gap-1 cursor-pointer"
                 >
                   <span className="material-symbols-outlined text-[16px]">add</span>
@@ -2261,13 +2041,12 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
                       <button
                         key={c.key}
                         type="button"
-                        onClick={() => {
-                          setRules({
-                            ...rules,
-                            assessmentCycle: c.key as 'monthly' | 'quarterly' | 'yearly',
-                          });
-                          showToast(`考评周期已切换为：${c.label}`);
-                        }}
+                        onClick={() =>
+                          setAssessmentCycle(
+                            c.key as 'monthly' | 'quarterly' | 'yearly',
+                            c.label
+                          )
+                        }
                         className={`px-3 py-1.5 rounded text-xs transition-colors cursor-pointer border ${
                           rules.assessmentCycle === c.key
                             ? 'bg-[#1890ff] text-white border-[#1890ff] font-semibold'
@@ -2289,7 +2068,7 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
                       type="checkbox"
                       id="penaltySwitch"
                       checked={rules.enablePenalty}
-                      onChange={(e) => setRules({ ...rules, enablePenalty: e.target.checked })}
+                      onChange={(e) => setPenaltyEnabled(e.target.checked)}
                       className="w-4 h-4 text-[#1890ff] rounded border-gray-300 focus:ring-[#1890ff] cursor-pointer"
                     />
                     <label htmlFor="penaltySwitch" className="text-xs text-gray-700 cursor-pointer">
@@ -2372,15 +2151,7 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
                               rules.assessmentRules.length > 1 && (
                                 <button
                                   type="button"
-                                  onClick={() => {
-                                    setRules({
-                                      ...rules,
-                                      assessmentRules: rules.assessmentRules.filter(
-                                        (r) => r.id !== ar.id
-                                      ),
-                                    });
-                                    showToast(`已删除考核项【${ar.metricName}】！`);
-                                  }}
+                                  onClick={() => removeAssessmentRule(ar)}
                                   className="text-gray-400 hover:text-red-500 cursor-pointer"
                                 >
                                   删除
@@ -2575,13 +2346,7 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
                     <button
                       key={wf.key}
                       type="button"
-                      onClick={() => {
-                        setRules({
-                          ...rules,
-                          workflowType: wf.key as any,
-                        });
-                        showToast(`已切换为【${wf.label}】工作流！`);
-                      }}
+                      onClick={() => setWorkflowType(wf.key as any, wf.label)}
                       className={`px-3 py-1.5 rounded text-xs transition-colors cursor-pointer border ${
                         rules.workflowType === wf.key
                           ? 'bg-[#1890ff] text-white border-[#1890ff] font-semibold'
@@ -2645,14 +2410,13 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
                               <input
                                 type="checkbox"
                                 checked={node.allowTransfer}
-                                onChange={(e) => {
-                                  const updated = rules.reviewNodes.map((n) =>
-                                    n.level === node.level
-                                      ? { ...n, allowTransfer: e.target.checked }
-                                      : n
-                                  );
-                                  setRules({ ...rules, reviewNodes: updated });
-                                }}
+                                onChange={(e) =>
+                                  setReviewNodeOption(
+                                    node.level,
+                                    'allowTransfer',
+                                    e.target.checked
+                                  )
+                                }
                                 className="rounded text-[#1890ff]"
                               />
                               <span>支持转审</span>
@@ -2662,14 +2426,13 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
                               <input
                                 type="checkbox"
                                 checked={node.allowDirectPublish}
-                                onChange={(e) => {
-                                  const updated = rules.reviewNodes.map((n) =>
-                                    n.level === node.level
-                                      ? { ...n, allowDirectPublish: e.target.checked }
-                                      : n
-                                  );
-                                  setRules({ ...rules, reviewNodes: updated });
-                                }}
+                                onChange={(e) =>
+                                  setReviewNodeOption(
+                                    node.level,
+                                    'allowDirectPublish',
+                                    e.target.checked
+                                  )
+                                }
                                 className="rounded text-[#1890ff]"
                               />
                               <span>允许签发</span>
@@ -2695,7 +2458,7 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
                   <input
                     type="checkbox"
                     checked={rules.enableFastTrack}
-                    onChange={(e) => setRules({ ...rules, enableFastTrack: e.target.checked })}
+                    onChange={(e) => setFastTrackEnabled(e.target.checked)}
                     className="w-4 h-4 text-[#1890ff] rounded border-gray-300 focus:ring-[#1890ff] cursor-pointer"
                   />
                 </div>
@@ -2713,14 +2476,7 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
                         <span>{kw}</span>
                         <button
                           type="button"
-                          onClick={() => {
-                            setRules({
-                              ...rules,
-                              autoApproveKeywords: rules.autoApproveKeywords.filter(
-                                (_, i) => i !== kwIdx
-                              ),
-                            });
-                          }}
+                          onClick={() => removeAutoApproveKeyword(kwIdx)}
                           className="text-gray-400 hover:text-red-500 cursor-pointer"
                         >
                           ×
@@ -2847,20 +2603,7 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
                             <div className="flex items-center gap-2">
                               <button
                                 type="button"
-                                onClick={() => {
-                                  const currentList =
-                                    rules.valueAddedServices || defaultValueAddedServices;
-                                  const updated = currentList.map((item) =>
-                                    item.id === service.id
-                                      ? { ...item, isEnabled: !item.isEnabled }
-                                      : item
-                                  );
-                                  setRules({ ...rules, valueAddedServices: updated });
-                                  showToast(
-                                    `已${!isEnabled ? '启用' : '停用'}「${service.name}」增值扩展功能`,
-                                    !isEnabled ? 'success' : 'info'
-                                  );
-                                }}
+                                onClick={() => toggleValueAddedService(service)}
                                 className={`relative inline-flex h-[22px] w-[42px] shrink-0 items-center rounded-full transition-colors cursor-pointer select-none px-[2px] ${
                                   isEnabled ? 'bg-[#10b981]' : 'bg-gray-300'
                                 }`}
@@ -3444,58 +3187,7 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
 
                       <button
                         type="button"
-                        onClick={() => {
-                          const typeLabelMap: Record<TemplateFieldType, string> = {
-                            text: '新建文本项',
-                            role: '身份角色',
-                            phone: '手机号码',
-                            gender: '性别',
-                            idcard: '身份证号',
-                            bankcard: '银行卡号',
-                            attachment: '证明附件',
-                            textarea: '新建详细说明',
-                            time: '新建时间节点',
-                            number: '新建数据指标',
-                            link: '新建来源链接',
-                            select: '新建下拉选项',
-                          };
-                          const placeholderMap: Record<TemplateFieldType, string> = {
-                            text: '请输入具体内容',
-                            role: '请选择身份角色',
-                            phone: '请输入 11 位手机号码',
-                            gender: '请选择性别',
-                            idcard: '请输入身份证号码',
-                            bankcard: '请输入银行卡号',
-                            attachment: '上传图片、视频或证明材料',
-                            textarea: '请输入详细描述说明',
-                            time: '年/月/日 --:--',
-                            number: '请输入数值数据',
-                            link: 'https://...',
-                            select: '请选择分类选项',
-                          };
-
-                          const newF: TemplateFieldItem = {
-                            id: `f-${Date.now()}`,
-                            name: typeLabelMap[quickAddFieldType] || '自定义字段',
-                            type: quickAddFieldType,
-                            required: false,
-                            placeholder: placeholderMap[quickAddFieldType] || '',
-                            options:
-                              quickAddFieldType === 'select'
-                                ? ['选项一', '选项二', '选项三']
-                                : quickAddFieldType === 'role'
-                                ? ['超级管理员', '机构管理员', '上报员', '审核员', '运营管理员', '临时审核员']
-                                : quickAddFieldType === 'gender'
-                                ? ['男', '女']
-                                : undefined,
-                          };
-
-                          setEditingTemplate({
-                            ...editingTemplate,
-                            fields: [...(editingTemplate.fields || []), newF],
-                          });
-                          showToast(`已追加【${typeLabelMap[quickAddFieldType]}】字段！`);
-                        }}
+                        onClick={addTemplateField}
                         className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#1677ff] text-white hover:bg-blue-600 transition-colors flex items-center gap-1 cursor-pointer shrink-0 shadow-2xs"
                       >
                         <span className="material-symbols-outlined text-[15px]">add</span>
@@ -3910,44 +3602,7 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  if (!editingTemplate.name.trim()) {
-                    showToast('请输入模板配置名称！', 'warning');
-                    return;
-                  }
-
-                  const exists = rules.templates.some((t) => t.id === editingTemplate.id);
-                  let updatedList: TemplateConfigItem[];
-
-                  if (exists) {
-                    updatedList = rules.templates.map((t) =>
-                      t.id === editingTemplate.id
-                        ? {
-                            ...editingTemplate,
-                            updatedAt: new Date()
-                              .toISOString()
-                              .replace('T', ' ')
-                              .substring(0, 19),
-                          }
-                        : t
-                    );
-                  } else {
-                    updatedList = [
-                      ...rules.templates,
-                      {
-                        ...editingTemplate,
-                        updatedAt: new Date()
-                          .toISOString()
-                          .replace('T', ' ')
-                          .substring(0, 19),
-                      },
-                    ];
-                  }
-
-                  setRules({ ...rules, templates: updatedList });
-                  setEditingTemplate(null);
-                  showToast('模板配置已成功保存并立即生效！', 'success');
-                }}
+                onClick={() => saveTemplate(editingTemplate)}
                 className="px-5 py-1.5 rounded-lg text-xs font-semibold bg-[#1677ff] text-white hover:bg-blue-600 transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
               >
                 <span className="material-symbols-outlined text-[16px]">check</span>
@@ -4234,20 +3889,7 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
                   </div>
                   <button
                     type="button"
-                    onClick={() => {
-                      const nextOrder = editingScoringRuleGroup.levels.length + 1;
-                      const newLevel: ScoringLevelItem = {
-                        id: `lvl-${Date.now()}`,
-                        name: `等级 ${nextOrder}`,
-                        score: Math.max(0, editingScoringRuleGroup.totalScore - (nextOrder - 1) * 10),
-                        description: `等级 ${nextOrder} 标准说明`,
-                      };
-                      setEditingScoringRuleGroup({
-                        ...editingScoringRuleGroup,
-                        levels: [...editingScoringRuleGroup.levels, newLevel],
-                        levelCount: editingScoringRuleGroup.levels.length + 1,
-                      });
-                    }}
+                    onClick={addScoringLevel}
                     className="text-xs font-semibold text-[#1890ff] hover:bg-blue-50 border border-blue-200 px-3 py-1 rounded-md transition-colors flex items-center gap-1 cursor-pointer"
                   >
                     <span className="material-symbols-outlined text-[15px]">add</span>
@@ -4354,28 +3996,7 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  const nowStr = new Date().toISOString().replace('T', ' ').slice(0, 19);
-                  const updatedGroup = {
-                    ...editingScoringRuleGroup,
-                    updatedAt: nowStr,
-                    levelCount: editingScoringRuleGroup.levels.length,
-                  };
-
-                  const currentGroups =
-                    rules.scoringRuleGroups || defaultInstitutionBusinessRules.scoringRuleGroups || [];
-                  const exists = currentGroups.some((g) => g.id === updatedGroup.id);
-                  const newGroups = exists
-                    ? currentGroups.map((g) => (g.id === updatedGroup.id ? updatedGroup : g))
-                    : [...currentGroups, updatedGroup];
-
-                  setRules({
-                    ...rules,
-                    scoringRuleGroups: newGroups,
-                  });
-                  setEditingScoringRuleGroup(null);
-                  showToast(`【${updatedGroup.name}】配置已保存！`, 'success');
-                }}
+                onClick={() => saveScoringRuleGroup(editingScoringRuleGroup)}
                 className="px-5 py-1.5 rounded-lg text-xs font-semibold bg-[#1677ff] hover:bg-blue-600 text-white cursor-pointer shadow-2xs"
               >
                 保存模板配置
@@ -4629,25 +4250,7 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  const nowStr = new Date().toISOString().replace('T', ' ').slice(0, 19);
-                  const updatedItem = {
-                    ...editingDictItem,
-                    updatedAt: nowStr,
-                  };
-
-                  const exists = rules.dictItems.some((d) => d.id === editingDictItem.id);
-                  const newItems = exists
-                    ? rules.dictItems.map((d) => (d.id === editingDictItem.id ? updatedItem : d))
-                    : [...rules.dictItems, updatedItem];
-
-                  setRules({
-                    ...rules,
-                    dictItems: newItems,
-                  });
-                  setEditingDictItem(null);
-                  showToast(`【${updatedItem.label}】已保存！`, 'success');
-                }}
+                onClick={() => saveDictItem(editingDictItem)}
                 className="px-5 py-1.5 rounded text-xs font-medium bg-[#1890ff] text-white hover:bg-blue-600 cursor-pointer"
               >
                 保存
@@ -4771,16 +4374,7 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  setRules({
-                    ...rules,
-                    assessmentRules: rules.assessmentRules.map((r) =>
-                      r.id === editingAssessment.id ? editingAssessment : r
-                    ),
-                  });
-                  setEditingAssessment(null);
-                  showToast('考核指标已更新！', 'success');
-                }}
+                onClick={() => saveAssessmentRule(editingAssessment)}
                 className="px-5 py-1.5 rounded text-xs font-medium bg-[#1890ff] text-white hover:bg-blue-600 cursor-pointer"
               >
                 保存

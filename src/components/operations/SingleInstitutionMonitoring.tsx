@@ -1,13 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import ReactECharts from 'echarts-for-react';
 import {
   OrgTreeNode,
-  PersonnelItem,
-  ReportReviewEvent,
   mockPlatformOrgTreeData,
-  mockPersonnelList,
-  mockReportReviewEvents,
 } from './monitoringData';
+import { useSingleInstitutionMonitoringViewModel } from '../../viewmodels/useSingleInstitutionMonitoringViewModel';
 
 interface SingleInstitutionMonitoringProps {
   institution: OrgTreeNode;
@@ -20,120 +17,34 @@ export const SingleInstitutionMonitoring: React.FC<SingleInstitutionMonitoringPr
   onBackToHub,
   onSwitchInstitution,
 }) => {
-  // Tree drill-down selection inside this institution
-  const [selectedSubNodeId, setSelectedSubNodeId] = useState<string>('ROOT');
-  const [treeExpandedKeys, setTreeExpandedKeys] = useState<Record<string, boolean>>({
-    [institution.id]: true,
-    ...(institution.children?.reduce((acc, c) => ({ ...acc, [c.id]: true }), {}) || {}),
-  });
-  const [treeSearchQuery, setTreeSearchQuery] = useState<string>('');
-
-  // Main Tabs inside institution
-  const [activeTab, setActiveTab] = useState<'overview' | 'personnel' | 'pipeline' | 'matrix'>('overview');
-  const [timeRange, setTimeRange] = useState<'today' | '7days' | '30days' | 'quarter'>('today');
-  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
-  const [personnelSearch, setPersonnelSearch] = useState<string>('');
-  const [eventCategoryFilter, setEventCategoryFilter] = useState<string>('ALL');
-  const [eventStatusFilter, setEventStatusFilter] = useState<string>('ALL');
-
-  const handleRefresh = () => {
-    setIsRefreshing(true);
-    setTimeout(() => {
-      setIsRefreshing(false);
-    }, 500);
-  };
-
-  const toggleTreeNode = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setTreeExpandedKeys((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
-
-  // Find currently focused node within this institution's tree
-  const activeNode = useMemo(() => {
-    if (selectedSubNodeId === 'ROOT' || selectedSubNodeId === institution.id) {
-      return institution;
-    }
-    const findNode = (nodes: OrgTreeNode[]): OrgTreeNode | null => {
-      for (const node of nodes) {
-        if (node.id === selectedSubNodeId) return node;
-        if (node.children) {
-          const found = findNode(node.children);
-          if (found) return found;
-        }
-      }
-      return null;
-    };
-    return findNode(institution.children || []) || institution;
-  }, [institution, selectedSubNodeId]);
-
-  // Compute metrics for active node
-  const activeNodeStats = useMemo(() => {
-    const isInstitutionRoot = activeNode.id === institution.id;
-
-    const countSub = (node: OrgTreeNode): number => {
-      let count = 0;
-      if (node.children && node.children.length > 0) {
-        count += node.children.length;
-        for (const c of node.children) count += countSub(c);
-      }
-      return count;
-    };
-
-    return {
-      scopeName: activeNode.name,
-      isRoot: isInstitutionRoot,
-      subBranchesCount: countSub(activeNode),
-      totalPersonnel: activeNode.totalPersonnel,
-      activePersonnel: activeNode.activePersonnel,
-      qrLimit: activeNode.qrLimit,
-      qrUsed: activeNode.qrUsed,
-      todayReports: activeNode.todayReports,
-      totalReports: activeNode.totalReports,
-      pendingReview: activeNode.pendingReview,
-      reviewedToday: activeNode.reviewedToday,
-      passRate: activeNode.passRate,
-      avgReviewMinutes: activeNode.avgReviewMinutes,
-    };
-  }, [activeNode, institution]);
-
-  // Flatten sub-branches for matrix tab
-  const flatSubBranches = useMemo(() => {
-    const list: OrgTreeNode[] = [];
-    const collect = (nodes?: OrgTreeNode[]) => {
-      if (!nodes) return;
-      for (const n of nodes) {
-        list.push(n);
-        if (n.children) collect(n.children);
-      }
-    };
-    collect(institution.children);
-    return list;
-  }, [institution]);
-
-  // Personnel filtered for this institution
-  const relevantPersonnel = useMemo(() => {
-    return mockPersonnelList.filter((p) => {
-      if (personnelSearch.trim()) {
-        const q = personnelSearch.toLowerCase();
-        const match =
-          p.name.toLowerCase().includes(q) ||
-          p.phone.toLowerCase().includes(q) ||
-          p.subBranchName.toLowerCase().includes(q) ||
-          p.role.toLowerCase().includes(q);
-        if (!match) return false;
-      }
-      return true;
-    });
-  }, [personnelSearch]);
-
-  // Events filtered for this institution
-  const relevantEvents = useMemo(() => {
-    return mockReportReviewEvents.filter((evt) => {
-      if (eventCategoryFilter !== 'ALL' && evt.category !== eventCategoryFilter) return false;
-      if (eventStatusFilter !== 'ALL' && evt.status !== eventStatusFilter) return false;
-      return true;
-    });
-  }, [eventCategoryFilter, eventStatusFilter]);
+  const { state, actions } = useSingleInstitutionMonitoringViewModel(institution);
+  const {
+    selectedSubNodeId,
+    treeExpandedKeys,
+    treeSearchQuery,
+    activeTab,
+    timeRange,
+    isRefreshing,
+    personnelSearch,
+    eventCategoryFilter,
+    eventStatusFilter,
+    activeNode,
+    activeNodeStats,
+    flatSubBranches,
+    relevantPersonnel,
+    relevantEvents,
+  } = state;
+  const {
+    setSelectedSubNodeId,
+    setTreeSearchQuery,
+    setActiveTab,
+    setTimeRange,
+    setPersonnelSearch,
+    setEventCategoryFilter,
+    setEventStatusFilter,
+    handleRefresh,
+    toggleTreeNode,
+  } = actions;
 
   // ECharts: Hourly Trend Option
   const hourlyTrendChartOption = useMemo(() => {

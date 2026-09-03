@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React from 'react';
 import {
   MpMigrationConfig,
   MpPersonnelMigrationItem,
@@ -6,6 +6,7 @@ import {
   MpMigrationStatus,
   WechatMpConfig,
 } from '../../types';
+import { useMpPersonnelMigrationViewModel } from '../../viewmodels/useMpPersonnelMigrationViewModel';
 
 export const mockMigrationPersonnel: MpPersonnelMigrationItem[] = [
   {
@@ -168,123 +169,43 @@ export const MpPersonnelMigrationSection: React.FC<MpPersonnelMigrationSectionPr
   onChangeMigration,
   showToast,
 }) => {
-  const [personnelList, setPersonnelList] = useState<MpPersonnelMigrationItem[]>(
-    migrationConfig?.personnelList || mockMigrationPersonnel
-  );
-  const [tasks, setTasks] = useState<MpMigrationTask[]>(
-    migrationConfig?.taskHistory || mockMigrationTasks
-  );
-
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | MpMigrationStatus>('all');
-  const [showTaskDrawer, setShowTaskDrawer] = useState(false);
-  const [showPrincipleHelp, setShowPrincipleHelp] = useState(false);
-
-  // Launch New Batch Migration Modal State
-  const [showLaunchModal, setShowLaunchModal] = useState(false);
-  const targetMpName = mpConfig?.mpName || '单位自有公众号';
-  const [isLaunching, setIsLaunching] = useState(false);
-
-  // Individual Personnel Migration QR Modal
-  const [selectedPersonForQr, setSelectedPersonForQr] = useState<MpPersonnelMigrationItem | null>(null);
-
-  // Quick Stats
-  const totalCount = personnelList.length;
-  const completedCount = personnelList.filter((p) => p.status === 'completed').length;
-  const pendingCount = personnelList.filter((p) => p.status === 'pending_scan' || p.status === 'migrating').length;
-  const notStartedCount = personnelList.filter((p) => p.status === 'not_started').length;
-  const completionRate = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
-
-  // Filtered list
-  const filteredList = useMemo(() => {
-    return personnelList.filter((p) => {
-      const matchSearch =
-        !searchQuery ||
-        p.name.includes(searchQuery) ||
-        p.department.includes(searchQuery) ||
-        p.phone.includes(searchQuery);
-
-      const matchStatus = statusFilter === 'all' || p.status === statusFilter;
-      return matchSearch && matchStatus;
-    });
-  }, [personnelList, searchQuery, statusFilter]);
-
-  // Handle single user remind
-  const handleRemindPerson = (id: string, name: string) => {
-    setPersonnelList((prev) =>
-      prev.map((p) => {
-        if (p.id === id) {
-          return {
-            ...p,
-            status: 'pending_scan',
-            remindCount: p.remindCount + 1,
-            lastRemindTime: new Date().toLocaleString('zh-CN').replace(/\//g, '-'),
-          };
-        }
-        return p;
-      })
-    );
-    showToast(`已向【${name}】发送换绑提醒短信与微信通知！`, 'success');
-  };
-
-  // Handle manual confirm migration
-  const handleManualConfirmMigration = (id: string, name: string) => {
-    setPersonnelList((prev) =>
-      prev.map((p) => {
-        if (p.id === id) {
-          return {
-            ...p,
-            status: 'completed',
-            targetOpenId: `oZ4_manual_${Date.now().toString().slice(-8)}`,
-            migratedTime: new Date().toLocaleString('zh-CN').replace(/\//g, '-'),
-            matchedVia: 'manual',
-          };
-        }
-        return p;
-      })
-    );
-    showToast(`已人工确认完成【${name}】的换绑！`, 'success');
-  };
-
-  // Handle Launch Batch Migration
-  const handleLaunchMigrationTask = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLaunching(true);
-    showToast('正在向全员发送换绑通知...', 'info');
-
-    setTimeout(() => {
-      setIsLaunching(false);
-      const newTask: MpMigrationTask = {
-        id: `TASK-${Date.now()}`,
-        taskBatchNo: `BATCH-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-01`,
-        taskName: `【${institutionName}】全员一键换绑迁移任务`,
-        sourceMpName: '点点速豹 (平台统配)',
-        targetMpName: targetMpName,
-        totalPersonnel: totalCount,
-        completedCount: completedCount,
-        pendingCount: totalCount - completedCount,
-        failedCount: 0,
-        channels: ['wechat_card', 'sms', 'qr_poster'],
-        status: 'in_progress',
-        createdAt: new Date().toLocaleString('zh-CN').replace(/\//g, '-'),
-        operator: '当前管理员',
-        progressPercentage: completionRate,
-        remark: '全员微信卡片与短信提醒',
-      };
-
-      const updatedList = personnelList.map((p) => ({
-        ...p,
-        status: p.status === 'completed' ? 'completed' : ('pending_scan' as MpMigrationStatus),
-        remindCount: p.status === 'completed' ? p.remindCount : p.remindCount + 1,
-        lastRemindTime: new Date().toLocaleString('zh-CN').replace(/\//g, '-'),
-      }));
-
-      setTasks([newTask, ...tasks]);
-      setPersonnelList(updatedList);
-      setShowLaunchModal(false);
-      showToast(`已向 ${totalCount} 位成员下发换绑提醒！成员扫码关注新号即可自动完成绑定。`, 'success');
-    }, 800);
-  };
+  const { state, actions } = useMpPersonnelMigrationViewModel({
+    institutionName,
+    mpConfig,
+    migrationConfig,
+    defaultPersonnel: mockMigrationPersonnel,
+    defaultTasks: mockMigrationTasks,
+    onChangeMigration,
+    showToast,
+  });
+  const {
+    personnelList,
+    tasks,
+    searchQuery,
+    statusFilter,
+    showTaskDrawer,
+    showPrincipleHelp,
+    showLaunchModal,
+    isLaunching,
+    selectedPersonForQr,
+    targetMpName,
+    totalCount,
+    completedCount,
+    pendingCount,
+    completionRate,
+    filteredList,
+  } = state;
+  const {
+    setSearchQuery,
+    setStatusFilter,
+    setShowTaskDrawer,
+    setShowPrincipleHelp,
+    setShowLaunchModal,
+    setSelectedPersonForQr,
+    handleRemindPerson,
+    handleManualConfirmMigration,
+    handleLaunchMigrationTask,
+  } = actions;
 
   return (
     <div className="space-y-4 text-gray-800">

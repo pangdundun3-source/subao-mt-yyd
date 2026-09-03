@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
 import ReactECharts from 'echarts-for-react';
 import { Download, Check } from 'lucide-react';
 import { ExpiringInstitution, ActiveTab } from '../types';
+import { useDashboardHomeViewModel } from '../viewmodels/useDashboardHomeViewModel';
 
 interface DashboardHomeProps {
   expiringInstitutions: ExpiringInstitution[];
@@ -14,66 +15,12 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
   onSelectInstitution,
   setActiveTab,
 }) => {
-  // Pagination State
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-  const [jumpPage, setJumpPage] = useState('1');
-  const [isExporting, setIsExporting] = useState(false);
-
-  // Handle CSV Export
-  const handleExport = () => {
-    setIsExporting(true);
-    try {
-      const headers = [
-        '序号',
-        '机构名称',
-        '机构状态',
-        '所属区域',
-        '机构类别',
-        '行业类别',
-        '销售负责人',
-        '销售电话',
-        '服务开始日期',
-        '服务结束日期',
-        '到期倒计时',
-      ];
-
-      const rows = expiringInstitutions.map((item, idx) => [
-        idx + 1,
-        `"${item.name.replace(/"/g, '""')}"`,
-        item.status,
-        `"${item.region}"`,
-        item.category,
-        item.industry,
-        item.salesName,
-        item.salesPhone,
-        item.startDate || '2026-08-24',
-        item.endDate || item.expireTime.slice(0, 10),
-        item.isExpired || item.countdownText === '已到期' || item.countdownText === '已过期'
-          ? '已到期'
-          : item.countdownText || `${item.daysRemaining}天`,
-      ]);
-
-      const csvContent =
-        '\uFEFF' +
-        [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.setAttribute('href', url);
-      const now = new Date();
-      const dateStr = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
-      link.setAttribute('download', `近1个月到期机构数据_${dateStr}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    } finally {
-      setTimeout(() => {
-        setIsExporting(false);
-      }, 1500);
-    }
-  };
+  const { state, actions } = useDashboardHomeViewModel({
+    expiringInstitutions,
+    setActiveTab,
+  });
+  const { currentPage, pageSize, jumpPage, isExporting, total, totalPages, startIndex, currentList } = state;
+  const { setPageSize, setJumpPage, handleExport, handlePageChange, handleJumpPage } = actions;
 
   // Bar Chart Option
   const barChartOption = {
@@ -166,12 +113,6 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
       },
     ],
   };
-
-  // Pagination calculations
-  const total = expiringInstitutions.length;
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  const startIndex = (currentPage - 1) * pageSize;
-  const currentList = expiringInstitutions.slice(startIndex, startIndex + pageSize);
 
   return (
     <div className="flex flex-col gap-6 p-6 min-w-[1024px]">
@@ -426,11 +367,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
 
           {/* Prev Button */}
           <button
-            onClick={() => {
-              const newPage = Math.max(1, currentPage - 1);
-              setCurrentPage(newPage);
-              setJumpPage(String(newPage));
-            }}
+            onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage <= 1}
             className="w-7 h-7 border border-gray-200 rounded flex items-center justify-center text-gray-600 hover:border-[#1890ff] hover:text-[#1890ff] disabled:opacity-30 disabled:hover:border-gray-200 disabled:hover:text-gray-600 disabled:cursor-not-allowed cursor-pointer bg-white transition-colors"
           >
@@ -441,10 +378,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
             <button
               key={pageNum}
-              onClick={() => {
-                setCurrentPage(pageNum);
-                setJumpPage(String(pageNum));
-              }}
+              onClick={() => handlePageChange(pageNum)}
               className={`w-7 h-7 rounded flex items-center justify-center font-medium cursor-pointer transition-colors text-xs ${
                 currentPage === pageNum
                   ? 'border border-[#1890ff] bg-[#e6f7ff] text-[#1890ff]'
@@ -457,11 +391,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
 
           {/* Next Button */}
           <button
-            onClick={() => {
-              const newPage = Math.min(totalPages, currentPage + 1);
-              setCurrentPage(newPage);
-              setJumpPage(String(newPage));
-            }}
+            onClick={() => handlePageChange(currentPage + 1)}
             disabled={currentPage >= totalPages}
             className="w-7 h-7 border border-gray-200 rounded flex items-center justify-center text-gray-600 hover:border-[#1890ff] hover:text-[#1890ff] disabled:opacity-30 disabled:hover:border-gray-200 disabled:hover:text-gray-600 disabled:cursor-not-allowed cursor-pointer bg-white transition-colors"
           >
@@ -474,8 +404,6 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
             onChange={(e) => {
               const newSize = Number(e.target.value);
               setPageSize(newSize);
-              setCurrentPage(1);
-              setJumpPage('1');
             }}
             className="border border-gray-200 rounded px-2 h-7 text-xs text-gray-700 bg-white focus:outline-none focus:border-[#1890ff] cursor-pointer"
           >
@@ -494,22 +422,10 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
               onChange={(e) => setJumpPage(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
-                  const p = parseInt(jumpPage, 10);
-                  if (!isNaN(p) && p >= 1 && p <= totalPages) {
-                    setCurrentPage(p);
-                  } else {
-                    setJumpPage(String(currentPage));
-                  }
+                  handleJumpPage();
                 }
               }}
-              onBlur={() => {
-                const p = parseInt(jumpPage, 10);
-                if (!isNaN(p) && p >= 1 && p <= totalPages) {
-                  setCurrentPage(p);
-                } else {
-                  setJumpPage(String(currentPage));
-                }
-              }}
+              onBlur={handleJumpPage}
               className="w-5 text-center text-xs text-gray-800 focus:outline-none border-b border-transparent focus:border-[#1890ff]"
             />
             <span>页</span>

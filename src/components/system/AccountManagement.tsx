@@ -1,295 +1,65 @@
-import React, { useState } from 'react';
-import { SystemAccountUser, SystemRoleType } from '../../types';
-import {
-  initialSystemAccounts,
-  systemRoleOptions,
-  systemDepartmentOptions,
-} from './systemData';
+import React from 'react';
+import { SystemRoleType } from '../../types';
+import { systemDepartmentOptions, systemRoleOptions } from './systemData';
+import { useAccountManagementViewModel } from '../../viewmodels/useAccountManagementViewModel';
 
 interface AccountManagementProps {
   onShowToast?: (msg: string) => void;
 }
 
 export const AccountManagement: React.FC<AccountManagementProps> = ({ onShowToast }) => {
-  const [accounts, setAccounts] = useState<SystemAccountUser[]>(initialSystemAccounts);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedRole, setSelectedRole] = useState<string>('all');
-  const [selectedDept, setSelectedDept] = useState<string>('all');
-  const [selectedStatus, setSelectedStatus] = useState<string>('all');
-  const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([]);
-
-  // Modal States
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingAccount, setEditingAccount] = useState<SystemAccountUser | null>(null);
-  const [resettingAccount, setResettingAccount] = useState<SystemAccountUser | null>(null);
-  const [deletingAccount, setDeletingAccount] = useState<SystemAccountUser | null>(null);
-  const [batchDeleteModalOpen, setBatchDeleteModalOpen] = useState(false);
-  const [viewingPermissionsAccount, setViewingPermissionsAccount] =
-    useState<SystemAccountUser | null>(null);
-  const [generatedPassword, setGeneratedPassword] = useState('');
-  const [mustChangePasswordOnLogin, setMustChangePasswordOnLogin] = useState(true);
-
-  // Form State
-  const [formState, setFormState] = useState<{
-    name: string;
-    username: string;
-    wechat: string;
-    gender: 'male' | 'female';
-    phone: string;
-    email: string;
-    dept: string;
-    roleId: SystemRoleType;
-    dataScope: 'all' | 'formal_only' | 'regional' | 'custom';
-    mfaEnabled: boolean;
-    ipWhitelist: string;
-    remarks: string;
-  }>({
-    name: '',
-    username: '',
-    wechat: '',
-    gender: 'male',
-    phone: '',
-    email: '',
-    dept: systemDepartmentOptions[0],
-    roleId: 'ops_admin',
-    dataScope: 'all',
-    mfaEnabled: true,
-    ipWhitelist: '',
-    remarks: '',
-  });
-
-  const notify = (msg: string) => {
-    if (onShowToast) {
-      onShowToast(msg);
-    }
-  };
-
-  // Filtered accounts
-  const filteredAccounts = accounts.filter((acc) => {
-    const matchSearch =
-      acc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      acc.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (acc.wechat && acc.wechat.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (acc.jobNumber && acc.jobNumber.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      acc.phone.includes(searchTerm);
-
-    const matchRole = selectedRole === 'all' || acc.roleId === selectedRole;
-    const matchDept = selectedDept === 'all' || acc.dept === selectedDept;
-    const matchStatus = selectedStatus === 'all' || acc.status === selectedStatus;
-
-    return matchSearch && matchRole && matchDept && matchStatus;
-  });
-
-  // Calculate Metrics
-  const totalAccounts = accounts.length;
-  const activeAccounts = accounts.filter((a) => a.status === 'active').length;
-  const disabledAccounts = accounts.filter((a) => a.status === 'disabled').length;
-  const mfaCount = accounts.filter((a) => a.mfaEnabled).length;
-
-  const handleOpenCreateModal = () => {
-    setEditingAccount(null);
-    setFormState({
-      name: '',
-      username: '',
-      wechat: '',
-      gender: 'male',
-      phone: '',
-      email: '',
-      dept: systemDepartmentOptions[0],
-      roleId: 'ops_admin',
-      dataScope: 'all',
-      mfaEnabled: true,
-      ipWhitelist: '',
-      remarks: '',
-    });
-    setIsModalOpen(true);
-  };
-
-  const handleOpenEditModal = (acc: SystemAccountUser) => {
-    setEditingAccount(acc);
-    setFormState({
-      name: acc.name,
-      username: acc.username,
-      wechat: acc.wechat || '',
-      gender: acc.gender,
-      phone: acc.phone,
-      email: acc.email,
-      dept: acc.dept,
-      roleId: acc.roleId,
-      dataScope: acc.dataScope,
-      mfaEnabled: acc.mfaEnabled,
-      ipWhitelist: acc.ipWhitelist || '',
-      remarks: acc.remarks || '',
-    });
-    setIsModalOpen(true);
-  };
-
-  const handleSaveAccount = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formState.name.trim() || !formState.username.trim()) {
-      notify('请完整填写姓名与登录账号');
-      return;
-    }
-
-    const matchedRole = systemRoleOptions.find((r) => r.id === formState.roleId);
-    const roleName = matchedRole?.name || '管理人员';
-    const roleBadgeColor =
-      matchedRole?.color || 'bg-gray-50 text-gray-700 border-gray-200';
-
-    let dataScopeDesc = '全网所有机构与系统设置 (无限制)';
-    if (formState.dataScope === 'formal_only') {
-      dataScopeDesc = '仅限正式签约生效机构数据';
-    } else if (formState.dataScope === 'regional') {
-      dataScopeDesc = '所属大区及指定省市机构数据';
-    } else if (formState.dataScope === 'custom') {
-      dataScopeDesc = '自定义指定机构白名单权限';
-    }
-
-    if (editingAccount) {
-      setAccounts((prev) =>
-        prev.map((acc) =>
-          acc.id === editingAccount.id
-            ? {
-                ...acc,
-                ...formState,
-                roleName,
-                roleBadgeColor,
-                dataScopeDesc,
-              }
-            : acc
-        )
-      );
-      notify(`已成功更新账号【${formState.name} (${formState.username})】信息`);
-    } else {
-      const newAcc: SystemAccountUser = {
-        id: `ACC-${String(accounts.length + 1).padStart(3, '0')}`,
-        ...formState,
-        roleName,
-        roleBadgeColor,
-        dataScopeDesc,
-        status: 'active',
-        lastLoginTime: '从未登录',
-        lastLoginIp: '--',
-        lastLoginLocation: '--',
-        createdAt: new Date().toISOString().replace('T', ' ').substring(0, 19),
-        permissions: ['基础业务查看', '本部门报表检索'],
-      };
-      setAccounts((prev) => [newAcc, ...prev]);
-      notify(`已成功创建新管理账号【${newAcc.name} (${newAcc.username})】`);
-    }
-
-    setIsModalOpen(false);
-  };
-
-  const handleToggleStatus = (acc: SystemAccountUser) => {
-    const nextStatus = acc.status === 'active' ? 'disabled' : 'active';
-    setAccounts((prev) =>
-      prev.map((a) => (a.id === acc.id ? { ...a, status: nextStatus } : a))
-    );
-    notify(
-      `已将账号【${acc.name}】状态更改为：${
-        nextStatus === 'active' ? '正常启用' : '已冻结禁用'
-      }`
-    );
-  };
-
-  const handleDeleteAccount = (acc: SystemAccountUser) => {
-    if (acc.roleId === 'super_admin') {
-      notify('超级管理员账号受系统核心保护，不可删除！');
-      return;
-    }
-    if (acc.status === 'active') {
-      notify('启用状态的账号不支持删除，请先在状态开关中将其禁用！');
-      return;
-    }
-    setDeletingAccount(acc);
-  };
-
-  const handleConfirmDeleteAccount = () => {
-    if (!deletingAccount) return;
-    const target = deletingAccount;
-    setAccounts((prev) => prev.filter((a) => a.id !== target.id));
-    setSelectedAccountIds((prev) => prev.filter((id) => id !== target.id));
-    notify(`已成功永久删除账号【${target.name} (${target.username})】`);
-    setDeletingAccount(null);
-  };
-
-  const handleBatchDeleteDisabled = () => {
-    setBatchDeleteModalOpen(true);
-  };
-
-  const handleConfirmBatchDelete = () => {
-    const disabledSelected = accounts.filter(
-      (a) => selectedAccountIds.includes(a.id) && a.status === 'disabled' && a.roleId !== 'super_admin'
-    );
-    if (disabledSelected.length === 0) {
-      setBatchDeleteModalOpen(false);
-      return;
-    }
-    const disabledIds = disabledSelected.map((a) => a.id);
-    setAccounts((prev) => prev.filter((a) => !disabledIds.includes(a.id)));
-    setSelectedAccountIds((prev) => prev.filter((id) => !disabledIds.includes(id)));
-    notify(`已成功批量删除 ${disabledSelected.length} 个已禁用账号`);
-    setBatchDeleteModalOpen(false);
-  };
-
-  const handleOpenResetPassword = (acc: SystemAccountUser) => {
-    setResettingAccount(acc);
-    // Generate secure random temp password
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%';
-    let pwd = 'Mt#';
-    for (let i = 0; i < 7; i++) {
-      pwd += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    pwd += '@2026';
-    setGeneratedPassword(pwd);
-    setMustChangePasswordOnLogin(true);
-  };
-
-  const handleConfirmResetPassword = () => {
-    if (resettingAccount) {
-      notify(`已成功重置【${resettingAccount.name}】的登录密码为：${generatedPassword}`);
-      setResettingAccount(null);
-    }
-  };
-
-  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.checked) {
-      setSelectedAccountIds(filteredAccounts.map((a) => a.id));
-    } else {
-      setSelectedAccountIds([]);
-    }
-  };
-
-  const handleSelectOne = (id: string) => {
-    setSelectedAccountIds((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-    );
-  };
-
-  const handleBatchEnable = () => {
-    if (selectedAccountIds.length === 0) return;
-    setAccounts((prev) =>
-      prev.map((a) =>
-        selectedAccountIds.includes(a.id) ? { ...a, status: 'active' } : a
-      )
-    );
-    notify(`已批量启用 ${selectedAccountIds.length} 个账号`);
-    setSelectedAccountIds([]);
-  };
-
-  const handleBatchDisable = () => {
-    if (selectedAccountIds.length === 0) return;
-    setAccounts((prev) =>
-      prev.map((a) =>
-        selectedAccountIds.includes(a.id) && a.roleId !== 'super_admin'
-          ? { ...a, status: 'disabled' }
-          : a
-      )
-    );
-    notify(`已批量冻结选中的账号`);
-    setSelectedAccountIds([]);
-  };
+  const { state, actions } = useAccountManagementViewModel(onShowToast);
+  const {
+    accounts,
+    searchTerm,
+    selectedRole,
+    selectedDept,
+    selectedStatus,
+    selectedAccountIds,
+    isModalOpen,
+    editingAccount,
+    resettingAccount,
+    deletingAccount,
+    batchDeleteModalOpen,
+    viewingPermissionsAccount,
+    generatedPassword,
+    mustChangePasswordOnLogin,
+    formState,
+    filteredAccounts,
+    totalAccounts,
+    activeAccounts,
+    disabledAccounts,
+    mfaCount,
+  } = state;
+  const {
+    setSearchTerm,
+    setSelectedRole,
+    setSelectedDept,
+    setSelectedStatus,
+    setSelectedAccountIds,
+    setIsModalOpen,
+    setResettingAccount,
+    setDeletingAccount,
+    setBatchDeleteModalOpen,
+    setViewingPermissionsAccount,
+    setMustChangePasswordOnLogin,
+    setFormState,
+    handleOpenCreateModal,
+    handleOpenEditModal,
+    handleSaveAccount,
+    handleToggleStatus,
+    handleDeleteAccount,
+    handleConfirmDeleteAccount,
+    handleBatchDeleteDisabled,
+    handleConfirmBatchDelete,
+    handleOpenResetPassword,
+    handleConfirmResetPassword,
+    handleSelectAll,
+    handleSelectOne,
+    handleBatchEnable,
+    handleBatchDisable,
+    notify,
+  } = actions;
 
   return (
     <div className="space-y-6">

@@ -9,8 +9,8 @@ import {
   MetricFormulaConfig,
   ReviewLevelNode,
   ValueAddedServiceItem,
+  OtherBusinessConfig,
 } from '../types';
-import { defaultOtherBusinessConfig } from '../components/OtherBusinessConfigTab';
 
 export const defaultValueAddedServices: ValueAddedServiceItem[] = [
   {
@@ -734,7 +734,14 @@ export const initialGlobalBusinessRules: InstitutionBusinessRules = {
   valueAddedServices: defaultValueAddedServices,
 
   // 8. 其他配置
-  otherConfig: defaultOtherBusinessConfig,
+  otherConfig: {
+    qrUsage: {
+      totalLimit: 50,
+      usedCount: 18,
+      warningThreshold: 10,
+      allowSelfApply: true,
+    },
+  } satisfies OtherBusinessConfig,
 
   // 登录鉴权
   loginAuth: {
@@ -751,49 +758,13 @@ export const initialGlobalBusinessRules: InstitutionBusinessRules = {
   },
 };
 
-const GLOBAL_RULES_STORAGE_KEY = 'platform_global_business_rules';
-
-// Get current global business rules
-export const getGlobalBusinessRules = (): InstitutionBusinessRules => {
-  try {
-    const saved = localStorage.getItem(GLOBAL_RULES_STORAGE_KEY);
-    if (!saved) return initialGlobalBusinessRules;
-    const parsed = JSON.parse(saved);
-    return {
-      ...initialGlobalBusinessRules,
-      ...parsed,
-      templates: parsed.templates || initialGlobalBusinessRules.templates,
-      scoringRuleGroups: parsed.scoringRuleGroups || initialGlobalBusinessRules.scoringRuleGroups,
-      scoringDimensions: parsed.scoringDimensions || initialGlobalBusinessRules.scoringDimensions,
-      dictItems: parsed.dictItems || initialGlobalBusinessRules.dictItems,
-      assessmentRules: parsed.assessmentRules || initialGlobalBusinessRules.assessmentRules,
-      metricsFormula: parsed.metricsFormula || initialGlobalBusinessRules.metricsFormula,
-      reviewNodes: parsed.reviewNodes || initialGlobalBusinessRules.reviewNodes,
-      valueAddedServices: parsed.valueAddedServices || initialGlobalBusinessRules.valueAddedServices,
-      otherConfig: parsed.otherConfig || initialGlobalBusinessRules.otherConfig,
-      loginAuth: parsed.loginAuth || initialGlobalBusinessRules.loginAuth,
-    };
-  } catch {
-    return initialGlobalBusinessRules;
-  }
-};
-
-// Save global business rules
-export const saveGlobalBusinessRules = (rules: InstitutionBusinessRules): void => {
-  localStorage.setItem(GLOBAL_RULES_STORAGE_KEY, JSON.stringify(rules));
-  // Dispatch custom event for cross-component reactive sync
-  if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent('global_business_rules_updated', { detail: rules }));
-  }
-};
-
 // Merge an institution's custom rules with global rules
 // Rule inheritance principle:
 // 1. Global rules are non-deletable in institution view, but can be enabled/disabled or customized.
 // 2. Custom rules created by the institution are fully editable and deletable.
 export const mergeInstitutionRulesWithGlobal = (
   instRules?: InstitutionBusinessRules | null,
-  globalRules: InstitutionBusinessRules = getGlobalBusinessRules()
+  globalRules: InstitutionBusinessRules = initialGlobalBusinessRules
 ): InstitutionBusinessRules => {
   if (!instRules) {
     // If no institution rules exist, start with cloned global rules

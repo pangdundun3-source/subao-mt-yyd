@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { AuditLog, SystemSubModule } from '../types';
 import { AccountManagement } from './system/AccountManagement';
 import { SystemLogs } from './system/SystemLogs';
+import { useSystemManagementViewModel } from '../viewmodels/useSystemManagementViewModel';
 
 interface SystemManagementProps {
   auditLogs?: AuditLog[];
@@ -15,26 +16,9 @@ export const SystemManagement: React.FC<SystemManagementProps> = ({
   onSubTabChange,
   onShowToast,
 }) => {
-  const [activeSubTab, setActiveSubTab] = useState<SystemSubModule>(() => {
-    if (initialSubTab) return initialSubTab;
-    const saved = localStorage.getItem('admin_system_sub_tab');
-    return saved === 'logs' ? 'logs' : 'accounts';
-  });
-
-  // Keep state synchronized if initialSubTab prop updates
-  useEffect(() => {
-    if (initialSubTab && initialSubTab !== activeSubTab) {
-      setActiveSubTab(initialSubTab);
-    }
-  }, [initialSubTab]);
-
-  const handleSwitchTab = (tab: SystemSubModule) => {
-    setActiveSubTab(tab);
-    localStorage.setItem('admin_system_sub_tab', tab);
-    if (onSubTabChange) {
-      onSubTabChange(tab);
-    }
-  };
+  const { state, actions } = useSystemManagementViewModel(initialSubTab);
+  const { activeSubTab } = state;
+  const { handleSwitchTab } = actions;
 
   return (
     <div className="p-6 flex flex-col gap-6 min-w-[1024px]">

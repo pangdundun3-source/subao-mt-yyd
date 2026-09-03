@@ -1,5 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React from 'react';
 import { Institution } from '../types';
+import {
+  FORMAL_DURATION_PRESETS,
+  TRIAL_DURATION_PRESETS,
+  useInstitutionListViewModel,
+} from '../viewmodels/useInstitutionListViewModel';
 
 interface InstitutionManagementProps {
   institutions: Institution[];
@@ -19,52 +24,6 @@ interface InstitutionManagementProps {
   ) => void;
 }
 
-const getTodayStr = () => {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-};
-
-const getFutureDateStr = (days: number) => {
-  const d = new Date();
-  d.setDate(d.getDate() + days);
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-};
-
-// Helper to calculate days remaining
-const calculateDays = (startStr: string, endStr: string) => {
-  if (!startStr || !endStr) return 0;
-  const start = new Date(startStr).getTime();
-  const end = new Date(endStr).getTime();
-  return Math.max(0, Math.ceil((end - start) / (1000 * 3600 * 24)));
-};
-
-const calculateRemainingDays = (endDateStr: string) => {
-  if (!endDateStr) return 0;
-  const today = new Date(getTodayStr()).getTime();
-  const end = new Date(endDateStr).getTime();
-  const diffDays = Math.ceil((end - today) / (1000 * 3600 * 24));
-  return diffDays > 0 ? diffDays : 0;
-};
-
-const TRIAL_DURATION_PRESETS = [
-  { label: '7天试用', days: 7 },
-  { label: '15天', days: 15 },
-  { label: '1个月 (30天)', days: 30 },
-];
-
-const FORMAL_DURATION_PRESETS = [
-  { label: '3个月 (季度)', days: 90 },
-  { label: '半年 (180天)', days: 180 },
-  { label: '1年 (365天)', days: 365 },
-  { label: '2年 (730天)', days: 730 },
-];
-
 export const InstitutionManagement: React.FC<InstitutionManagementProps> = ({
   institutions,
   onAddClick,
@@ -74,192 +33,47 @@ export const InstitutionManagement: React.FC<InstitutionManagementProps> = ({
   onToggleStatus,
   onProvisionInstitution,
 }) => {
-  // Filter States
-  const [filterName, setFilterName] = useState('');
-  const [filterLocation, setFilterLocation] = useState('');
-  const [filterCategory, setFilterCategory] = useState('');
-  const [activeTab, setActiveTab] = useState<'all' | 'official' | 'trial' | 'expired'>('all');
-  const [filterUnit, setFilterUnit] = useState('');
-
-  // Provisioning Modal State (For expired institutions being enabled)
-  const [provisioningTarget, setProvisioningTarget] = useState<Institution | null>(null);
-  const [provisionForm, setProvisionForm] = useState<{
-    status: '试用' | '正式';
-    startDate: string;
-    endDate: string;
-  }>({
-    status: '正式',
-    startDate: getTodayStr(),
-    endDate: getFutureDateStr(365),
-  });
-
-  const handleOpenProvisionModal = (inst: Institution) => {
-    const isTrial = inst.status === '试用';
-    const defaultStatus: '试用' | '正式' = isTrial ? '试用' : '正式';
-    setProvisionForm({
-      status: defaultStatus,
-      startDate: getTodayStr(),
-      endDate: getFutureDateStr(defaultStatus === '试用' ? 30 : 365),
-    });
-    setProvisioningTarget(inst);
-  };
-
-  const handleModalSwitchStatus = (status: '试用' | '正式') => {
-    const defaultDays = status === '试用' ? 30 : 365;
-    const start = new Date(provisionForm.startDate || getTodayStr());
-    const end = new Date(start.getTime() + defaultDays * 24 * 60 * 60 * 1000);
-    const y = end.getFullYear();
-    const m = String(end.getMonth() + 1).padStart(2, '0');
-    const d = String(end.getDate()).padStart(2, '0');
-    setProvisionForm({
-      ...provisionForm,
-      status,
-      endDate: `${y}-${m}-${d}`,
-    });
-  };
-
-  const handleModalQuickDuration = (days: number, forceStatus?: '试用' | '正式') => {
-    const targetStatus = forceStatus || (days <= 30 ? '试用' : '正式');
-    const start = new Date(provisionForm.startDate || getTodayStr());
-    const end = new Date(start.getTime() + days * 24 * 60 * 60 * 1000);
-    const year = end.getFullYear();
-    const month = String(end.getMonth() + 1).padStart(2, '0');
-    const day = String(end.getDate()).padStart(2, '0');
-    const newEndDate = `${year}-${month}-${day}`;
-
-    setProvisionForm({
-      status: targetStatus,
-      startDate: provisionForm.startDate || getTodayStr(),
-      endDate: newEndDate,
-    });
-  };
-
-  const handleConfirmProvision = () => {
-    if (!provisioningTarget) return;
-    const days = calculateDays(provisionForm.startDate, provisionForm.endDate);
-    if (days <= 0) {
-      alert('服务到期日期必须晚于生效日期！');
-      return;
-    }
-
-    if (onProvisionInstitution) {
-      onProvisionInstitution(provisioningTarget.id, {
-        status: provisionForm.status,
-        startDate: provisionForm.startDate,
-        endDate: provisionForm.endDate,
-        daysRemaining: days,
-      });
-    }
-    setProvisioningTarget(null);
-  };
-
-  // Pagination State
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(30);
-  const [jumpPageInput, setJumpPageInput] = useState('1');
-
-  // Handle Search & Reset
-  const handleReset = () => {
-    setFilterName('');
-    setFilterLocation('');
-    setFilterCategory('');
-    setFilterUnit('');
-    setCurrentPage(1);
-  };
-
-  // Tab counts based on all institutions
-  const tabCounts = useMemo(() => {
-    let all = institutions.length;
-    let official = 0;
-    let trial = 0;
-    let expired = 0;
-
-    institutions.forEach((item) => {
-      if (item.daysRemaining <= 0) {
-        expired++;
-      } else if (item.status === '正式') {
-        official++;
-      } else if (item.status === '试用') {
-        trial++;
-      }
-    });
-
-    return { all, official, trial, expired };
-  }, [institutions]);
-
-  const tabs = [
-    { key: 'all', label: '全部', count: tabCounts.all },
-    { key: 'official', label: '正式', count: tabCounts.official },
-    { key: 'trial', label: '试用', count: tabCounts.trial },
-    { key: 'expired', label: '已到期', count: tabCounts.expired },
-  ] as const;
-
-  // Filter Logic
-  const filteredInstitutions = useMemo(() => {
-    return institutions.filter((item) => {
-      if (
-        filterName.trim() &&
-        !item.name.toLowerCase().includes(filterName.trim().toLowerCase())
-      ) {
-        return false;
-      }
-      if (filterLocation && !item.location.includes(filterLocation)) {
-        return false;
-      }
-      if (filterCategory && item.category !== filterCategory) {
-        return false;
-      }
-      // Product Status Tab Filter
-      if (activeTab === 'expired' && item.daysRemaining > 0) {
-        return false;
-      }
-      if (
-        activeTab === 'official' &&
-        (item.status !== '正式' || item.daysRemaining <= 0)
-      ) {
-        return false;
-      }
-      if (
-        activeTab === 'trial' &&
-        (item.status !== '试用' || item.daysRemaining <= 0)
-      ) {
-        return false;
-      }
-      if (filterUnit && item.unitName !== filterUnit) {
-        return false;
-      }
-      return true;
-    });
-  }, [
+  const { state, actions, derived } = useInstitutionListViewModel({
     institutions,
+    onProvisionInstitution,
+  });
+  const {
     filterName,
     filterLocation,
     filterCategory,
     activeTab,
     filterUnit,
-  ]);
-
-  const totalCount = filteredInstitutions.length;
-  const totalPages = Math.ceil(totalCount / pageSize) || 1;
-
-  const pageData = useMemo(() => {
-    const start = (currentPage - 1) * pageSize;
-    return filteredInstitutions.slice(start, start + pageSize);
-  }, [filteredInstitutions, currentPage, pageSize]);
-
-  const handlePageChange = (page: number) => {
-    if (page >= 1 && page <= totalPages) {
-      setCurrentPage(page);
-      setJumpPageInput(String(page));
-    }
-  };
-
-  const handleJumpPage = () => {
-    const p = parseInt(jumpPageInput, 10);
-    if (!isNaN(p)) {
-      handlePageChange(Math.max(1, Math.min(p, totalPages)));
-    }
-  };
+    provisioningTarget,
+    provisionForm,
+    currentPage,
+    pageSize,
+    jumpPageInput,
+    tabs,
+    totalCount,
+    totalPages,
+    pageData,
+  } = state;
+  const {
+    setFilterName,
+    setFilterLocation,
+    setFilterCategory,
+    setActiveTab,
+    setFilterUnit,
+    setProvisionForm,
+    setProvisioningTarget,
+    setCurrentPage,
+    setPageSize,
+    setJumpPageInput,
+    handleOpenProvisionModal,
+    handleModalSwitchStatus,
+    handleModalQuickDuration,
+    handleConfirmProvision,
+    handleReset,
+    handlePageChange,
+    handleJumpPage,
+    prepareBasicDetail,
+  } = actions;
+  const { calculateDays, calculateRemainingDays } = derived;
 
   return (
     <div className="p-6 flex-1 flex flex-col gap-4 min-w-[1024px]">
@@ -584,7 +398,7 @@ export const InstitutionManagement: React.FC<InstitutionManagementProps> = ({
                           id={`btn-table-detail-${row.id}`}
                           type="button"
                           onClick={() => {
-                            localStorage.setItem('admin_inst_detail_active_tab', 'basic');
+                            prepareBasicDetail();
                             onDetailClick(row);
                           }}
                           className="text-[#1890ff] hover:text-blue-700 hover:underline transition-colors cursor-pointer"

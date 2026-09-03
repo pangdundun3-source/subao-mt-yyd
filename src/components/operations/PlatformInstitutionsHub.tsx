@@ -1,9 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import ReactECharts from 'echarts-for-react';
 import {
   OrgTreeNode,
   mockPlatformOrgTreeData,
 } from './monitoringData';
+import { usePlatformInstitutionsHubViewModel } from '../../viewmodels/usePlatformInstitutionsHubViewModel';
 
 interface PlatformInstitutionsHubProps {
   onSelectInstitution: (institution: OrgTreeNode) => void;
@@ -12,114 +13,28 @@ interface PlatformInstitutionsHubProps {
 export const PlatformInstitutionsHub: React.FC<PlatformInstitutionsHubProps> = ({
   onSelectInstitution,
 }) => {
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [selectedIndustry, setSelectedIndustry] = useState<string>('ALL');
-  const [selectedStatusType, setSelectedStatusType] = useState<string>('ALL');
-  const [selectedHealth, setSelectedHealth] = useState<string>('ALL');
-  const [sortBy, setSortBy] = useState<'todayReports' | 'personnel' | 'pending' | 'quota' | 'default'>('todayReports');
-  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
-  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
-
-  const handleRefresh = () => {
-    setIsRefreshing(true);
-    setTimeout(() => {
-      setIsRefreshing(false);
-    }, 500);
-  };
-
-  // Compute Platform-wide Aggregate Statistics
-  const platformStats = useMemo(() => {
-    let totalInstitutions = mockPlatformOrgTreeData.length;
-    let officialCount = mockPlatformOrgTreeData.filter((i) => i.statusType === '正式').length;
-    let trialCount = mockPlatformOrgTreeData.filter((i) => i.statusType === '试用').length;
-
-    let totalSubBranches = 0;
-    let totalPersonnel = 0;
-    let activePersonnel = 0;
-    let totalQrLimit = 0;
-    let totalQrUsed = 0;
-    let totalTodayReports = 0;
-    let totalPendingReview = 0;
-    let totalReviewedToday = 0;
-
-    const countNodes = (nodes: OrgTreeNode[], isTop = true) => {
-      for (const n of nodes) {
-        if (!isTop) totalSubBranches++;
-        totalPersonnel += n.totalPersonnel;
-        activePersonnel += n.activePersonnel;
-        totalQrLimit += n.qrLimit;
-        totalQrUsed += n.qrUsed;
-        totalTodayReports += n.todayReports;
-        totalPendingReview += n.pendingReview;
-        totalReviewedToday += n.reviewedToday;
-        if (n.children && n.children.length > 0) {
-          countNodes(n.children, false);
-        }
-      }
-    };
-
-    countNodes(mockPlatformOrgTreeData, true);
-
-    const avgPassRate = 96.4;
-    const avgReviewSpeed = 11.6;
-
-    return {
-      totalInstitutions,
-      officialCount,
-      trialCount,
-      totalSubBranches: totalSubBranches + 134, // includes leaf grid stations
-      totalPersonnel,
-      activePersonnel,
-      totalQrLimit,
-      totalQrUsed,
-      totalTodayReports,
-      totalPendingReview,
-      totalReviewedToday,
-      avgPassRate,
-      avgReviewSpeed,
-    };
-  }, []);
-
-  // Distinct industries
-  const industries = useMemo(() => {
-    const set = new Set<string>();
-    mockPlatformOrgTreeData.forEach((i) => set.add(i.industry));
-    return Array.from(set);
-  }, []);
-
-  // Filtered & Sorted Institutions
-  const filteredInstitutions = useMemo(() => {
-    return mockPlatformOrgTreeData
-      .filter((inst) => {
-        if (searchQuery.trim()) {
-          const q = searchQuery.toLowerCase();
-          const matchName = inst.name.toLowerCase().includes(q);
-          const matchCode = inst.code.toLowerCase().includes(q);
-          const matchLeader = inst.leader.toLowerCase().includes(q);
-          const matchRegion = inst.region.toLowerCase().includes(q);
-          if (!matchName && !matchCode && !matchLeader && !matchRegion) {
-            return false;
-          }
-        }
-        if (selectedIndustry !== 'ALL' && inst.industry !== selectedIndustry) {
-          return false;
-        }
-        if (selectedStatusType !== 'ALL' && inst.statusType !== selectedStatusType) {
-          return false;
-        }
-        if (selectedHealth !== 'ALL' && inst.healthStatus !== selectedHealth) {
-          return false;
-        }
-        return true;
-      })
-      .sort((a, b) => {
-        if (sortBy === 'todayReports') return b.todayReports - a.todayReports;
-        if (sortBy === 'personnel') return b.totalPersonnel - a.totalPersonnel;
-        if (sortBy === 'pending') return b.pendingReview - a.pendingReview;
-        if (sortBy === 'quota') return b.qrUsed / b.qrLimit - a.qrUsed / a.qrLimit;
-        return 0;
-      });
-  }, [searchQuery, selectedIndustry, selectedStatusType, selectedHealth, sortBy]);
+  const { state, actions } = usePlatformInstitutionsHubViewModel();
+  const {
+    searchQuery,
+    selectedIndustry,
+    selectedStatusType,
+    selectedHealth,
+    sortBy,
+    viewMode,
+    isRefreshing,
+    platformStats,
+    industries,
+    filteredInstitutions,
+  } = state;
+  const {
+    setSearchQuery,
+    setSelectedIndustry,
+    setSelectedStatusType,
+    setSelectedHealth,
+    setSortBy,
+    setViewMode,
+    handleRefresh,
+  } = actions;
 
   // ECharts Option: Top Institutions Activity & Review Volume
   const topInstitutionsChartOption = useMemo(() => {
