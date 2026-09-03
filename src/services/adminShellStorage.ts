@@ -54,15 +54,15 @@ export const adminShellStorage = {
 
   readSelectedInstitutionId: (): number | null => {
     const saved = read(STORAGE_KEYS.selectedInstitutionId);
-    if (!saved) return 1;
+    if (!saved || saved === 'none' || saved === 'null') return null;
 
     const parsed = Number(saved);
-    return Number.isFinite(parsed) ? parsed : 1;
+    return Number.isFinite(parsed) ? parsed : null;
   },
 
   saveSelectedInstitutionId: (id: number | null) => {
     if (id === null) {
-      remove(STORAGE_KEYS.selectedInstitutionId);
+      write(STORAGE_KEYS.selectedInstitutionId, 'none');
       return;
     }
 

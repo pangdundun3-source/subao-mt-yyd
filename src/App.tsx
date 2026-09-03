@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { DashboardHome } from './components/DashboardHome';
@@ -8,12 +9,19 @@ import { SystemManagement } from './components/SystemManagement';
 import { InstitutionDetailPage } from './components/InstitutionDetailPage';
 import { DeleteConfirmModal } from './components/DeleteConfirmModal';
 import { WechatQrLogin } from './components/WechatQrLogin';
+import { MtPortalWorkspace } from './components/MtPortalWorkspace';
+import { LogoutConfirmModal } from './components/LogoutConfirmModal';
 import { useAppEntryViewModel } from './viewmodels/useAppEntryViewModel';
 import { useAdminShellViewModel } from './viewmodels/useAdminShellViewModel';
 
 export default function App() {
-  const { isAuthenticated, loginPhase, qrRevision, actions: entryActions } =
-    useAppEntryViewModel();
+  const {
+    isAuthenticated,
+    activeView,
+    loginPhase,
+    qrRevision,
+    actions: entryActions,
+  } = useAppEntryViewModel();
   const { state, actions } = useAdminShellViewModel();
   const {
     activeTab,
@@ -44,6 +52,17 @@ export default function App() {
     setDeletingInstitution,
   } = actions;
 
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
+  const handleConfirmLogout = () => {
+    setShowLogoutConfirm(false);
+    entryActions.handleLogout();
+  };
+
+  const handleCancelLogout = () => {
+    setShowLogoutConfirm(false);
+  };
+
   if (!isAuthenticated) {
     return (
       <WechatQrLogin
@@ -52,6 +71,23 @@ export default function App() {
         onRefreshQr={entryActions.refreshQr}
         onSimulateScan={entryActions.simulateScan}
       />
+    );
+  }
+
+  // 1:1 MT Management System Application Portal Workspace
+  if (activeView === 'portal') {
+    return (
+      <>
+        <MtPortalWorkspace
+          onEnterDiandian={entryActions.enterOperationInterface}
+          onLogout={() => setShowLogoutConfirm(true)}
+        />
+        <LogoutConfirmModal
+          isOpen={showLogoutConfirm}
+          onConfirm={handleConfirmLogout}
+          onCancel={handleCancelLogout}
+        />
+      </>
     );
   }
 
@@ -70,7 +106,7 @@ export default function App() {
       {/* Top Header Bar */}
       <Header
         onLogout={() => {
-          entryActions.handleLogout();
+          setShowLogoutConfirm(true);
         }}
       />
 
@@ -94,7 +130,7 @@ export default function App() {
               onSave={handleSaveInstitution}
               auditLogs={auditLogs}
             />
-          ) : activeDetailInstitution ? (
+          ) : (activeTab === 'institutions' && activeDetailInstitution) ? (
             /* If secondary institution detail page is open */
             <InstitutionDetailPage
               key={`inst-${activeDetailInstitution.id}-${isEditingInstitution ? 'edit' : 'detail'}`}
@@ -156,6 +192,13 @@ export default function App() {
         institution={deletingInstitution}
         onClose={() => setDeletingInstitution(null)}
         onConfirm={handleConfirmDelete}
+      />
+
+      {/* Logout Confirm Modal (1:1 with prompt screenshot) */}
+      <LogoutConfirmModal
+        isOpen={showLogoutConfirm}
+        onConfirm={handleConfirmLogout}
+        onCancel={handleCancelLogout}
       />
     </div>
   );

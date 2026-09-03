@@ -124,6 +124,10 @@ export const useAdminShellViewModel = () => {
     adminShellStorage.saveIsCreatingInstitution(false);
     adminShellStorage.saveIsEditingInstitution(isEdit);
     adminShellStorage.saveSelectedInstitutionId(id);
+    if (id !== null) {
+      setActiveTab('institutions');
+      adminShellStorage.saveActiveTab('institutions');
+    }
   }, []);
 
   const handleCloseInstitutionDetail = useCallback(() => {
@@ -134,10 +138,12 @@ export const useAdminShellViewModel = () => {
     setIsCreatingInstitution(true);
     setIsEditingInstitution(true);
     setSelectedInstitutionId(null);
+    setActiveTab('institutions');
 
     adminShellStorage.saveIsCreatingInstitution(true);
     adminShellStorage.saveIsEditingInstitution(true);
     adminShellStorage.saveSelectedInstitutionId(null);
+    adminShellStorage.saveActiveTab('institutions');
   }, []);
 
   const handleCloseAddInstitution = useCallback(() => {
