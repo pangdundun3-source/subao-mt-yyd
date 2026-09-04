@@ -18,11 +18,8 @@ const write = (key: string, value: string) => {
 };
 
 export const authStorage = {
-  // Default to authenticated so user directly lands on the post-login portal view on this turn
-  readIsAuthenticated: () => {
-    const val = read(STORAGE_KEY);
-    return val === null ? true : val === 'true';
-  },
+  // Always start from the QR login screen on app boot.
+  readIsAuthenticated: () => false,
 
   saveIsAuthenticated: (isAuthenticated: boolean) => {
     write(STORAGE_KEY, isAuthenticated ? 'true' : 'false');
@@ -42,4 +39,3 @@ export const authStorage = {
     write(VIEW_KEY, 'portal');
   },
 };
-

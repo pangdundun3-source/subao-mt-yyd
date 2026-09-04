@@ -35,29 +35,27 @@ export const GlobalConfig: React.FC<GlobalConfigProps> = ({ onShowToast }) => {
 
   return (
     <div className="p-6 flex-1 flex flex-col gap-4 min-w-[1024px] w-full">
-      {/* Toast Notification Banner (when standalone) */}
       {internalToast && (
         <div
           className={`fixed top-4 right-4 z-50 text-white px-5 py-3 rounded-lg shadow-lg flex items-center gap-2 text-sm transition-all ${
             internalToast.type === 'success'
               ? 'bg-[#52c41a]'
               : internalToast.type === 'warning'
-              ? 'bg-[#faad14]'
-              : 'bg-[#1890ff]'
+                ? 'bg-[#faad14]'
+                : 'bg-[#1890ff]'
           }`}
         >
           <span className="material-symbols-outlined text-[20px]">
             {internalToast.type === 'success'
               ? 'check_circle'
               : internalToast.type === 'warning'
-              ? 'warning'
-              : 'info'}
+                ? 'warning'
+                : 'info'}
           </span>
           {internalToast.message}
         </div>
       )}
 
-      {/* Top Header Card */}
       <div className="bg-white rounded border border-gray-100 p-4 shadow-[0_2px_8px_0_rgba(0,0,0,0.04)]">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center text-[#666666]">
@@ -72,7 +70,6 @@ export const GlobalConfig: React.FC<GlobalConfigProps> = ({ onShowToast }) => {
             </span>
           </div>
 
-          {/* Primary Top Tab Switcher */}
           <div className="flex items-center p-1 bg-gray-100/90 rounded border border-gray-200/80 self-start sm:self-auto">
             <button
               type="button"
@@ -95,17 +92,17 @@ export const GlobalConfig: React.FC<GlobalConfigProps> = ({ onShowToast }) => {
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              <span className="material-symbols-outlined text-[16px]">settings_system_daydream</span>
+              <span className="material-symbols-outlined text-[16px]">
+                settings_system_daydream
+              </span>
               <span>系统运维与策略</span>
             </button>
           </div>
         </div>
       </div>
 
-      {/* Main Content Areas */}
       {activeGlobalTab === 'business_rules' && (
         <div className="w-full">
-          {/* Embedding the Business Rules Component in Global Scope */}
           <InstitutionBusinessRulesTab
             isGlobalScope={true}
             onSaveRules={handleSaveGlobalRules}
@@ -130,19 +127,14 @@ export const GlobalConfig: React.FC<GlobalConfigProps> = ({ onShowToast }) => {
 
           {savedSuccess && (
             <div className="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-xs flex items-center">
-              <span className="material-symbols-outlined mr-2 text-[18px]">
-                check_circle
-              </span>
+              <span className="material-symbols-outlined mr-2 text-[18px]">check_circle</span>
               全局策略已成功保存更新！
             </div>
           )}
 
           <form onSubmit={handleSaveSystemPolicy} className="space-y-6 max-w-3xl">
-            {/* Rule 1: Expiration Notice */}
             <div className="grid grid-cols-3 gap-4 items-center">
-              <label className="text-xs font-semibold text-gray-700">
-                到期预警天数 (天)
-              </label>
+              <label className="text-xs font-semibold text-gray-700">到期预警天数 (天)</label>
               <div className="col-span-2">
                 <input
                   type="number"
@@ -158,11 +150,8 @@ export const GlobalConfig: React.FC<GlobalConfigProps> = ({ onShowToast }) => {
               </div>
             </div>
 
-            {/* Rule 2: Max Trial Days */}
             <div className="grid grid-cols-3 gap-4 items-center">
-              <label className="text-xs font-semibold text-gray-700">
-                试用机构默认天数 (天)
-              </label>
+              <label className="text-xs font-semibold text-gray-700">试用机构默认天数 (天)</label>
               <div className="col-span-2">
                 <input
                   type="number"
@@ -172,17 +161,12 @@ export const GlobalConfig: React.FC<GlobalConfigProps> = ({ onShowToast }) => {
                   onChange={(e) => setMaxTrialDays(Number(e.target.value))}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-[#1890ff] bg-white"
                 />
-                <p className="text-[11px] text-gray-400 mt-1">
-                  新建试用机构时自动初始化的服务天数。
-                </p>
+                <p className="text-[11px] text-gray-400 mt-1">新建试用机构时自动初始化的服务天数。</p>
               </div>
             </div>
 
-            {/* Rule 3: Auto Disable Expired */}
             <div className="grid grid-cols-3 gap-4 items-center">
-              <label className="text-xs font-semibold text-gray-700">
-                到期自动关停机构
-              </label>
+              <label className="text-xs font-semibold text-gray-700">到期自动关停机构</label>
               <div className="col-span-2 flex items-center">
                 <button
                   type="button"
@@ -191,18 +175,10 @@ export const GlobalConfig: React.FC<GlobalConfigProps> = ({ onShowToast }) => {
                     autoDisableExpired ? 'bg-[#1890ff]' : 'bg-[#bfbfbf]'
                   }`}
                 >
-                  <span
-                    className={`text-[11px] font-normal text-white leading-none transition-all duration-200 ${
-                      autoDisableExpired ? 'pl-1.5 mr-auto' : 'pr-1.5 ml-auto'
-                    }`}
-                  >
+                  <span className={`text-[11px] font-normal text-white leading-none transition-all duration-200 ${autoDisableExpired ? 'pl-1.5 mr-auto' : 'pr-1.5 ml-auto'}`}>
                     {autoDisableExpired ? '启' : '停'}
                   </span>
-                  <span
-                    className={`absolute top-[2.5px] h-[17px] w-[17px] rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.2)] transition-all duration-200 ${
-                      autoDisableExpired ? 'right-[2.5px]' : 'left-[2.5px]'
-                    }`}
-                  />
+                  <span className={`absolute top-[2.5px] h-[17px] w-[17px] rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.2)] transition-all duration-200 ${autoDisableExpired ? 'right-[2.5px]' : 'left-[2.5px]'}`} />
                 </button>
                 <span className="text-xs text-gray-500 ml-3">
                   {autoDisableExpired ? '已开启 (服务到期后自动停用接口与服务)' : '已关闭'}
@@ -210,11 +186,8 @@ export const GlobalConfig: React.FC<GlobalConfigProps> = ({ onShowToast }) => {
               </div>
             </div>
 
-            {/* Rule 4: Notification Switches */}
             <div className="grid grid-cols-3 gap-4 items-center">
-              <label className="text-xs font-semibold text-gray-700">
-                通知告警通道
-              </label>
+              <label className="text-xs font-semibold text-gray-700">通知告警通道</label>
               <div className="col-span-2 space-y-2">
                 <label className="flex items-center text-xs text-gray-700 cursor-pointer">
                   <input
@@ -237,18 +210,15 @@ export const GlobalConfig: React.FC<GlobalConfigProps> = ({ onShowToast }) => {
               </div>
             </div>
 
-            {/* Rule 5: Announcement Text */}
             <div className="grid grid-cols-3 gap-4 items-start">
-              <label className="text-xs font-semibold text-gray-700 pt-2">
-                客户端系统公告
-              </label>
+              <label className="text-xs font-semibold text-gray-700 pt-2">客户端系统公告</label>
               <div className="col-span-2">
                 <textarea
                   rows={3}
                   value={systemNoticeText}
                   onChange={(e) => setSystemNoticeText(e.target.value)}
                   className="w-full border border-gray-300 rounded-lg p-3 text-xs focus:outline-none focus:border-[#1890ff] bg-white"
-                ></textarea>
+                />
                 <p className="text-[11px] text-gray-400 mt-1">
                   此内容将向所有已登录客户端管理员的顶部通知栏播报。
                 </p>
@@ -260,9 +230,7 @@ export const GlobalConfig: React.FC<GlobalConfigProps> = ({ onShowToast }) => {
                 type="submit"
                 className="bg-[#1890ff] text-white px-6 py-2 rounded-lg text-xs font-semibold hover:bg-blue-600 transition-colors shadow-2xs cursor-pointer flex items-center gap-1.5"
               >
-                <span className="material-symbols-outlined text-[17px]">
-                  save
-                </span>
+                <span className="material-symbols-outlined text-[17px]">save</span>
                 <span>保存策略配置</span>
               </button>
             </div>

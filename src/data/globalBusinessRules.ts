@@ -10,6 +10,7 @@ import {
   ReviewLevelNode,
   ValueAddedServiceItem,
   OtherBusinessConfig,
+  QrCodeUsageConfig,
 } from '../types';
 
 export const defaultValueAddedServices: ValueAddedServiceItem[] = [
@@ -758,6 +759,17 @@ export const initialGlobalBusinessRules: InstitutionBusinessRules = {
   },
 };
 
+// 机构初始化二维码名额库：以平台通用默认总额度为上限，占用/台账从零开始
+const buildDefaultInstitutionQrUsage = (
+  globalQr?: QrCodeUsageConfig
+): QrCodeUsageConfig => ({
+  totalLimit: globalQr?.totalLimit ?? 50,
+  usedCount: globalQr?.usedCount ?? 18,
+  historyRecords: globalQr?.historyRecords ?? [],
+  warningThreshold: globalQr?.warningThreshold ?? 10,
+  allowSelfApply: globalQr?.allowSelfApply ?? true,
+});
+
 // Merge an institution's custom rules with global rules
 // Rule inheritance principle:
 // 1. Global rules are non-deletable in institution view, but can be enabled/disabled or customized.
@@ -777,6 +789,10 @@ export const mergeInstitutionRulesWithGlobal = (
       assessmentRules: globalRules.assessmentRules.map((a) => ({ ...a, isGlobal: true })),
       reviewNodes: globalRules.reviewNodes.map((n) => ({ ...n, isGlobal: true })),
       valueAddedServices: globalRules.valueAddedServices?.map((v) => ({ ...v, isGlobal: true })),
+      otherConfig: {
+        ...(globalRules.otherConfig || {}),
+        qrUsage: buildDefaultInstitutionQrUsage(globalRules.otherConfig?.qrUsage),
+      },
     };
   }
 
@@ -980,7 +996,13 @@ export const mergeInstitutionRulesWithGlobal = (
     assessmentRules: mergedAssess,
     reviewNodes: mergedNodes,
     valueAddedServices: mergedVas,
-    otherConfig: instRules.otherConfig || globalRules.otherConfig,
+    otherConfig: {
+      ...(globalRules.otherConfig || {}),
+      ...(instRules.otherConfig || {}),
+      qrUsage: instRules.otherConfig?.qrUsage
+        ? instRules.otherConfig.qrUsage
+        : buildDefaultInstitutionQrUsage(globalRules.otherConfig?.qrUsage),
+    },
     metricsFormula: instRules.metricsFormula || globalRules.metricsFormula,
     passScore: instRules.passScore ?? globalRules.passScore,
     excellentScore: instRules.excellentScore ?? globalRules.excellentScore,

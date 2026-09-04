@@ -13,12 +13,20 @@ import {
   ValueAddedServiceItem,
   OtherBusinessConfig,
   QrCodeUsageConfig,
+  WechatMpConfig,
+  MpMigrationConfig,
 } from '../types';
 import {
   OtherBusinessConfigTab,
   defaultOtherBusinessConfig,
 } from './OtherBusinessConfigTab';
+import {
+  BusinessModuleId,
+  V8BusinessConfigBoard,
+} from './business/V8BusinessConfigBoard';
 import { QrQuotaSection } from './other-config/QrQuotaSection';
+import { GlobalQrDefaultsSection } from './other-config/GlobalQrDefaultsSection';
+import { GlobalOtherConfigDefaultsSection } from './other-config/GlobalOtherConfigDefaultsSection';
 import {
   mergeInstitutionRulesWithGlobal,
 } from '../data/globalBusinessRules';
@@ -963,9 +971,9 @@ interface NavItem {
 const RULE_NAV_ITEMS: NavItem[] = [
   {
     key: 'templates',
-    label: '模版配置',
+    label: '模板配置',
     icon: 'dashboard_customize',
-    description: '速报样式模版、封面排版风格与水印设置',
+    description: '速报样式模板、封面排版风格与水印设置',
     badge: '4套',
   },
   {
@@ -1139,6 +1147,48 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
     handleResetToDefault,
   } = actions;
 
+  // 将 MT 模块导航映射到 V8 业务配置维护的模块，右侧内容由 V8 同款面板承载
+  const V8_NAV_TO_MODULE: Partial<Record<BusinessRuleNavKey, BusinessModuleId>> = {
+    templates: 'report_template',
+    scoring: 'audit_score',
+    dictionary: 'data_dict',
+    assessment: 'evaluation_rule',
+    metrics: 'stats_metric',
+    workflow: 'audit_flow',
+    value_added: 'value_added',
+  };
+  const activeV8Module = V8_NAV_TO_MODULE[activeNav];
+  const v8StorageKey = isGlobalScope
+    ? 'mt_global_v8_business_config'
+    : `mt_inst_v8_business_config_${institution?.id ?? 'new'}`;
+  const v8FallbackStorageKey = isGlobalScope ? undefined : 'mt_global_v8_business_config';
+
+  const handleSaveGlobalMpDefaults = (mpConfig: WechatMpConfig) => {
+    const updated: InstitutionBusinessRules = {
+      ...rules,
+      otherConfig: {
+        ...defaultOtherBusinessConfig,
+        ...(rules.otherConfig || {}),
+        wechatMp: mpConfig,
+      },
+    };
+    setRules(updated);
+    onSaveRules(updated);
+  };
+
+  const handleSaveGlobalMigrationDefaults = (migration: MpMigrationConfig) => {
+    const updated: InstitutionBusinessRules = {
+      ...rules,
+      otherConfig: {
+        ...defaultOtherBusinessConfig,
+        ...(rules.otherConfig || {}),
+        migration,
+      },
+    };
+    setRules(updated);
+    onSaveRules(updated);
+  };
+
   return (
     <div className="space-y-6 pb-20">
       {/* Main Two-Column Layout: Left Vertical Navigation, Right Content Panel */}
@@ -1191,10 +1241,23 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
 
         {/* Right Configuration Content Panel */}
         <div className="lg:col-span-9 space-y-6">
+          {/* 与 V8 业务配置维护 1:1 对齐的模块右侧内容（模板配置/审核打分/字典/考核/统计指标/审核流程/增值业务） */}
+          {activeV8Module && (
+            <V8BusinessConfigBoard
+              key={activeV8Module}
+              embedded
+              initialModule={activeV8Module}
+              storageKey={v8StorageKey}
+              fallbackStorageKey={v8FallbackStorageKey}
+              valueAddedAllOperable
+              hideValueAddedStatusBadge={isGlobalScope}
+            />
+          )}
+
           {/* ========================================================= */}
           {/* 1. 模版配置 (Template Configuration) - Redesigned */}
           {/* ========================================================= */}
-          {activeNav === 'templates' && (
+          {activeNav === '__v8_1' && (
             <div className="space-y-4">
               {/* Header Bar */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-gray-200 shadow-2xs">
@@ -1539,7 +1602,7 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
           {/* ========================================================= */}
           {/* 2. 审核打分规则 (Review Scoring Rules) - Redesigned */}
           {/* ========================================================= */}
-          {activeNav === 'scoring' && (
+          {activeNav === '__v8_2' && (
             <div className="space-y-4">
               {/* Header Bar */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -1764,7 +1827,7 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
           {/* ========================================================= */}
           {/* 3. 数据字典维护 (Data Dictionary Maintenance) */}
           {/* ========================================================= */}
-          {activeNav === 'dictionary' && (
+          {activeNav === '__v8_3' && (
             <div className="space-y-4">
               {/* Header: Title on Left, Search Input on Right */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -2001,7 +2064,7 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
           {/* ========================================================= */}
           {/* 4. 考核规则 (Assessment Rules) */}
           {/* ========================================================= */}
-          {activeNav === 'assessment' && (
+          {activeNav === '__v8_4' && (
             <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-2xs space-y-6">
               <div className="flex items-center justify-between pb-4 border-b border-gray-100">
                 <div>
@@ -2171,7 +2234,7 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
           {/* ========================================================= */}
           {/* 5. 统计指标 (Statistical Metrics) */}
           {/* ========================================================= */}
-          {activeNav === 'metrics' && (
+          {activeNav === '__v8_5' && (
             <div className="space-y-4">
               <h2 className="text-base font-bold text-gray-900">统计指标</h2>
 
@@ -2322,7 +2385,7 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
           {/* ========================================================= */}
           {/* 6. 审核层级/流程 (Review Level / Process) */}
           {/* ========================================================= */}
-          {activeNav === 'workflow' && (
+          {activeNav === '__v8_6' && (
             <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-2xs space-y-6">
               <div className="flex items-center justify-between pb-4 border-b border-gray-100">
                 <div>
@@ -2492,7 +2555,7 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
           {/* ========================================================= */}
           {/* 7. 增值业务 (Value Added Services) */}
           {/* ========================================================= */}
-          {activeNav === 'value_added' && (
+          {activeNav === '__v8_7' && (
             <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-2xs space-y-5">
               {/* Header Title */}
               <div className="flex items-center justify-between pb-3 border-b border-gray-100">
@@ -2690,25 +2753,45 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
           {/* 8. 二维码配置 (QR Code Quota & Bound Personnel Management) */}
           {/* ========================================================= */}
           {activeNav === 'qr_code' && (
-            <QrQuotaSection
-              institution={institution}
-              qrConfig={rules.otherConfig?.qrUsage || defaultOtherBusinessConfig.qrUsage}
-              onChangeQrConfig={handleUpdateQrConfig}
-              showToast={showToast}
-            />
+            isGlobalScope ? (
+              /* 全局维度：全平台二维码通用项配置（机构初始化默认额度母版） */
+              <GlobalQrDefaultsSection
+                qrDefaults={rules.otherConfig?.qrUsage || defaultOtherBusinessConfig.qrUsage}
+                onSaveDefaults={handleUpdateQrConfig}
+                showToast={showToast}
+              />
+            ) : (
+              <QrQuotaSection
+                institution={institution}
+                qrConfig={rules.otherConfig?.qrUsage || defaultOtherBusinessConfig.qrUsage}
+                onChangeQrConfig={handleUpdateQrConfig}
+                showToast={showToast}
+              />
+            )
           )}
 
           {/* ========================================================= */}
           {/* 9. 其他配置 (Other Configurations - 微信公众号配置 & 人员迁移) */}
           {/* ========================================================= */}
           {activeNav === 'other' && (
-            <OtherBusinessConfigTab
-              institution={institution}
-              rules={rules}
-              setRules={setRules}
-              onSaveRules={onSaveRules}
-              showToast={showToast}
-            />
+            isGlobalScope ? (
+              /* 全局维度：全平台公众号使用方式与人员一键迁移全局通用项配置 */
+              <GlobalOtherConfigDefaultsSection
+                mpConfig={rules.otherConfig?.wechatMp}
+                migrationConfig={rules.otherConfig?.migration}
+                onSaveMpDefaults={handleSaveGlobalMpDefaults}
+                onSaveMigrationDefaults={handleSaveGlobalMigrationDefaults}
+                showToast={showToast}
+              />
+            ) : (
+              <OtherBusinessConfigTab
+                institution={institution}
+                rules={rules}
+                setRules={setRules}
+                onSaveRules={onSaveRules}
+                showToast={showToast}
+              />
+            )
           )}
         </div>
       </div>

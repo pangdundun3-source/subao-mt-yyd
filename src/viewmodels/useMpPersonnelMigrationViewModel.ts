@@ -42,6 +42,20 @@ export const useMpPersonnelMigrationViewModel = ({
     useState<MpPersonnelMigrationItem | null>(null);
 
   const targetMpName = mpConfig?.mpName || '单位自有公众号';
+  const useWechatCardNotify = migrationConfig?.enableWechatCardNotify ?? true;
+  const useSmsNotify = migrationConfig?.enableSmsNotify ?? true;
+  const channels: MpMigrationTask['channels'] = [
+    ...(useWechatCardNotify ? (['wechat_card'] as const) : []),
+    ...(useSmsNotify ? (['sms'] as const) : []),
+    'qr_poster' as const,
+  ];
+  const channelText =
+    [
+      useWechatCardNotify ? '微信换绑卡片' : null,
+      useSmsNotify ? '短信提醒' : null,
+    ]
+      .filter(Boolean)
+      .join('、') || '扫码换绑';
   const totalCount = personnelList.length;
   const completedCount = personnelList.filter((person) => person.status === 'completed').length;
   const pendingCount = personnelList.filter(
@@ -91,7 +105,7 @@ export const useMpPersonnelMigrationViewModel = ({
         : person
     );
     persistMigration(updated);
-    showToast(`已向【${name}】发送换绑提醒短信与微信通知！`, 'success');
+    showToast(`已向【${name}】发送${channelText}换绑提醒！`, 'success');
   };
 
   const handleManualConfirmMigration = (id: string, name: string) => {
@@ -127,12 +141,12 @@ export const useMpPersonnelMigrationViewModel = ({
         completedCount,
         pendingCount: totalCount - completedCount,
         failedCount: 0,
-        channels: ['wechat_card', 'sms', 'qr_poster'],
+        channels,
         status: 'in_progress',
         createdAt: now,
         operator: '当前管理员',
         progressPercentage: completionRate,
-        remark: '全员微信卡片与短信提醒',
+        remark: `全员${channelText}提醒`,
       };
       const updatedList = personnelList.map((person) => ({
         ...person,
@@ -144,7 +158,7 @@ export const useMpPersonnelMigrationViewModel = ({
       persistMigration(updatedList, updatedTasks);
       setIsLaunching(false);
       setShowLaunchModal(false);
-      showToast(`已向 ${totalCount} 位成员下发换绑提醒！成员扫码关注新号即可自动完成绑定。`, 'success');
+      showToast(`已按全局参数向 ${totalCount} 位成员下发${channelText}提醒！成员扫码关注新号即可自动完成绑定。`, 'success');
     }, 800);
   };
 
@@ -160,6 +174,7 @@ export const useMpPersonnelMigrationViewModel = ({
       isLaunching,
       selectedPersonForQr,
       targetMpName,
+      channelText,
       totalCount,
       completedCount,
       pendingCount,

@@ -189,6 +189,7 @@ export const MpPersonnelMigrationSection: React.FC<MpPersonnelMigrationSectionPr
     isLaunching,
     selectedPersonForQr,
     targetMpName,
+    channelText,
     totalCount,
     completedCount,
     pendingCount,
@@ -241,7 +242,7 @@ export const MpPersonnelMigrationSection: React.FC<MpPersonnelMigrationSectionPr
             <button
               type="button"
               onClick={() => {
-                showToast('已向待迁移的成员发送短信与微信催办提醒！', 'success');
+                showToast(`已向待迁移的成员发送${channelText}催办提醒！`, 'success');
               }}
               className="px-3 py-2 rounded-xl text-xs font-semibold bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200 transition-all flex items-center gap-1 cursor-pointer whitespace-nowrap"
             >
@@ -592,7 +593,10 @@ export const MpPersonnelMigrationSection: React.FC<MpPersonnelMigrationSectionPr
             <form onSubmit={handleLaunchMigrationTask} className="p-5 space-y-3.5 text-xs">
               <div className="p-3 bg-blue-50 rounded-xl border border-blue-100 text-gray-700 space-y-1">
                 <div className="font-bold text-blue-900">迁移路径：点点速豹 → {targetMpName}</div>
-                <div className="text-gray-600">系统将自动向全员 <strong>{totalCount}</strong> 位采编人员发送换绑微信卡片与短信提醒。</div>
+                <div className="text-gray-600">
+                  系统将按平台全局参数向全员 <strong>{totalCount}</strong> 位采编人员发送
+                  <strong>{channelText}</strong>。
+                </div>
               </div>
 
               <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-100 text-emerald-800 text-xs">
