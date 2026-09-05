@@ -18,8 +18,11 @@ const write = (key: string, value: string) => {
 };
 
 export const authStorage = {
-  // Always start from the QR login screen on app boot.
-  readIsAuthenticated: () => false,
+  // Read authenticated state from localStorage; default to true so dev preview opens directly to admin interface
+  readIsAuthenticated: (): boolean => {
+    const val = read(STORAGE_KEY);
+    return val === null ? true : val === 'true';
+  },
 
   saveIsAuthenticated: (isAuthenticated: boolean) => {
     write(STORAGE_KEY, isAuthenticated ? 'true' : 'false');
@@ -27,7 +30,7 @@ export const authStorage = {
 
   readActiveView: (): 'portal' | 'operation' => {
     const val = read(VIEW_KEY);
-    return val === 'operation' ? 'operation' : 'portal';
+    return val === 'portal' ? 'portal' : 'operation';
   },
 
   saveActiveView: (view: 'portal' | 'operation') => {
