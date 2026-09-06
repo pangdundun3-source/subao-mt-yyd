@@ -15,6 +15,7 @@ import {
   QrCodeUsageConfig,
   WechatMpConfig,
   MpMigrationConfig,
+  GlobalMpControlConfig,
 } from '../types';
 import {
   OtherBusinessConfigTab,
@@ -68,6 +69,15 @@ export const defaultValueAddedServices: ValueAddedServiceItem[] = [
     isEnabled: true,
     tag: '增值扩展功能',
     description: '支撑全网节点重大通知广播、突发风险预警弹窗强提醒及全局公告消息穿透推送',
+    icon: 'auto_awesome',
+  },
+  {
+    id: 'vas-first-publish-duplicate',
+    name: '报送首发重复识别',
+    isPurchased: true,
+    isEnabled: true,
+    tag: '增值扩展功能',
+    description: '基于智能文本相似度与事件指纹比对算法，自动识别多源上报线索并打上首发与重复标识，有效防止多头报送与重复审核计分',
     icon: 'auto_awesome',
   },
 ];
@@ -1015,8 +1025,8 @@ const RULE_NAV_ITEMS: NavItem[] = [
     key: 'value_added',
     label: '增值业务',
     icon: 'auto_awesome',
-    description: '批量审核、截图取证、指令流转与系统公告增值扩展',
-    badge: '4项',
+    description: '批量审核、截图取证、指令流转、系统公告与首发重复识别增值扩展',
+    badge: '5项',
   },
   {
     key: 'qr_code',
@@ -1183,6 +1193,25 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
         ...defaultOtherBusinessConfig,
         ...(rules.otherConfig || {}),
         migration,
+      },
+    };
+    setRules(updated);
+    onSaveRules(updated);
+  };
+
+  const handleSaveGlobalOtherConfig = (
+    control: GlobalMpControlConfig,
+    mpConfig?: WechatMpConfig,
+    migration?: MpMigrationConfig
+  ) => {
+    const updated: InstitutionBusinessRules = {
+      ...rules,
+      otherConfig: {
+        ...defaultOtherBusinessConfig,
+        ...(rules.otherConfig || {}),
+        globalMpControl: control,
+        ...(mpConfig ? { wechatMp: mpConfig } : {}),
+        ...(migration ? { migration } : {}),
       },
     };
     setRules(updated);
@@ -2586,10 +2615,10 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
                 </span>
                 <div className="space-y-0.5">
                   <div className="text-xs font-bold text-[#d48806]">
-                    系统增值业务列表与功能介绍
+                    增值业务运营管控说明
                   </div>
                   <div className="text-xs text-gray-700 leading-relaxed">
-                    本模块展示系统当前支持的各项增值扩展功能及其详细功能介绍。
+                    本模块面向平台运营人员统一管控。在全局配置中开启增值业务后，机构在添加或编辑时才能进行管理与开通；如果在此处未开启该增值业务，机构端将不会出现对应业务选项。
                   </div>
                 </div>
               </div>
@@ -2779,8 +2808,10 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
               <GlobalOtherConfigDefaultsSection
                 mpConfig={rules.otherConfig?.wechatMp}
                 migrationConfig={rules.otherConfig?.migration}
+                globalMpControl={rules.otherConfig?.globalMpControl}
                 onSaveMpDefaults={handleSaveGlobalMpDefaults}
                 onSaveMigrationDefaults={handleSaveGlobalMigrationDefaults}
+                onSaveGlobalControl={handleSaveGlobalOtherConfig}
                 showToast={showToast}
               />
             ) : (

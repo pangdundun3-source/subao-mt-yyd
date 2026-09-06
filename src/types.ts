@@ -194,7 +194,7 @@ export interface QrCodeUsageConfig {
   warningThreshold?: number;
 }
 
-// 微信公众号类型: 平台统配「点点速豹」 vs 客户自有独立微信公众号
+// 微信公众号类型: 机构默认「点点速报」 vs 支持使用机构自有公众号
 export type WechatMpMode = 'platform_default' | 'custom_official';
 
 export interface WechatMpTemplateConfig {
@@ -206,7 +206,7 @@ export interface WechatMpTemplateConfig {
 
 export interface WechatMpConfig {
   mode: WechatMpMode; // 'platform_default' | 'custom_official'
-  mpName: string; // 公众号名称，如 "随州融媒发布" 或 "点点速豹"
+  mpName: string; // 公众号名称，如 "随州融媒发布" 或 "点点速报"
   wechatAccount: string; // 微信号，如 "suizhou_mt_news"
   originalId: string; // 微信原始ID，如 "gh_a87293b610c4"
   appId: string; // 开发者 AppID
@@ -235,7 +235,7 @@ export interface MpPersonnelMigrationItem {
   department: string;
   role: string;
   phone: string;
-  sourceMp: string; // 源公众号, 如 "点点速豹"
+  sourceMp: string; // 源公众号, 如 "点点速报"
   sourceOpenId: string; // 原公众号 OpenID
   targetMp: string; // 目标公众号, 如 "随州融媒发布"
   targetOpenId?: string; // 目标公众号 OpenID
@@ -279,10 +279,61 @@ export interface MpMigrationConfig {
   taskHistory: MpMigrationTask[];
 }
 
+export interface GlobalMpMigrationMethods {
+  autoUnionId: {
+    enabled: boolean;
+    title: string;
+    description: string;
+    requireSameOpenPlatform: boolean;
+  };
+  wechatCard: {
+    enabled: boolean;
+    title: string;
+    description: string;
+    templateTitle: string;
+    pushFrequencyLimit: number;
+  };
+  smsVerify: {
+    enabled: boolean;
+    title: string;
+    description: string;
+    codeExpireMinutes: number;
+    smsSignature: string;
+  };
+  workspaceQr: {
+    enabled: boolean;
+    title: string;
+    description: string;
+    forceOnLogin: boolean;
+  };
+}
+
+export interface GlobalMpControlConfig {
+  // 1. 公众号使用方式配置
+  allowDefaultPlatformMp: boolean; // (a) 使用机构默认的“点点速报”
+  allowCustomOfficialMp: boolean; // (b) 支持使用机构自有的公众号
+  defaultPreferredMode: WechatMpMode; // 新建机构默认选用方式
+  // 2. 自有公众号人员迁移方式
+  migrationMethods: GlobalMpMigrationMethods;
+  // 迁移数据继承保障
+  dataInheritance: {
+    inheritDrafts: boolean;
+    inheritAuditLogs: boolean;
+    inheritPoints: boolean;
+    inheritRoles: boolean;
+  };
+  // 运营管控参数
+  migrationGracePeriodDays: number;
+  maxDailyRemindCount: number;
+  updatedAt?: string;
+  updatedBy?: string;
+}
+
 export interface OtherBusinessConfig {
   qrUsage: QrCodeUsageConfig;
   wechatMp?: WechatMpConfig;
   migration?: MpMigrationConfig;
+  globalMpControl?: GlobalMpControlConfig;
 }
 
 export interface InstitutionBusinessRules {

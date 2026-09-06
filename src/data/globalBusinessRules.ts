@@ -12,6 +12,7 @@ import {
   OtherBusinessConfig,
   QrCodeUsageConfig,
 } from '../types';
+import { defaultGlobalMpControlConfig } from '../components/other-config/GlobalOtherConfigDefaultsSection';
 
 export const defaultValueAddedServices: ValueAddedServiceItem[] = [
   {
@@ -51,6 +52,16 @@ export const defaultValueAddedServices: ValueAddedServiceItem[] = [
     isEnabled: true,
     tag: '增值扩展功能',
     description: '支撑全网节点重大通知广播、突发风险预警弹窗强提醒及全局公告消息穿透推送',
+    icon: 'auto_awesome',
+    isGlobal: true,
+  },
+  {
+    id: 'vas-first-publish-duplicate',
+    name: '报送首发重复识别',
+    isPurchased: true,
+    isEnabled: true,
+    tag: '增值扩展功能',
+    description: '基于智能文本相似度与事件指纹比对算法，自动识别多源上报线索并打上首发与重复标识，有效防止多头报送与重复审核计分',
     icon: 'auto_awesome',
     isGlobal: true,
   },
@@ -742,6 +753,7 @@ export const initialGlobalBusinessRules: InstitutionBusinessRules = {
       warningThreshold: 10,
       allowSelfApply: true,
     },
+    globalMpControl: defaultGlobalMpControlConfig,
   } satisfies OtherBusinessConfig,
 
   // 登录鉴权

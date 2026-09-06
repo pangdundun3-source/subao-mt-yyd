@@ -17,7 +17,7 @@ export const mockMigrationPersonnel: MpPersonnelMigrationItem[] = [
     avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80',
     department: '新闻采编部',
     role: '速报采编员',
-    sourceMp: '点点速豹',
+    sourceMp: '点点速报',
     sourceOpenId: 'o4_ddsb_892301984210a',
     targetMp: '随州融媒发布',
     targetOpenId: 'oZ4_szrm_781209384112b',
@@ -38,7 +38,7 @@ export const mockMigrationPersonnel: MpPersonnelMigrationItem[] = [
     avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80',
     department: '新媒体运营中心',
     role: '机构管理员',
-    sourceMp: '点点速豹',
+    sourceMp: '点点速报',
     sourceOpenId: 'o4_ddsb_119283471029c',
     targetMp: '随州融媒发布',
     targetOpenId: 'oZ4_szrm_992182736154k',
@@ -59,7 +59,7 @@ export const mockMigrationPersonnel: MpPersonnelMigrationItem[] = [
     avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100&auto=format&fit=crop&q=80',
     department: '影像摄制组',
     role: '速报采编员',
-    sourceMp: '点点速豹',
+    sourceMp: '点点速报',
     sourceOpenId: 'o4_ddsb_551920384712d',
     targetMp: '随州融媒发布',
     targetOpenId: '',
@@ -79,7 +79,7 @@ export const mockMigrationPersonnel: MpPersonnelMigrationItem[] = [
     avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&auto=format&fit=crop&q=80',
     department: '舆情监测科',
     role: '舆情监测员',
-    sourceMp: '点点速豹',
+    sourceMp: '点点速报',
     sourceOpenId: 'o4_ddsb_772819034812f',
     targetMp: '随州融媒发布',
     targetOpenId: 'oZ4_szrm_331928471920m',
@@ -100,7 +100,7 @@ export const mockMigrationPersonnel: MpPersonnelMigrationItem[] = [
     avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80',
     department: '应急联动中心',
     role: '速报采编员',
-    sourceMp: '点点速豹',
+    sourceMp: '点点速报',
     sourceOpenId: 'o4_ddsb_991823746192e',
     targetMp: '随州融媒发布',
     targetOpenId: '',
@@ -120,7 +120,7 @@ export const mockMigrationPersonnel: MpPersonnelMigrationItem[] = [
     avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
     department: '政务新闻部',
     role: '普通成员',
-    sourceMp: '点点速豹',
+    sourceMp: '点点速报',
     sourceOpenId: 'o4_ddsb_662819203817h',
     targetMp: '随州融媒发布',
     targetOpenId: '',
@@ -138,8 +138,8 @@ export const mockMigrationTasks: MpMigrationTask[] = [
   {
     id: 'TASK-MIG-20260828',
     taskBatchNo: 'BATCH-20260828-01',
-    taskName: '随州市网信中心全员换绑任务（点点速豹 -> 随州融媒发布）',
-    sourceMpName: '点点速豹 (平台统配)',
+    taskName: '随州市网信中心全员换绑任务（点点速报 -> 随州融媒发布）',
+    sourceMpName: '点点速报 (平台统配)',
     targetMpName: '随州融媒发布 (官方服务号)',
     totalPersonnel: 6,
     completedCount: 3,
@@ -221,7 +221,7 @@ export const MpPersonnelMigrationSection: React.FC<MpPersonnelMigrationSectionPr
                 <span>人员一键换绑迁移</span>
               </h3>
               <span className="text-[11px] px-2 py-0.5 rounded-full bg-blue-50 text-[#1890ff] font-semibold border border-blue-200">
-                点点速豹 → {targetMpName}
+                点点速报 → {targetMpName}
               </span>
             </div>
             <p className="text-xs text-gray-500 mt-1">
@@ -592,7 +592,7 @@ export const MpPersonnelMigrationSection: React.FC<MpPersonnelMigrationSectionPr
 
             <form onSubmit={handleLaunchMigrationTask} className="p-5 space-y-3.5 text-xs">
               <div className="p-3 bg-blue-50 rounded-xl border border-blue-100 text-gray-700 space-y-1">
-                <div className="font-bold text-blue-900">迁移路径：点点速豹 → {targetMpName}</div>
+                <div className="font-bold text-blue-900">迁移路径：点点速报 → {targetMpName}</div>
                 <div className="text-gray-600">
                   系统将按平台全局参数向全员 <strong>{totalCount}</strong> 位采编人员发送
                   <strong>{channelText}</strong>。

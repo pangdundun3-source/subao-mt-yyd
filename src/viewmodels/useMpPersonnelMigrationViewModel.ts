@@ -135,7 +135,7 @@ export const useMpPersonnelMigrationViewModel = ({
         id: `TASK-${Date.now()}`,
         taskBatchNo: `BATCH-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-01`,
         taskName: `【${institutionName}】全员一键换绑迁移任务`,
-        sourceMpName: '点点速豹 (平台统配)',
+        sourceMpName: '点点速报 (平台统配)',
         targetMpName,
         totalPersonnel: totalCount,
         completedCount,

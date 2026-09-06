@@ -382,6 +382,17 @@ function loadPersistedDataStore(
     ...(defaults || {}),
     ...saved,
   };
+  // 增值业务：确保新增的默认增值业务项能够并入已持久化的数据
+  if (Array.isArray(defaults?.value_added)) {
+    const existingList = Array.isArray(saved?.value_added) ? [...saved.value_added] : [...defaults.value_added];
+    const existingNames = new Set(existingList.map(i => i.name));
+    for (const defaultItem of defaults.value_added) {
+      if (!existingNames.has(defaultItem.name)) {
+        existingList.push(defaultItem);
+      }
+    }
+    merged.value_added = existingList;
+  }
   // 增值业务状态兜底：未记录开通状态的一律视为“未开通”，且未开通不可处于启用态
   if (Array.isArray(merged.value_added)) {
     merged.value_added = merged.value_added.map((item) => {
@@ -453,7 +464,7 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
     { id: 'stats_metric', label: '统计指标' },
     { id: 'audit_flow', label: '审核层级/流程' },
     { id: 'login_method', label: '登录验证方式' },
-    { id: 'value_added', label: '增值业务申请' }
+    { id: 'value_added', label: '增值业务配置' }
   ];
 
   // Data state for each configuration module
@@ -803,6 +814,17 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
         activatedStatus: '未开通',
         updateTime: '2023-11-10 10:00:00',
         description: '支撑全网节点重大通知广播、突发风险预警弹窗强提醒及全局公告消息穿透推送',
+        isDefault: true
+      },
+      {
+        id: 'va_5',
+        name: '报送首发重复识别',
+        dictCategoryName: '增值业务',
+        dictCode: 'VA_REPORT_DUPLICATE_IDENTIFICATION',
+        status: '启用',
+        activatedStatus: '已开通',
+        updateTime: '2023-11-10 10:00:00',
+        description: '基于智能文本相似度与事件指纹比对算法，自动识别多源上报线索并打上首发与重复标识，有效防止多头报送与重复审核计分',
         isDefault: true
       }
     ]
@@ -2740,10 +2762,10 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
                 <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                 <div className="space-y-0.5">
                   <span className="font-bold text-[#1E5ABB] block">
-                    系统增值业务列表与功能介绍
+                    增值业务运营管控说明
                   </span>
                   <p className="text-gray-600 text-[11px] leading-relaxed">
-                    本模块展示系统当前支持的各项增值扩展功能及其详细功能介绍。
+                    本模块面向平台运营人员统一管控。在全局配置中开启增值业务后，机构在添加或编辑时才能进行管理与开通；如果在此处未开启该增值业务，机构端将不会出现对应业务选项。
                   </p>
                 </div>
               </div>
@@ -3964,7 +3986,19 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
                                   ? 'bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200/80'
                                   : 'bg-gray-200 border-gray-300'
                               }`}>
-                                <Sparkles className={`w-5 h-5 ${isEnabled || !isActivated ? 'text-amber-600' : 'text-gray-400'}`} />
+                                {item.name === '批量审核' ? (
+                                  <CheckSquare className={`w-5 h-5 ${isEnabled || !isActivated ? 'text-amber-600' : 'text-gray-400'}`} />
+                                ) : item.name === '截图取证' ? (
+                                  <ShieldCheck className={`w-5 h-5 ${isEnabled || !isActivated ? 'text-amber-600' : 'text-gray-400'}`} />
+                                ) : item.name === '指令流转' ? (
+                                  <GitBranch className={`w-5 h-5 ${isEnabled || !isActivated ? 'text-amber-600' : 'text-gray-400'}`} />
+                                ) : item.name === '系统公告' ? (
+                                  <Zap className={`w-5 h-5 ${isEnabled || !isActivated ? 'text-amber-600' : 'text-gray-400'}`} />
+                                ) : item.name === '报送首发重复识别' ? (
+                                  <Layers className={`w-5 h-5 ${isEnabled || !isActivated ? 'text-amber-600' : 'text-gray-400'}`} />
+                                ) : (
+                                  <Sparkles className={`w-5 h-5 ${isEnabled || !isActivated ? 'text-amber-600' : 'text-gray-400'}`} />
+                                )}
                               </div>
                               <div>
                                 <h3 className={`font-bold text-sm flex items-center space-x-2 ${

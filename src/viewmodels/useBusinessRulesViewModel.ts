@@ -84,7 +84,7 @@ export const useBusinessRulesViewModel = ({
     ];
     return saved && validKeys.includes(saved as BusinessRuleNavKey)
       ? (saved as BusinessRuleNavKey)
-      : 'qr_code';
+      : 'other';
   });
   const [templateFilterType, setTemplateFilterType] = useState<'all' | 'report' | 'active'>('active');
   const [templateSearchKeyword, setTemplateSearchKeyword] = useState('');

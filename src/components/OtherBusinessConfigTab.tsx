@@ -15,6 +15,7 @@ import {
   mockMigrationTasks,
 } from './other-config/MpPersonnelMigrationSection';
 import { defaultQuotaHistory } from './other-config/QrQuotaSection';
+import { defaultGlobalMpControlConfig } from './other-config/GlobalOtherConfigDefaultsSection';
 
 export const defaultOtherBusinessConfig: OtherBusinessConfig = {
   qrUsage: {
@@ -32,6 +33,7 @@ export const defaultOtherBusinessConfig: OtherBusinessConfig = {
     personnelList: mockMigrationPersonnel,
     taskHistory: mockMigrationTasks,
   },
+  globalMpControl: defaultGlobalMpControlConfig,
 };
 
 interface NavSegmentItem {
@@ -152,7 +154,7 @@ export const OtherBusinessConfigTab: React.FC<OtherBusinessConfigTabProps> = ({
           <div className="mt-3 pt-3 border-t border-gray-100 grid grid-cols-1 md:grid-cols-2 gap-2.5 text-xs text-gray-600 animate-fade-in">
             <div className="p-2.5 rounded-lg bg-blue-50/50 border border-blue-100">
               <span className="font-bold text-blue-900 block mb-0.5">1. 微信公众号配置</span>
-              <span>支持开通即用的「点点速豹平台统配」，也支持无缝接入机构自己的微信服务号与发稿通道。</span>
+              <span>支持开通即用的「点点速报平台统配」，也支持无缝接入机构自己的微信服务号与发稿通道。</span>
             </div>
             <div className="p-2.5 rounded-lg bg-blue-50/50 border border-blue-100">
               <span className="font-bold text-blue-900 block mb-0.5">2. 人员一键换绑迁移</span>

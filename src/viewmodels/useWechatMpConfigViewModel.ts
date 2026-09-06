@@ -41,7 +41,7 @@ export const useWechatMpConfigViewModel = ({
       mode,
       mpName:
         mode === 'platform_default'
-          ? '点点速豹 (平台统配)'
+          ? '点点速报 (平台统配)'
           : formData.mpName || `${institutionName}官方公众号`,
       originalId: mode === 'platform_default' ? 'gh_ddsb_system_default' : formData.originalId,
       appId: mode === 'platform_default' ? 'wx_ddsb_platform_std' : formData.appId,
@@ -51,7 +51,7 @@ export const useWechatMpConfigViewModel = ({
     onChangeConfig(updated);
     showToast(
       mode === 'platform_default'
-        ? '已切换为【平台统配·点点速豹】模式（免配置即开即用）'
+        ? '已切换为【平台统配·点点速报】模式（免配置即开即用）'
         : '已切换为【单位自有公众号】模式，只需填写 AppID 与 AppSecret 即可',
       'info'
     );

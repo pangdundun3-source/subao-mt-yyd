@@ -58,8 +58,61 @@ export const WechatMpConfigSection: React.FC<WechatMpConfigSectionProps> = ({
     handleSave,
   } = actions;
 
+  // 读取平台运营全局策略控制
+  const globalControl = React.useMemo(() => {
+    try {
+      const saved = localStorage.getItem('mt_global_mp_control_config');
+      if (saved) return JSON.parse(saved);
+    } catch {
+      // ignore
+    }
+    return null;
+  }, []);
+
+  const allowCustomOfficialMp = globalControl ? (globalControl.allowCustomOfficialMp ?? true) : true;
+  const allowDefaultPlatformMp = globalControl ? (globalControl.allowDefaultPlatformMp ?? true) : true;
+
+  const onSelectMode = (targetMode: WechatMpMode) => {
+    if (targetMode === 'custom_official' && !allowCustomOfficialMp) {
+      showToast('平台当前策略已关闭机构自有公众号接入，所有机构只能使用默认的“点点速报”', 'warning');
+      return;
+    }
+    if (targetMode === 'platform_default' && !allowDefaultPlatformMp) {
+      showToast('平台当前策略要求必须使用机构自有公众号', 'warning');
+      return;
+    }
+    handleModeChange(targetMode);
+  };
+
   return (
     <div className="space-y-4">
+      {/* 平台策略状态提示条 */}
+      {!allowCustomOfficialMp ? (
+        <div className="p-3.5 rounded-xl bg-blue-50 border border-blue-200 text-xs text-blue-900 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-[18px] text-[#1890ff]">lock</span>
+            <span className="font-bold">
+              平台统一管控策略生效中：当前全平台已关闭自有公众号接入，所有机构只能使用默认的「点点速报」。
+            </span>
+          </div>
+          <span className="text-[11px] px-2 py-0.5 rounded bg-blue-100 text-blue-800 font-semibold">
+            只读统配模式
+          </span>
+        </div>
+      ) : allowDefaultPlatformMp && allowCustomOfficialMp ? (
+        <div className="p-3 rounded-xl bg-emerald-50/80 border border-emerald-200 text-xs text-emerald-900 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-[18px] text-emerald-600">check_circle</span>
+            <span>
+              <strong>双模自由切换已开放</strong>：平台已开启点点速报与自有公众号双通道，贵单位可根据自身资质自由切换。
+            </span>
+          </div>
+          <span className="text-[11px] px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-semibold">
+            支持自由切换
+          </span>
+        </div>
+      ) : null}
+
       {/* 1. Header Card & Clear Mode Selection */}
       <div className="bg-white rounded-2xl border border-gray-200/90 p-5 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-gray-100">
@@ -99,9 +152,9 @@ export const WechatMpConfigSection: React.FC<WechatMpConfigSectionProps> = ({
 
         {/* 2 Clear Choice Options */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 mt-4">
-          {/* Choice A: 平台统配点点速豹 */}
+          {/* Choice A: 平台统配点点速报 */}
           <div
-            onClick={() => handleModeChange('platform_default')}
+            onClick={() => onSelectMode('platform_default')}
             className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between ${
               formData.mode === 'platform_default'
                 ? 'border-[#1890ff] bg-blue-50/40 ring-2 ring-[#1890ff]/20 shadow-xs'
@@ -114,7 +167,7 @@ export const WechatMpConfigSection: React.FC<WechatMpConfigSectionProps> = ({
                   <span className="w-6 h-6 rounded-md bg-blue-100 text-[#1890ff] flex items-center justify-center font-bold text-xs">
                     省
                   </span>
-                  <span className="font-bold text-sm text-gray-900">方式一：用平台统配的「点点速豹」</span>
+                  <span className="font-bold text-sm text-gray-900">方式一：用机构默认的「点点速报」</span>
                 </div>
                 <span className="text-[10px] px-2 py-0.5 rounded bg-blue-100 text-blue-700 font-bold">
                   最简单·免配置
@@ -126,13 +179,13 @@ export const WechatMpConfigSection: React.FC<WechatMpConfigSectionProps> = ({
             </div>
             <div className="mt-3 pt-2 border-t border-gray-200/60 flex items-center justify-between text-xs">
               <span className={formData.mode === 'platform_default' ? 'text-[#1890ff] font-bold' : 'text-gray-400'}>
-                {formData.mode === 'platform_default' ? '✓ 当前已选中此模式' : '点击使用此模式'}
+                {formData.mode === 'platform_default' ? '✓ 当前已选用此模式' : '点击切换为此模式'}
               </span>
               <input
                 type="radio"
                 name="mpMode"
                 checked={formData.mode === 'platform_default'}
-                onChange={() => handleModeChange('platform_default')}
+                onChange={() => onSelectMode('platform_default')}
                 className="accent-[#1890ff]"
               />
             </div>
@@ -140,23 +193,29 @@ export const WechatMpConfigSection: React.FC<WechatMpConfigSectionProps> = ({
 
           {/* Choice B: 机构自有独立公众号 */}
           <div
-            onClick={() => handleModeChange('custom_official')}
-            className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between ${
-              formData.mode === 'custom_official'
-                ? 'border-emerald-500 bg-emerald-50/40 ring-2 ring-emerald-500/20 shadow-xs'
-                : 'border-gray-200 hover:border-gray-300 bg-gray-50/40'
+            onClick={() => onSelectMode('custom_official')}
+            className={`p-4 rounded-xl border-2 transition-all flex flex-col justify-between ${
+              !allowCustomOfficialMp
+                ? 'border-gray-200 bg-gray-100/70 opacity-60 cursor-not-allowed'
+                : formData.mode === 'custom_official'
+                ? 'border-emerald-500 bg-emerald-50/40 ring-2 ring-emerald-500/20 shadow-xs cursor-pointer'
+                : 'border-gray-200 hover:border-gray-300 bg-gray-50/40 cursor-pointer'
             }`}
           >
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <div className="flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-md bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs">
+                  <span className={`w-6 h-6 rounded-md flex items-center justify-center font-bold text-xs ${
+                    allowCustomOfficialMp ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-200 text-gray-500'
+                  }`}>
                     自
                   </span>
-                  <span className="font-bold text-sm text-gray-900">方式二：用单位自己的微信公众号</span>
+                  <span className="font-bold text-sm text-gray-900">方式二：支持使用机构自有的公众号</span>
                 </div>
-                <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold">
-                  单位专属品牌
+                <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${
+                  allowCustomOfficialMp ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-200 text-gray-500'
+                }`}>
+                  {allowCustomOfficialMp ? '单位专属品牌' : '平台暂未开放'}
                 </span>
               </div>
               <p className="text-xs text-gray-600 leading-relaxed">
@@ -164,14 +223,25 @@ export const WechatMpConfigSection: React.FC<WechatMpConfigSectionProps> = ({
               </p>
             </div>
             <div className="mt-3 pt-2 border-t border-gray-200/60 flex items-center justify-between text-xs">
-              <span className={formData.mode === 'custom_official' ? 'text-emerald-700 font-bold' : 'text-gray-400'}>
-                {formData.mode === 'custom_official' ? '✓ 当前已选中此模式' : '点击使用此模式'}
+              <span className={
+                !allowCustomOfficialMp
+                  ? 'text-gray-400 font-normal'
+                  : formData.mode === 'custom_official'
+                  ? 'text-emerald-700 font-bold'
+                  : 'text-gray-400'
+              }>
+                {!allowCustomOfficialMp
+                  ? '🔒 平台管控关闭（不可切换）'
+                  : formData.mode === 'custom_official'
+                  ? '✓ 当前已选用此模式'
+                  : '点击切换为此模式'}
               </span>
               <input
                 type="radio"
                 name="mpMode"
+                disabled={!allowCustomOfficialMp}
                 checked={formData.mode === 'custom_official'}
-                onChange={() => handleModeChange('custom_official')}
+                onChange={() => onSelectMode('custom_official')}
                 className="accent-emerald-600"
               />
             </div>
@@ -196,7 +266,7 @@ export const WechatMpConfigSection: React.FC<WechatMpConfigSectionProps> = ({
           <div className="w-12 h-12 rounded-2xl bg-blue-50 text-[#1890ff] flex items-center justify-center mx-auto mb-3">
             <span className="material-symbols-outlined text-[28px]">verified</span>
           </div>
-          <h4 className="text-sm font-bold text-gray-900">当前已启用平台统配「点点速豹」公众号</h4>
+          <h4 className="text-sm font-bold text-gray-900">当前已启用机构默认「点点速报」公众号</h4>
           <p className="text-xs text-gray-500 mt-1 max-w-md mx-auto">
             系统已自动配置完成底层接口与消息网关，无需您手动填写任何技术参数。采编人员只需扫码关注平台统配码即可开始工作。
           </p>
