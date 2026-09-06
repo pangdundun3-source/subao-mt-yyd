@@ -61,7 +61,7 @@ export const defaultValueAddedServices: ValueAddedServiceItem[] = [
     isPurchased: true,
     isEnabled: true,
     tag: '增值扩展功能',
-    description: '基于智能文本相似度与事件指纹比对算法，自动识别多源上报线索并打上首发与重复标识，有效防止多头报送与重复审核计分',
+    description: '通过抓取报送链接的文章原文比对判断内容是否重复，并结合提交时间线智能判定首发，避免多头报送与重复审核计分。',
     icon: 'auto_awesome',
     isGlobal: true,
   },

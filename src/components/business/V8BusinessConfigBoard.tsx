@@ -382,13 +382,21 @@ function loadPersistedDataStore(
     ...(defaults || {}),
     ...saved,
   };
-  // 增值业务：确保新增的默认增值业务项能够并入已持久化的数据
+  // 增值业务：确保新增的默认增值业务项能够并入已持久化的数据，并同步最新系统文案
   if (Array.isArray(defaults?.value_added)) {
     const existingList = Array.isArray(saved?.value_added) ? [...saved.value_added] : [...defaults.value_added];
     const existingNames = new Set(existingList.map(i => i.name));
     for (const defaultItem of defaults.value_added) {
       if (!existingNames.has(defaultItem.name)) {
         existingList.push(defaultItem);
+      } else if (defaultItem.name === '报送首发重复识别') {
+        const targetIndex = existingList.findIndex(i => i.name === '报送首发重复识别');
+        if (targetIndex !== -1) {
+          existingList[targetIndex] = {
+            ...existingList[targetIndex],
+            description: defaultItem.description,
+          };
+        }
       }
     }
     merged.value_added = existingList;
@@ -824,7 +832,7 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
         status: '启用',
         activatedStatus: '已开通',
         updateTime: '2023-11-10 10:00:00',
-        description: '基于智能文本相似度与事件指纹比对算法，自动识别多源上报线索并打上首发与重复标识，有效防止多头报送与重复审核计分',
+        description: '通过抓取报送链接的文章原文比对判断内容是否重复，并结合提交时间线智能判定首发，避免多头报送与重复审核计分。',
         isDefault: true
       }
     ]
@@ -4074,7 +4082,9 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
                             <p className={`text-xs leading-relaxed p-3 rounded-lg border font-sans ${
                               isEnabled || !isActivated ? 'bg-slate-50/80 text-gray-700 border-slate-200/60' : 'bg-gray-200/50 text-gray-500 border-gray-200'
                             }`}>
-                              {item.description || '暂无产品功能介绍说明'}
+                              {item.name === '报送首发重复识别'
+                                ? '通过抓取报送链接的文章原文比对判断内容是否重复，并结合提交时间线智能判定首发，避免多头报送与重复审核计分。'
+                                : (item.description || '暂无产品功能介绍说明')}
                             </p>
 
                             {/* Contact Sales Notice - Only shown for non-activated products (非全开放启禁模式) */}

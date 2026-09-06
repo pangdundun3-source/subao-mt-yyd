@@ -84,7 +84,7 @@ export const useBusinessRulesViewModel = ({
     ];
     return saved && validKeys.includes(saved as BusinessRuleNavKey)
       ? (saved as BusinessRuleNavKey)
-      : 'other';
+      : 'value_added';
   });
   const [templateFilterType, setTemplateFilterType] = useState<'all' | 'report' | 'active'>('active');
   const [templateSearchKeyword, setTemplateSearchKeyword] = useState('');
