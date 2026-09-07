@@ -18,10 +18,10 @@ const write = (key: string, value: string) => {
 };
 
 export const authStorage = {
-  // Read authenticated state from localStorage; default to true so dev preview opens directly to admin interface
+  // Read authenticated state from localStorage; default to false so every fresh visit lands on login.
   readIsAuthenticated: (): boolean => {
     const val = read(STORAGE_KEY);
-    return val === null ? true : val === 'true';
+    return val === null ? false : val === 'true';
   },
 
   saveIsAuthenticated: (isAuthenticated: boolean) => {

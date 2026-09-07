@@ -5,12 +5,8 @@ export type LoginPhase = 'waiting' | 'scanning' | 'authenticated';
 export type AppActiveView = 'portal' | 'operation';
 
 export const useAppEntryViewModel = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(() =>
-    authStorage.readIsAuthenticated()
-  );
-  const [activeView, setActiveView] = useState<AppActiveView>(() =>
-    authStorage.readActiveView()
-  );
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [activeView, setActiveView] = useState<AppActiveView>('portal');
   const [loginPhase, setLoginPhase] = useState<LoginPhase>('waiting');
   const [qrRevision, setQrRevision] = useState(() => Date.now());
 
@@ -77,6 +73,13 @@ export const useAppEntryViewModel = () => {
   }, [clearTimers]);
 
   useEffect(() => {
+    // Each fresh entry should start from the login page, even if older auth flags remain in storage.
+    authStorage.clear();
+    setIsAuthenticated(false);
+    setActiveView('portal');
+    setLoginPhase('waiting');
+    setQrRevision(Date.now());
+
     return () => clearTimers();
   }, [clearTimers]);
 
