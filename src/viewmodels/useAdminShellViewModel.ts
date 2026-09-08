@@ -5,6 +5,7 @@ import {
   initialInstitutions,
 } from '../data';
 import { adminShellStorage } from '../services/adminShellStorage';
+import { hashRouter } from '../services/hashRouter';
 import { ActiveTab, AuditLog, ExpiringInstitution, Institution, SystemSubModule } from '../types';
 
 interface InstitutionProvisionData {
@@ -75,21 +76,53 @@ const createAuditLog = (action: string, target: string): AuditLog => ({
   status: '成功',
 });
 
+const getInitialShellState = () => {
+  const parsed = hashRouter.parseRoute();
+  const savedTab = adminShellStorage.readActiveTab();
+  const savedSubTab = adminShellStorage.readSystemSubTab();
+  const savedInstId = adminShellStorage.readSelectedInstitutionId();
+  const savedIsCreating = adminShellStorage.readIsCreatingInstitution();
+  const savedIsEditing = adminShellStorage.readIsEditingInstitution();
+
+  const activeTab = parsed.activeTab || savedTab;
+  const isInstitutions = activeTab === 'institutions';
+
+  return {
+    activeTab,
+    systemSubTab: parsed.systemSubTab || savedSubTab,
+    selectedInstitutionId:
+      parsed.selectedInstitutionId !== undefined
+        ? parsed.selectedInstitutionId
+        : isInstitutions
+          ? savedInstId
+          : null,
+    isCreatingInstitution:
+      parsed.isCreatingInstitution !== undefined
+        ? parsed.isCreatingInstitution
+        : isInstitutions
+          ? savedIsCreating
+          : false,
+    isEditingInstitution:
+      parsed.isEditingInstitution !== undefined
+        ? parsed.isEditingInstitution
+        : isInstitutions
+          ? savedIsEditing
+          : false,
+  };
+};
+
 export const useAdminShellViewModel = () => {
-  const [activeTab, setActiveTab] = useState<ActiveTab>(() =>
-    adminShellStorage.readActiveTab()
+  const initial = useMemo(getInitialShellState, []);
+  const [activeTab, setActiveTab] = useState<ActiveTab>(initial.activeTab);
+  const [systemSubTab, setSystemSubTab] = useState<SystemSubModule>(initial.systemSubTab);
+  const [selectedInstitutionId, setSelectedInstitutionId] = useState<number | null>(
+    initial.selectedInstitutionId
   );
-  const [systemSubTab, setSystemSubTab] = useState<SystemSubModule>(() =>
-    adminShellStorage.readSystemSubTab()
+  const [isEditingInstitution, setIsEditingInstitution] = useState<boolean>(
+    initial.isEditingInstitution
   );
-  const [selectedInstitutionId, setSelectedInstitutionId] = useState<number | null>(() =>
-    adminShellStorage.readSelectedInstitutionId()
-  );
-  const [isEditingInstitution, setIsEditingInstitution] = useState<boolean>(() =>
-    adminShellStorage.readIsEditingInstitution()
-  );
-  const [isCreatingInstitution, setIsCreatingInstitution] = useState<boolean>(() =>
-    adminShellStorage.readIsCreatingInstitution()
+  const [isCreatingInstitution, setIsCreatingInstitution] = useState<boolean>(
+    initial.isCreatingInstitution
   );
 
   const [institutions, setInstitutions] = useState<Institution[]>(initialInstitutions);
@@ -127,6 +160,19 @@ export const useAdminShellViewModel = () => {
     if (id !== null) {
       setActiveTab('institutions');
       adminShellStorage.saveActiveTab('institutions');
+      hashRouter.syncToUrl({
+        activeTab: 'institutions',
+        selectedInstitutionId: id,
+        isCreatingInstitution: false,
+        isEditingInstitution: isEdit,
+      });
+    } else {
+      hashRouter.syncToUrl({
+        activeTab: 'institutions',
+        selectedInstitutionId: null,
+        isCreatingInstitution: false,
+        isEditingInstitution: false,
+      });
     }
   }, []);
 
@@ -144,6 +190,12 @@ export const useAdminShellViewModel = () => {
     adminShellStorage.saveIsEditingInstitution(true);
     adminShellStorage.saveSelectedInstitutionId(null);
     adminShellStorage.saveActiveTab('institutions');
+    hashRouter.syncToUrl({
+      activeTab: 'institutions',
+      isCreatingInstitution: true,
+      isEditingInstitution: true,
+      selectedInstitutionId: null,
+    });
   }, []);
 
   const handleCloseAddInstitution = useCallback(() => {
@@ -152,27 +204,58 @@ export const useAdminShellViewModel = () => {
 
     adminShellStorage.saveIsCreatingInstitution(false);
     adminShellStorage.saveIsEditingInstitution(false);
+    hashRouter.syncToUrl({
+      activeTab: 'institutions',
+      isCreatingInstitution: false,
+      isEditingInstitution: false,
+      selectedInstitutionId: null,
+    });
   }, []);
 
   const handleTabChange = useCallback(
     (tab: ActiveTab) => {
       setActiveTab(tab);
+      setSelectedInstitutionId(null);
+      setIsCreatingInstitution(false);
+      setIsEditingInstitution(false);
+
       adminShellStorage.saveActiveTab(tab);
-      openInstitutionDetail(null);
-      handleCloseAddInstitution();
+      adminShellStorage.saveSelectedInstitutionId(null);
+      adminShellStorage.saveIsCreatingInstitution(false);
+      adminShellStorage.saveIsEditingInstitution(false);
+
+      hashRouter.syncToUrl({
+        activeTab: tab,
+        systemSubTab,
+        selectedInstitutionId: null,
+        isCreatingInstitution: false,
+        isEditingInstitution: false,
+      });
     },
-    [handleCloseAddInstitution, openInstitutionDetail]
+    [systemSubTab]
   );
 
   const handleSystemSubTabChange = useCallback((subTab: SystemSubModule) => {
     setSystemSubTab(subTab);
     adminShellStorage.saveSystemSubTab(subTab);
+    hashRouter.syncToUrl({
+      activeTab: 'system',
+      systemSubTab: subTab,
+    });
   }, []);
 
   const handleEditModeChange = useCallback((isEdit: boolean) => {
     setIsEditingInstitution(isEdit);
     adminShellStorage.saveIsEditingInstitution(isEdit);
-  }, []);
+    if (selectedInstitutionId !== null) {
+      hashRouter.syncToUrl({
+        activeTab: 'institutions',
+        selectedInstitutionId,
+        isEditingInstitution: isEdit,
+        isCreatingInstitution: false,
+      });
+    }
+  }, [selectedInstitutionId]);
 
   const handleToggleStatus = useCallback(
     (id: number) => {
@@ -291,6 +374,66 @@ export const useAdminShellViewModel = () => {
     () => findInstitutionById(institutions, selectedInstitutionId),
     [institutions, selectedInstitutionId]
   );
+
+  // Synchronize hash on initial load if route not present in hash
+  useEffect(() => {
+    const raw = hashRouter.getRawHash();
+    if (!raw || raw === '#' || raw === '#/') {
+      hashRouter.syncToUrl(
+        {
+          activeTab,
+          systemSubTab,
+          selectedInstitutionId,
+          isCreatingInstitution,
+          isEditingInstitution,
+        },
+        true
+      );
+    }
+  }, []);
+
+  // Listen to external hash changes (e.g. browser back/forward or manual hash updates)
+  useEffect(() => {
+    const handleHashChange = () => {
+      const parsed = hashRouter.parseRoute();
+      if (parsed.activeTab) {
+        setActiveTab(parsed.activeTab);
+        adminShellStorage.saveActiveTab(parsed.activeTab);
+
+        if (parsed.systemSubTab) {
+          setSystemSubTab(parsed.systemSubTab);
+          adminShellStorage.saveSystemSubTab(parsed.systemSubTab);
+        }
+
+        if (parsed.activeTab === 'institutions') {
+          if (parsed.isCreatingInstitution !== undefined) {
+            setIsCreatingInstitution(parsed.isCreatingInstitution);
+            adminShellStorage.saveIsCreatingInstitution(parsed.isCreatingInstitution);
+          }
+          if (parsed.isEditingInstitution !== undefined) {
+            setIsEditingInstitution(parsed.isEditingInstitution);
+            adminShellStorage.saveIsEditingInstitution(parsed.isEditingInstitution);
+          }
+          if (parsed.selectedInstitutionId !== undefined) {
+            setSelectedInstitutionId(parsed.selectedInstitutionId);
+            adminShellStorage.saveSelectedInstitutionId(parsed.selectedInstitutionId);
+          }
+        } else {
+          setSelectedInstitutionId(null);
+          setIsCreatingInstitution(false);
+          setIsEditingInstitution(false);
+          adminShellStorage.saveSelectedInstitutionId(null);
+          adminShellStorage.saveIsCreatingInstitution(false);
+          adminShellStorage.saveIsEditingInstitution(false);
+        }
+      }
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange);
+    };
+  }, []);
 
   useEffect(() => {
     return () => {
