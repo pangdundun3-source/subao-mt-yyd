@@ -85,222 +85,135 @@ export const WechatMpConfigSection: React.FC<WechatMpConfigSectionProps> = ({
   };
 
   return (
-    <div className="space-y-4">
-      {/* 平台策略状态提示条 */}
-      {!allowCustomOfficialMp ? (
-        <div className="p-3.5 rounded-xl bg-blue-50 border border-blue-200 text-xs text-blue-900 flex items-center justify-between">
+    <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-2xs space-y-4">
+      {/* 1. 顶部标题栏与模式切换 */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 border-b border-gray-100">
+        <div>
           <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-[18px] text-[#1890ff]">lock</span>
-            <span className="font-bold">
-              平台统一管控策略生效中：当前全平台已关闭自有公众号接入，所有机构只能使用默认的「点点速报」。
+            <h3 className="text-sm font-bold text-gray-900">微信公众号配置</h3>
+            <span
+              className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${
+                formData.mode === 'platform_default'
+                  ? 'bg-blue-50 text-[#1890ff] border border-blue-200'
+                  : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+              }`}
+            >
+              {formData.mode === 'platform_default' ? '平台统配' : '机构自有服务号'}
             </span>
           </div>
-          <span className="text-[11px] px-2 py-0.5 rounded bg-blue-100 text-blue-800 font-semibold">
-            只读统配模式
-          </span>
+          <p className="text-xs text-gray-500 mt-0.5">
+            配置本机构采编人员接收速报通知与审核发稿的微信公众号通道
+          </p>
         </div>
-      ) : allowDefaultPlatformMp && allowCustomOfficialMp ? (
-        <div className="p-3 rounded-xl bg-emerald-50/80 border border-emerald-200 text-xs text-emerald-900 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-[18px] text-emerald-600">check_circle</span>
-            <span>
-              <strong>双模自由切换已开放</strong>：平台已开启点点速报与自有公众号双通道，贵单位可根据自身资质自由切换。
+
+        {/* 顶部快捷操作 */}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleRunDiagnostics}
+            disabled={isTesting}
+            className="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200 transition-colors flex items-center gap-1 cursor-pointer disabled:opacity-50"
+          >
+            <span className={`material-symbols-outlined text-[15px] ${isTesting ? 'animate-spin text-[#1890ff]' : 'text-gray-500'}`}>
+              {isTesting ? 'sync' : 'network_check'}
             </span>
-          </div>
-          <span className="text-[11px] px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-semibold">
-            支持自由切换
-          </span>
-        </div>
-      ) : null}
+            <span>{isTesting ? '检测中...' : '测试连通性'}</span>
+          </button>
 
-      {/* 1. Header Card & Clear Mode Selection */}
-      <div className="bg-white rounded-2xl border border-gray-200/90 p-5 shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-gray-100">
-          <div>
-            <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
-              <span className="w-1.5 h-4 bg-emerald-500 rounded-xs" />
-              <span>第一步：选择公众号使用方式</span>
-            </h3>
-            <p className="text-xs text-gray-500 mt-0.5">
-              根据单位实际情况，二选一即可：
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handleRunDiagnostics}
-              disabled={isTesting}
-              className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition-all flex items-center gap-1 cursor-pointer disabled:opacity-50"
-            >
-              <span className={`material-symbols-outlined text-[16px] ${isTesting ? 'animate-spin' : ''}`}>
-                {isTesting ? 'sync' : 'network_check'}
-              </span>
-              <span>{isTesting ? '检测中...' : '测试连接状态'}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setShowQrModal(true)}
-              className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-blue-50 text-[#1890ff] hover:bg-blue-100 border border-blue-200 transition-all flex items-center gap-1 cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-[16px]">qr_code_2</span>
-              <span>查看关注二维码</span>
-            </button>
-          </div>
-        </div>
-
-        {/* 2 Clear Choice Options */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 mt-4">
-          {/* Choice A: 平台统配点点速报 */}
-          <div
-            onClick={() => onSelectMode('platform_default')}
-            className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between ${
-              formData.mode === 'platform_default'
-                ? 'border-[#1890ff] bg-blue-50/40 ring-2 ring-[#1890ff]/20 shadow-xs'
-                : 'border-gray-200 hover:border-gray-300 bg-gray-50/40'
-            }`}
+          <button
+            type="button"
+            onClick={() => setShowQrModal(true)}
+            className="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-blue-50 text-[#1890ff] hover:bg-blue-100 border border-blue-200 transition-colors flex items-center gap-1 cursor-pointer"
           >
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <div className="flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-md bg-blue-100 text-[#1890ff] flex items-center justify-center font-bold text-xs">
-                    省
-                  </span>
-                  <span className="font-bold text-sm text-gray-900">方式一：用机构默认的「点点速报」</span>
-                </div>
-                <span className="text-[10px] px-2 py-0.5 rounded bg-blue-100 text-blue-700 font-bold">
-                  最简单·免配置
-                </span>
-              </div>
-              <p className="text-xs text-gray-600 leading-relaxed">
-                无需单位申请微信认证，全员直接扫码关注即可收发速报，开通即用。
-              </p>
-            </div>
-            <div className="mt-3 pt-2 border-t border-gray-200/60 flex items-center justify-between text-xs">
-              <span className={formData.mode === 'platform_default' ? 'text-[#1890ff] font-bold' : 'text-gray-400'}>
-                {formData.mode === 'platform_default' ? '✓ 当前已选用此模式' : '点击切换为此模式'}
-              </span>
-              <input
-                type="radio"
-                name="mpMode"
-                checked={formData.mode === 'platform_default'}
-                onChange={() => onSelectMode('platform_default')}
-                className="accent-[#1890ff]"
-              />
-            </div>
-          </div>
-
-          {/* Choice B: 机构自有独立公众号 */}
-          <div
-            onClick={() => onSelectMode('custom_official')}
-            className={`p-4 rounded-xl border-2 transition-all flex flex-col justify-between ${
-              !allowCustomOfficialMp
-                ? 'border-gray-200 bg-gray-100/70 opacity-60 cursor-not-allowed'
-                : formData.mode === 'custom_official'
-                ? 'border-emerald-500 bg-emerald-50/40 ring-2 ring-emerald-500/20 shadow-xs cursor-pointer'
-                : 'border-gray-200 hover:border-gray-300 bg-gray-50/40 cursor-pointer'
-            }`}
-          >
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <div className="flex items-center gap-2">
-                  <span className={`w-6 h-6 rounded-md flex items-center justify-center font-bold text-xs ${
-                    allowCustomOfficialMp ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-200 text-gray-500'
-                  }`}>
-                    自
-                  </span>
-                  <span className="font-bold text-sm text-gray-900">方式二：支持使用机构自有的公众号</span>
-                </div>
-                <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${
-                  allowCustomOfficialMp ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-200 text-gray-500'
-                }`}>
-                  {allowCustomOfficialMp ? '单位专属品牌' : '平台暂未开放'}
-                </span>
-              </div>
-              <p className="text-xs text-gray-600 leading-relaxed">
-                绑定单位官方认证的微信服务号，速报通知将以单位官方名称直接向采编员发送。
-              </p>
-            </div>
-            <div className="mt-3 pt-2 border-t border-gray-200/60 flex items-center justify-between text-xs">
-              <span className={
-                !allowCustomOfficialMp
-                  ? 'text-gray-400 font-normal'
-                  : formData.mode === 'custom_official'
-                  ? 'text-emerald-700 font-bold'
-                  : 'text-gray-400'
-              }>
-                {!allowCustomOfficialMp
-                  ? '🔒 平台管控关闭（不可切换）'
-                  : formData.mode === 'custom_official'
-                  ? '✓ 当前已选用此模式'
-                  : '点击切换为此模式'}
-              </span>
-              <input
-                type="radio"
-                name="mpMode"
-                disabled={!allowCustomOfficialMp}
-                checked={formData.mode === 'custom_official'}
-                onChange={() => onSelectMode('custom_official')}
-                className="accent-emerald-600"
-              />
-            </div>
-          </div>
+            <span className="material-symbols-outlined text-[15px]">qr_code_2</span>
+            <span>查看入驻二维码</span>
+          </button>
         </div>
-
-        {/* Diagnostics Banner if tested */}
-        {testResults && (
-          <div className="mt-4 p-3.5 rounded-xl bg-emerald-50/80 border border-emerald-200 text-xs animate-fade-in flex items-center justify-between">
-            <div className="flex items-center gap-2 text-emerald-800 font-bold">
-              <span className="material-symbols-outlined text-[18px] text-emerald-600">check_circle</span>
-              <span>微信连接状态检测成功：公众号已就绪，消息推送通道正常！</span>
-            </div>
-            <span className="text-[11px] text-emerald-600">检测时间：{testResults.testedAt}</span>
-          </div>
-        )}
       </div>
 
-      {/* 2. Simplified Parameter Fill Form */}
-      {formData.mode === 'platform_default' ? (
-        <div className="bg-white rounded-2xl border border-gray-200/90 p-5 shadow-xs text-center py-8">
-          <div className="w-12 h-12 rounded-2xl bg-blue-50 text-[#1890ff] flex items-center justify-center mx-auto mb-3">
-            <span className="material-symbols-outlined text-[28px]">verified</span>
+      {/* 2. 模式切换分段选择器 */}
+      <div className="flex items-center gap-2 p-1 bg-gray-100/80 rounded-lg max-w-md">
+        <button
+          type="button"
+          onClick={() => onSelectMode('platform_default')}
+          className={`flex-1 py-1.5 px-3 rounded-md text-xs font-medium transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+            formData.mode === 'platform_default'
+              ? 'bg-white text-[#1890ff] font-bold shadow-2xs'
+              : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          <span className="material-symbols-outlined text-[15px]">verified</span>
+          <span>点点速报 (平台统配·免配置)</span>
+        </button>
+
+        <button
+          type="button"
+          disabled={!allowCustomOfficialMp}
+          onClick={() => onSelectMode('custom_official')}
+          className={`flex-1 py-1.5 px-3 rounded-md text-xs font-medium transition-all flex items-center justify-center gap-1.5 ${
+            !allowCustomOfficialMp
+              ? 'opacity-50 cursor-not-allowed text-gray-400'
+              : formData.mode === 'custom_official'
+              ? 'bg-white text-emerald-700 font-bold shadow-2xs cursor-pointer'
+              : 'text-gray-600 hover:text-gray-900 cursor-pointer'
+          }`}
+          title={!allowCustomOfficialMp ? '平台运营策略已统一锁定，暂未开放自有公众号' : ''}
+        >
+          <span className="material-symbols-outlined text-[15px]">apartment</span>
+          <span>机构自有公众号</span>
+        </button>
+      </div>
+
+      {/* 测试反馈条 */}
+      {testResults && (
+        <div className="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-center justify-between animate-fade-in">
+          <div className="flex items-center gap-1.5">
+            <span className="material-symbols-outlined text-[16px] text-emerald-600">check_circle</span>
+            <span>公众号连通性测试通过：微信网关通道已就绪，消息推送正常。</span>
           </div>
-          <h4 className="text-sm font-bold text-gray-900">当前已启用机构默认「点点速报」公众号</h4>
-          <p className="text-xs text-gray-500 mt-1 max-w-md mx-auto">
-            系统已自动配置完成底层接口与消息网关，无需您手动填写任何技术参数。采编人员只需扫码关注平台统配码即可开始工作。
-          </p>
-          <div className="mt-4 flex items-center justify-center gap-3">
+          <span className="text-[11px] text-emerald-600 font-mono">{testResults.testedAt}</span>
+        </div>
+      )}
+
+      {/* 3. 对应模式的简洁内容区 */}
+      {formData.mode === 'platform_default' ? (
+        <div className="p-4 rounded-xl bg-gray-50/80 border border-gray-200/80 space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+            <div className="bg-white p-3 rounded-lg border border-gray-200/60">
+              <span className="text-gray-400 block text-[11px]">公众号名称</span>
+              <span className="font-semibold text-gray-900 mt-0.5 block">点点速报 (官方认证服务号)</span>
+            </div>
+            <div className="bg-white p-3 rounded-lg border border-gray-200/60">
+              <span className="text-gray-400 block text-[11px]">接入方式</span>
+              <span className="font-semibold text-blue-600 mt-0.5 block">平台官方统配 · 零门槛即用</span>
+            </div>
+            <div className="bg-white p-3 rounded-lg border border-gray-200/60">
+              <span className="text-gray-400 block text-[11px]">运行状态</span>
+              <span className="font-semibold text-emerald-600 mt-0.5 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                正常运行中
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1 text-xs text-gray-500">
+            <span>系统已托管接口与消息网关，采编人员直接微信扫码关注即可收发速报通知，无需单位自行维护密钥。</span>
             <button
               type="button"
               onClick={() => setShowQrModal(true)}
-              className="px-4 py-2 rounded-xl text-xs font-bold bg-[#1890ff] text-white hover:bg-blue-600 transition-all cursor-pointer flex items-center gap-1.5"
+              className="text-[#1890ff] hover:underline font-medium cursor-pointer shrink-0"
             >
-              <span className="material-symbols-outlined text-[16px]">qr_code_2</span>
-              <span>查看机构专属入驻二维码</span>
+              查看专属入驻二维码 →
             </button>
           </div>
         </div>
       ) : (
         <form onSubmit={handleSave} className="space-y-4">
-          {/* Essential Simple Inputs (Just 3 fields: Name, AppID, AppSecret) */}
-          <div className="bg-white rounded-2xl border border-gray-200/90 p-5 shadow-xs space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+          <div className="p-4 rounded-xl bg-gray-50/80 border border-gray-200/80 space-y-3.5">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
               <div>
-                <h4 className="text-sm font-bold text-gray-900 flex items-center gap-2">
-                  <span className="w-1.5 h-4 bg-[#1890ff] rounded-xs" />
-                  <span>第二步：填写单位公众号的核心凭证</span>
-                </h4>
-                <p className="text-xs text-gray-500 mt-0.5">
-                  只需登录微信公众平台（mp.weixin.qq.com），复制并填写以下两项即可：
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 text-xs">
-              <div>
-                <label className="block font-bold text-gray-700 mb-1">
-                  1. 公众号名称 <span className="text-rose-500">*</span>
+                <label className="block font-medium text-gray-700 mb-1">
+                  公众号名称 <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -308,28 +221,28 @@ export const WechatMpConfigSection: React.FC<WechatMpConfigSectionProps> = ({
                   value={formData.mpName}
                   onChange={(e) => setFormData({ ...formData, mpName: e.target.value })}
                   placeholder="例如：随州融媒发布"
-                  className="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-[#1890ff]"
+                  className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-[#1890ff]"
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-gray-700 mb-1">
-                  2. 开发者 AppID <span className="text-rose-500">*</span>
+                <label className="block font-medium text-gray-700 mb-1">
+                  开发者 AppID <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="text"
                   required
                   value={formData.appId}
                   onChange={(e) => setFormData({ ...formData, appId: e.target.value })}
-                  placeholder="以 wx 开头，例如 wx78a9103c84df12a9"
-                  className="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs font-mono font-semibold focus:outline-none focus:border-[#1890ff]"
+                  placeholder="以 wx 开头"
+                  className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:border-[#1890ff]"
                 />
               </div>
 
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="font-bold text-gray-700">
-                    3. 应用密钥 AppSecret <span className="text-rose-500">*</span>
+                  <label className="font-medium text-gray-700">
+                    应用密钥 AppSecret <span className="text-rose-500">*</span>
                   </label>
                   <button
                     type="button"
@@ -348,72 +261,69 @@ export const WechatMpConfigSection: React.FC<WechatMpConfigSectionProps> = ({
                   value={formData.appSecret}
                   onChange={(e) => setFormData({ ...formData, appSecret: e.target.value })}
                   placeholder="32位字符密钥"
-                  className="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs font-mono focus:outline-none focus:border-[#1890ff]"
+                  className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:border-[#1890ff]"
                 />
               </div>
             </div>
 
-            {/* Optional Collapsible Technical Details for IT staff */}
-            <div className="pt-2">
+            {/* 可折叠的高级参数 */}
+            <div className="pt-1">
               <button
                 type="button"
                 onClick={() => setShowAdvanced(!showAdvanced)}
                 className="text-xs text-gray-500 hover:text-gray-800 flex items-center gap-1 cursor-pointer font-medium"
               >
-                <span className="material-symbols-outlined text-[16px] text-gray-400">
+                <span className="material-symbols-outlined text-[15px] text-gray-400">
                   {showAdvanced ? 'expand_less' : 'tune'}
                 </span>
-                <span>{showAdvanced ? '收起高级服务器与模板消息配置（选填）' : '展开高级技术参数配置（服务器网关/模板消息ID等，通常无需修改）'}</span>
+                <span>{showAdvanced ? '收起高级网关参数' : '展开高级网关参数（服务器网关URL、Token等，通常无需修改）'}</span>
               </button>
 
               {showAdvanced && (
-                <div className="mt-3 p-4 rounded-xl bg-gray-50 border border-gray-200/80 text-xs space-y-3 animate-fade-in">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <span className="block font-bold text-gray-700 mb-1">服务器网关 URL (自动分配)</span>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="text"
-                          readOnly
-                          value={formData.serverUrl}
-                          className="w-full bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 font-mono text-[11px] text-gray-600"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            navigator.clipboard?.writeText(formData.serverUrl);
-                            showToast('已复制网关 URL！');
-                          }}
-                          className="px-2 py-1.5 bg-gray-200 hover:bg-gray-300 rounded-lg text-gray-700 text-xs font-semibold cursor-pointer whitespace-nowrap"
-                        >
-                          复制
-                        </button>
-                      </div>
-                    </div>
-
-                    <div>
-                      <span className="block font-bold text-gray-700 mb-1">Token 验证令牌</span>
+                <div className="mt-2.5 p-3 rounded-lg bg-white border border-gray-200 text-xs grid grid-cols-1 sm:grid-cols-2 gap-3 animate-fade-in">
+                  <div>
+                    <span className="block font-medium text-gray-600 mb-1">服务器网关 URL (自动分配)</span>
+                    <div className="flex items-center gap-2">
                       <input
                         type="text"
-                        value={formData.token}
-                        onChange={(e) => setFormData({ ...formData, token: e.target.value })}
-                        className="w-full bg-white border border-gray-300 rounded-lg px-2.5 py-1.5 font-mono text-xs"
+                        readOnly
+                        value={formData.serverUrl}
+                        className="w-full bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5 font-mono text-[11px] text-gray-600"
                       />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard?.writeText(formData.serverUrl);
+                          showToast('已复制网关 URL！');
+                        }}
+                        className="px-2 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-700 text-xs font-medium cursor-pointer shrink-0"
+                      >
+                        复制
+                      </button>
                     </div>
+                  </div>
+
+                  <div>
+                    <span className="block font-medium text-gray-600 mb-1">Token 验证令牌</span>
+                    <input
+                      type="text"
+                      value={formData.token}
+                      onChange={(e) => setFormData({ ...formData, token: e.target.value })}
+                      className="w-full bg-white border border-gray-300 rounded-lg px-2.5 py-1.5 font-mono text-xs"
+                    />
                   </div>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Submit */}
-          <div className="flex items-center justify-end gap-3">
+          <div className="flex items-center justify-end">
             <button
               type="submit"
-              className="px-6 py-2.5 rounded-xl text-xs font-bold bg-[#1890ff] text-white hover:bg-blue-600 shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
+              className="px-5 py-2 rounded-lg text-xs font-semibold bg-[#1890ff] text-white hover:bg-blue-600 shadow-2xs transition-colors cursor-pointer flex items-center gap-1.5"
             >
               <span className="material-symbols-outlined text-[16px]">save</span>
-              <span>保存公众号设置</span>
+              <span>保存配置</span>
             </button>
           </div>
         </form>

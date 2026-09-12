@@ -1801,9 +1801,11 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
     }
 
     const matchesQuery =
-      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (item.dictCode && item.dictCode.toLowerCase().includes(searchQuery.toLowerCase()));
+      ['audit_score', 'data_dict', 'audit_flow'].includes(activeModule)
+        ? true
+        : item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
+          (item.dictCode && item.dictCode.toLowerCase().includes(searchQuery.toLowerCase()));
 
     if (activeModule === 'data_dict' && dictSubCategoryFilter !== 'all') {
       const cat = item.dictCategory || 'reject_reason';
@@ -2786,8 +2788,14 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
         </div>
 
         {/* Right Card: Dynamic Detail View */}
-        <div className={embedded ? 'w-full bg-white rounded-lg border border-gray-200/80 shadow-2xs p-5 flex flex-col justify-between min-h-[460px] space-y-4' : 'flex-1 w-full bg-white rounded-lg border border-gray-200/80 shadow-2xs p-5 flex flex-col justify-between min-h-[460px] space-y-4'}>
-          <div className="space-y-4">
+        <div className={
+          activeModule === 'report_template'
+            ? (embedded ? 'w-full' : 'flex-1 w-full')
+            : embedded
+              ? 'w-full bg-white rounded-lg border border-gray-200/80 shadow-2xs p-5 flex flex-col justify-between min-h-[460px] space-y-4'
+              : 'flex-1 w-full bg-white rounded-lg border border-gray-200/80 shadow-2xs p-5 flex flex-col justify-between min-h-[460px] space-y-4'
+        }>
+          <div className={activeModule === 'report_template' ? '' : 'space-y-4'}>
             {/* Action Bar Header */}
             {activeModule !== 'report_template' && (
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -2815,8 +2823,13 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
                 </div>
 
                 <div className="flex items-center space-x-3">
-                  {/* Search input (Hidden in value_added) */}
-                  {activeModule !== 'value_added' && activeModule !== 'stats_metric' && activeModule !== 'login_method' && (
+                  {/* Search input (Hidden in value_added, stats_metric, login_method, audit_score, data_dict, audit_flow) */}
+                  {activeModule !== 'value_added' &&
+                    activeModule !== 'stats_metric' &&
+                    activeModule !== 'login_method' &&
+                    activeModule !== 'audit_score' &&
+                    activeModule !== 'data_dict' &&
+                    activeModule !== 'audit_flow' && (
                     <div className="relative">
                       <Search className="w-3.5 h-3.5 text-gray-400 absolute left-2.5 top-2.5" />
                       <input
@@ -3225,7 +3238,7 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
                     暂无匹配的审核打分规则
                   </div>
                 ) : (
-                  <div className="grid grid-cols-[repeat(auto-fill,minmax(285px,1fr))] gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3.5">
                     {filteredList.map(item => {
                       const isEnabled = item.status === '启用';
                       const levels = item.scoreLevels || [];
@@ -3233,164 +3246,101 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
                         <div
                           key={item.id}
                           onClick={() => openPreviewItem(item)}
-                          className={`group bg-white border rounded-lg transition-all cursor-pointer overflow-hidden ${
+                          className={`group bg-white border rounded-xl p-4 transition-all duration-150 cursor-pointer flex flex-col justify-between hover:shadow-xs ${
                             isEnabled
-                              ? 'border-emerald-200 shadow-sm'
-                              : 'border-gray-200/80 hover:border-blue-200 hover:shadow-md'
+                              ? 'border-[#1E5ABB]/40 ring-1 ring-[#1E5ABB]/20'
+                              : 'border-gray-200 hover:border-gray-300'
                           }`}
                         >
-                          <div className="p-3 space-y-3">
-                            <div className="space-y-1">
-                              <div className="flex items-start justify-between gap-3">
-                                <h3 className="min-w-0 font-bold text-sm text-gray-900 group-hover:text-[#1E5ABB] break-words">
+                          <div>
+                            {/* Card Top: Title, Default Badge & Switch */}
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <h3 className="font-semibold text-sm text-gray-900 group-hover:text-[#1E5ABB] transition-colors truncate">
                                   {item.name}
                                 </h3>
+                                {item.isDefault && (
+                                  <span className="inline-flex items-center px-1.5 py-0.5 text-[10px] bg-gray-100 text-gray-500 rounded font-normal shrink-0">
+                                    默认
+                                  </span>
+                                )}
+                              </div>
+
+                              <div
+                                className="shrink-0"
+                                onClick={e => e.stopPropagation()}
+                              >
                                 <button
                                   type="button"
-                                  onClick={e => {
-                                    e.stopPropagation();
-                                    handleToggleStatus(item.id);
-                                  }}
-                                  className={`shrink-0 flex items-center gap-1.5 px-2 py-1 rounded-full border cursor-pointer transition-colors ${
-                                    isEnabled
-                                      ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
-                                      : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-blue-50 hover:text-[#1E5ABB] hover:border-blue-200'
+                                  role="switch"
+                                  aria-checked={isEnabled}
+                                  onClick={() => handleToggleStatus(item.id)}
+                                  className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                                    isEnabled ? 'bg-[#1E5ABB]' : 'bg-gray-200 hover:bg-gray-300'
                                   }`}
-                                  title={isEnabled ? '当前规则正在生效，点击停用' : '点击启用并替换当前生效规则'}
+                                  title={isEnabled ? '当前已生效，点击停用' : '点击启用此打分规则'}
                                 >
-                                  <span className="text-[10px] font-bold">{isEnabled ? '启用' : '停用'}</span>
-                                  <div className={`w-7 h-3.5 flex items-center rounded-full p-0.5 transition-colors ${isEnabled ? 'bg-emerald-500 justify-end' : 'bg-gray-300 justify-start'}`}>
-                                    <div className="w-2.5 h-2.5 bg-white rounded-full shadow-2xs" />
-                                  </div>
+                                  <span
+                                    className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-xs ring-0 transition duration-200 ease-in-out ${
+                                      isEnabled ? 'translate-x-4' : 'translate-x-0'
+                                    }`}
+                                  />
                                 </button>
                               </div>
-                              <div className="flex items-center justify-between gap-2 min-w-0">
-                                <div className="flex items-center gap-1.5 min-w-0">
-                                  {item.isDefault ? (
-                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] bg-gray-100 text-gray-600 font-bold rounded border border-gray-200 shrink-0">
-                                      <Lock className="w-2.5 h-2.5 text-gray-400" />
-                                      系统默认
-                                    </span>
-                                  ) : (
-                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] bg-emerald-50 text-emerald-700 font-bold rounded border border-emerald-200 shrink-0">
-                                      <Sparkles className="w-2.5 h-2.5 text-emerald-600" />
-                                      自定义
-                                    </span>
-                                  )}
-                                  <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-bold rounded border shrink-0 ${
-                                    isEnabled
-                                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                      : 'bg-gray-50 text-gray-500 border-gray-200'
-                                  }`}>
-                                    {isEnabled ? <CheckCircle2 className="w-2.5 h-2.5" /> : <XCircle className="w-2.5 h-2.5" />}
-                                    {isEnabled ? '当前生效' : '备用规则'}
-                                  </span>
-                                </div>
-                                <span className="text-[10px] text-gray-500 font-mono whitespace-nowrap shrink-0 ml-auto">
-                                  {item.updateTime}
-                                </span>
-                              </div>
                             </div>
 
-                            <div className="grid grid-cols-2 items-center gap-2 text-xs">
-                              <div className="flex items-center gap-1.5 text-blue-700 min-w-0 whitespace-nowrap">
-                                <FileText className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                                <span className="font-bold truncate">全部上报统一适用</span>
-                              </div>
-                              <div className="flex items-center gap-1.5 text-amber-700 min-w-0 whitespace-nowrap">
-                                <Award className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                                <span className="font-bold truncate">总分 {item.totalScore || 100} / {levels.length || item.levelCount || 0} 等级</span>
-                              </div>
+                            {/* Core Summary: Score, Level Count & Active Status */}
+                            <div className="mt-2.5 flex items-center gap-2 text-xs text-gray-500">
+                              <span>总分 <strong className="font-semibold text-gray-900">{item.totalScore || 100}</strong> 分</span>
+                              <span className="text-gray-300">·</span>
+                              <span>{levels.length || item.levelCount || 0} 个打分等级</span>
+                              <span className="text-gray-300">·</span>
+                              <span className={isEnabled ? 'text-emerald-600 font-medium' : 'text-gray-400'}>
+                                {isEnabled ? '已启用' : '未启用'}
+                              </span>
                             </div>
 
-                            <div className="rounded-md border border-gray-100 bg-gray-50/70 px-2.5 py-2">
-                              {levels.length > 0 ? (
-                                <div className="flex items-center gap-1.5 overflow-hidden whitespace-nowrap">
-                                  {levels.slice(0, 3).map((level, idx) => (
-                                    <span
-                                      key={level.id || idx}
-                                      className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] bg-white text-amber-800 border border-amber-200 rounded font-mono min-w-0 shrink"
-                                      title={`${level.levelName} ${level.score}分`}
-                                    >
-                                      <span className="font-bold text-gray-500 truncate">{level.levelName}</span>
-                                      <span className="shrink-0">{level.score}分</span>
-                                    </span>
-                                  ))}
-                                  {levels.length > 3 && (
-                                    <span className="px-1.5 py-0.5 text-[10px] text-gray-400 shrink-0">+{levels.length - 3} 个等级</span>
-                                  )}
-                                </div>
-                              ) : (
-                                <span className="text-[11px] text-gray-400">暂无等级配置</span>
-                              )}
-                            </div>
-
-                            <div className="rounded-md border border-gray-100 bg-gray-50/70 px-2.5 py-2">
-                              <p className="text-[11px] text-gray-500 truncate" title={item.description || '暂无规则说明'}>
-                                {item.description || '暂无规则说明'}
+                            {/* 1-line Description */}
+                            {item.description && (
+                              <p className="mt-2 text-xs text-gray-400 line-clamp-1" title={item.description}>
+                                {item.description}
                               </p>
-                            </div>
+                            )}
                           </div>
 
-                          <div className="px-3 py-2 border-t border-gray-100 bg-gray-50/40 flex items-center justify-between">
-                            <span className="text-[10px] text-gray-400">
-                              点击卡片查看配置详情
+                          {/* Card Footer: Detail view prompt & Edit/Delete actions */}
+                          <div className="mt-3.5 pt-2.5 border-t border-gray-100 flex items-center justify-between text-xs">
+                            <span className="text-[11px] text-gray-400 group-hover:text-[#1E5ABB] transition-colors">
+                              查看规则详情 →
                             </span>
-                            <div className="flex items-center gap-2">
-                              <button
-                                type="button"
-                                onClick={e => {
-                                  e.stopPropagation();
-                                  openPreviewItem(item);
-                                }}
-                                className="p-1.5 text-gray-400 hover:text-[#1E5ABB] cursor-pointer"
-                                title="查看详情"
-                              >
-                                <Eye className="w-3.5 h-3.5" />
-                              </button>
-                              {item.isDefault ? (
-                                <button
-                                  type="button"
-                                  disabled
-                                  className="p-1.5 text-gray-300 cursor-not-allowed"
-                                  title="系统默认规则不支持修改"
-                                >
-                                  <Edit3 className="w-3.5 h-3.5" />
-                                </button>
+
+                            <div
+                              className="flex items-center gap-1"
+                              onClick={e => e.stopPropagation()}
+                            >
+                              {!item.isDefault ? (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => openEditModal(item)}
+                                    className="p-1.5 text-gray-400 hover:text-[#1E5ABB] hover:bg-blue-50 rounded transition-colors cursor-pointer"
+                                    title="编辑规则"
+                                  >
+                                    <Edit3 className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDelete(item)}
+                                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors cursor-pointer"
+                                    title="删除规则"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </>
                               ) : (
-                                <button
-                                  type="button"
-                                  onClick={e => {
-                                    e.stopPropagation();
-                                    openEditModal(item);
-                                  }}
-                                  className="p-1.5 text-[#1E5ABB] hover:bg-blue-50 rounded cursor-pointer"
-                                  title="编辑规则"
-                                >
-                                  <Edit3 className="w-3.5 h-3.5" />
-                                </button>
-                              )}
-                              {item.isDefault ? (
-                                <button
-                                  type="button"
-                                  disabled
-                                  className="p-1.5 text-gray-300 cursor-not-allowed"
-                                  title="系统默认规则不支持删除"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              ) : (
-                                <button
-                                  type="button"
-                                  onClick={e => {
-                                    e.stopPropagation();
-                                    handleDelete(item);
-                                  }}
-                                  className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded cursor-pointer"
-                                  title="删除规则"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
+                                <span className="text-[11px] text-gray-300 pr-1 select-none">
+                                  系统内置
+                                </span>
                               )}
                             </div>
                           </div>
@@ -3518,70 +3468,8 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
                 </div>
               </div>
             ) : activeModule === 'audit_flow' ? (
-              <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_repeat(3,minmax(160px,170px))] gap-4">
-                <div className="contents">
-                  {[
-                    {
-                      label: '启用流程',
-                      value: auditFlowCoverageSummary.enabledFlowCount,
-                      unit: '套',
-                      icon: GitBranch,
-                      className: 'bg-blue-50/70 border-blue-100 text-blue-700',
-                    },
-                    {
-                      label: '专属覆盖机构',
-                      value: auditFlowCoverageSummary.specificOrgCount,
-                      unit: '个',
-                      icon: Building2,
-                      className: 'bg-emerald-50/70 border-emerald-100 text-emerald-700',
-                    },
-                    {
-                      label: '默认兜底机构',
-                      value: auditFlowCoverageSummary.fallbackOrgCount,
-                      unit: '个',
-                      icon: ShieldCheck,
-                      className: 'bg-slate-50 border-slate-200 text-slate-700',
-                    },
-                  ].map(item => {
-                    const Icon = item.icon;
-                    return (
-                      <div key={item.label} className={`rounded-lg border px-3 py-2.5 ${item.className}`}>
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-[11px] font-bold">{item.label}</span>
-                          <Icon className="w-4 h-4 opacity-80" />
-                        </div>
-                        <div className="mt-1 flex items-baseline gap-1">
-                          <span className="text-xl font-bold">{item.value}</span>
-                          <span className="text-[11px] font-medium opacity-80">{item.unit}</span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <div className={`order-first rounded-lg border px-3.5 py-3 flex items-start gap-2.5 ${
-                  defaultAuditFlow
-                    ? 'bg-blue-50/60 border-blue-100'
-                    : 'bg-amber-50/70 border-amber-200'
-                }`}>
-                  <Info className={`w-4 h-4 shrink-0 mt-0.5 ${defaultAuditFlow ? 'text-[#1E5ABB]' : 'text-amber-600'}`} />
-                  <div className="min-w-0">
-                    <div className={`text-xs font-bold ${defaultAuditFlow ? 'text-[#1E5ABB]' : 'text-amber-800'}`}>
-                      系统默认兜底流程
-                    </div>
-                    <div className="text-[11px] text-gray-600 leading-relaxed mt-0.5">
-                      {defaultAuditFlow ? (
-                        <>
-                          当前默认流程为 <span className="font-bold text-gray-800">{defaultAuditFlow.name}</span>，未命中机构专属流程的机构将自动进入该流程。
-                        </>
-                      ) : (
-                        '系统默认兜底流程，未命中机构专属流程的上报将自动进入该流程。'
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="col-span-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {filteredList.length === 0 ? (
                     <div className="col-span-full py-12 text-center text-gray-400 text-xs bg-white rounded-2xl border border-gray-100">
                       暂无相关审核流程配置

@@ -1627,27 +1627,6 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <h2 className="text-base font-bold text-gray-900">审核打分规则</h2>
                 <div className="flex items-center gap-3">
-                  <div className="relative w-full sm:w-80">
-                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-[18px]">
-                      search
-                    </span>
-                    <input
-                      type="text"
-                      value={scoringSearchKeyword}
-                      onChange={(e) => setScoringSearchKeyword(e.target.value)}
-                      placeholder="搜索审核打分规则名称/编码/描述..."
-                      className="w-full bg-white border border-gray-200 rounded-lg pl-9 pr-8 py-1.5 text-xs text-gray-800 placeholder:text-gray-400 focus:outline-none focus:border-[#1677ff] focus:ring-1 focus:ring-[#1677ff]/20 transition-all shadow-2xs"
-                    />
-                    {scoringSearchKeyword && (
-                      <button
-                        type="button"
-                        onClick={() => setScoringSearchKeyword('')}
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
-                      >
-                        <span className="material-symbols-outlined text-[15px]">close</span>
-                      </button>
-                    )}
-                  </div>
                   <button
                     type="button"
                     onClick={createNewScoringRuleGroup}
@@ -1660,7 +1639,7 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
               </div>
 
               {/* Scoring Rule Cards Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {(rules.scoringRuleGroups || defaultInstitutionBusinessRules.scoringRuleGroups || [])
                   .filter((group) => {
                     if (!scoringSearchKeyword.trim()) return true;
@@ -1673,166 +1652,106 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
                   })
                   .map((group) => {
                     const isCardActive = !!group.status;
+                    const isImmutable = isGlobalImmutable(group);
                     return (
                       <div
                         key={group.id}
                         onClick={() => setViewingScoringRuleGroup(group)}
-                        className={`bg-white rounded-xl border p-5 transition-all shadow-2xs flex flex-col justify-between cursor-pointer group ${
+                        className={`group bg-white rounded-xl border p-4 transition-all duration-150 shadow-2xs flex flex-col justify-between cursor-pointer hover:shadow-xs ${
                           isCardActive
-                            ? 'border-[#87e8de] ring-1 ring-[#52c41a]/30'
-                            : 'border-gray-200 hover:border-blue-200'
+                            ? 'border-[#1890ff]/40 ring-1 ring-[#1890ff]/20'
+                            : 'border-gray-200 hover:border-gray-300'
                         }`}
                       >
-                        {/* Top: Name & Switch */}
                         <div>
-                          <div className="flex items-center justify-between gap-2">
-                            <h3
-                              className={`text-sm font-bold truncate ${
-                                isCardActive ? 'text-[#1890ff]' : 'text-gray-900'
-                              }`}
-                            >
-                              {group.name}
-                            </h3>
-                            {/* Switch */}
+                          {/* Card Top: Name, Default Badge & Switch */}
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <h3 className="text-sm font-semibold text-gray-900 group-hover:text-[#1890ff] transition-colors truncate">
+                                {group.name}
+                              </h3>
+                              {isImmutable && (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 text-[10px] font-normal shrink-0">
+                                  平台全局
+                                </span>
+                              )}
+                            </div>
+
                             <div
-                              className="flex items-center gap-1.5 shrink-0"
+                              className="shrink-0"
                               onClick={(e) => e.stopPropagation()}
                             >
-                              <span
-                                className={`text-xs font-medium ${
-                                  group.status ? 'text-[#52c41a]' : 'text-gray-400'
-                                }`}
-                              >
-                                {group.status ? '启用' : '停用'}
-                              </span>
                               <button
                                 type="button"
+                                role="switch"
+                                aria-checked={isCardActive}
                                 onClick={() => toggleScoringRuleGroup(group)}
-                                className={`w-9 h-5 rounded-full p-0.5 transition-colors duration-200 ease-in-out cursor-pointer relative ${
-                                  group.status ? 'bg-[#52c41a]' : 'bg-gray-300'
+                                className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                                  isCardActive ? 'bg-[#1890ff]' : 'bg-gray-200 hover:bg-gray-300'
                                 }`}
+                                title={isCardActive ? '当前已生效，点击停用' : '点击启用此规则'}
                               >
                                 <span
-                                  className={`block w-4 h-4 rounded-full bg-white shadow-xs transform transition-transform duration-200 ease-in-out ${
-                                    group.status ? 'translate-x-4' : 'translate-x-0'
+                                  className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-xs ring-0 transition duration-200 ease-in-out ${
+                                    isCardActive ? 'translate-x-4' : 'translate-x-0'
                                   }`}
                                 />
                               </button>
                             </div>
                           </div>
 
-                          {/* Badges & Timestamp Row */}
-                          <div className="flex items-center justify-between gap-2 mt-2.5 pb-3 border-b border-gray-100">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              {isGlobalImmutable(group) ? (
-                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 text-[11px] border border-blue-200">
-                                  <span className="material-symbols-outlined text-[13px]">public</span>
-                                  <span>平台全局</span>
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-[#f6ffed] text-[#52c41a] text-[11px] border border-[#b7eb8f]">
-                                  <span className="material-symbols-outlined text-[13px]">auto_awesome</span>
-                                  <span>{isGlobalScope ? '全局规则' : '机构自定义'}</span>
-                                </span>
-                              )}
-
-                              {group.status ? (
-                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-[#f6ffed] text-[#52c41a] text-[11px] border border-[#b7eb8f]">
-                                  <span className="material-symbols-outlined text-[13px]">schedule</span>
-                                  <span>当前生效</span>
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 text-[11px] border border-gray-200">
-                                  <span className="material-symbols-outlined text-[13px]">radio_button_unchecked</span>
-                                  <span>备用规则</span>
-                                </span>
-                              )}
-                            </div>
-                            <span className="text-[11px] text-gray-400 font-mono shrink-0">
-                              {group.updatedAt}
+                          {/* Core Summary: Score, Level Count & Active Status */}
+                          <div className="mt-2.5 flex items-center gap-2 text-xs text-gray-500">
+                            <span>总分 <strong className="font-semibold text-gray-900">{group.totalScore || 100}</strong> 分</span>
+                            <span className="text-gray-300">·</span>
+                            <span>{group.levels.length} 个打分等级</span>
+                            <span className="text-gray-300">·</span>
+                            <span className={isCardActive ? 'text-emerald-600 font-medium' : 'text-gray-400'}>
+                              {isCardActive ? '已生效' : '未启用'}
                             </span>
                           </div>
 
-                          {/* Scope & Score Metric Row */}
-                          <div className="flex items-center justify-between text-xs my-3">
-                            <div className="flex items-center gap-1 text-[#1890ff] font-medium">
-                              <span className="material-symbols-outlined text-[15px]">description</span>
-                              <span>{group.scope}</span>
-                            </div>
-                            <div className="flex items-center gap-1 text-[#fa8c16] font-bold">
-                              <span className="material-symbols-outlined text-[15px]">military_tech</span>
-                              <span>总分 {group.totalScore} / {group.levels.length} 等级</span>
-                            </div>
-                          </div>
-
-                          {/* Level Preview Pills */}
-                          <div className="flex flex-wrap items-center gap-1.5 my-2">
-                            {group.levels.slice(0, 3).map((lvl) => (
-                              <span
-                                key={lvl.id}
-                                className="px-2 py-0.5 rounded border border-[#ffe58f] bg-[#fffbe6] text-[#d48806] text-[11px] font-medium"
-                              >
-                                {lvl.name.length > 5 ? `${lvl.name.slice(0, 4)}…` : lvl.name} {lvl.score}分
-                              </span>
-                            ))}
-                            {group.levels.length > 3 && (
-                              <span className="text-[11px] text-gray-400 font-medium">
-                                +{group.levels.length - 3} 个等级
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Description Box */}
-                          <div className="bg-[#fafbfc] border border-gray-100 rounded-lg p-2.5 text-xs text-gray-600 leading-relaxed my-2 line-clamp-2 min-h-[44px]">
-                            {group.description || '暂无说明描述'}
-                          </div>
+                          {/* 1-line Description */}
+                          {group.description && (
+                            <p className="mt-2 text-xs text-gray-400 line-clamp-1" title={group.description}>
+                              {group.description}
+                            </p>
+                          )}
                         </div>
 
-                        {/* Card Footer: Action Bar */}
-                        <div className="flex items-center justify-between pt-3 border-t border-gray-100 mt-2">
-                          <span className="text-[11px] text-gray-400 group-hover:text-gray-600 transition-colors">
-                            点击卡片查看配置详情
+                        {/* Card Footer */}
+                        <div className="mt-3.5 pt-2.5 border-t border-gray-100 flex items-center justify-between text-xs">
+                          <span className="text-[11px] text-gray-400 group-hover:text-[#1890ff] transition-colors">
+                            查看规则详情 →
                           </span>
+
                           <div
-                            className="flex items-center gap-2"
+                            className="flex items-center gap-1"
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <button
-                              type="button"
-                              onClick={() => setViewingScoringRuleGroup(group)}
-                              title="查看详情"
-                              className="text-gray-400 hover:text-[#1890ff] p-1 rounded hover:bg-blue-50 transition-colors cursor-pointer"
-                            >
-                              <span className="material-symbols-outlined text-[17px]">visibility</span>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setEditingScoringRuleGroup(group)}
-                              title="编辑规则"
-                              className="text-gray-400 hover:text-[#1890ff] p-1 rounded hover:bg-blue-50 transition-colors cursor-pointer"
-                            >
-                              <span className="material-symbols-outlined text-[17px]">edit</span>
-                            </button>
-                            {isGlobalImmutable(group) ? (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  showToast('平台全局配置项受统一基准保护，不支持删除。如不使用可直接切换开关停用。', 'warning');
-                                }}
-                                title="平台全局规则受统一基准保护不可删除（可切换开关停用）"
-                                className="text-gray-300 hover:text-amber-500 p-1 rounded hover:bg-amber-50 transition-colors cursor-pointer"
-                              >
-                                <span className="material-symbols-outlined text-[17px]">lock</span>
-                              </button>
+                            {!isImmutable ? (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingScoringRuleGroup(group)}
+                                  title="编辑规则"
+                                  className="p-1.5 text-gray-400 hover:text-[#1890ff] hover:bg-blue-50 rounded transition-colors cursor-pointer"
+                                >
+                                  <span className="material-symbols-outlined text-[16px]">edit</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => removeScoringRuleGroup(group)}
+                                  title="删除规则"
+                                  className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors cursor-pointer"
+                                >
+                                  <span className="material-symbols-outlined text-[16px]">delete</span>
+                                </button>
+                              </>
                             ) : (
-                              <button
-                                type="button"
-                                onClick={() => removeScoringRuleGroup(group)}
-                                title="删除规则"
-                                className="text-gray-400 hover:text-red-500 p-1 rounded hover:bg-red-50 transition-colors cursor-pointer"
-                              >
-                                <span className="material-symbols-outlined text-[17px]">delete</span>
-                              </button>
+                              <span className="text-[11px] text-gray-300 pr-1 select-none">
+                                全局基准
+                              </span>
                             )}
                           </div>
                         </div>
@@ -1848,30 +1767,9 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
           {/* ========================================================= */}
           {activeNav === '__v8_3' && (
             <div className="space-y-4">
-              {/* Header: Title on Left, Search Input on Right */}
+              {/* Header: Title on Left */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <h2 className="text-base font-bold text-gray-900">数据字典维护</h2>
-                <div className="relative w-full sm:w-80">
-                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[17px] text-gray-400">
-                    search
-                  </span>
-                  <input
-                    type="text"
-                    value={dictSearchKeyword}
-                    onChange={(e) => setDictSearchKeyword(e.target.value)}
-                    placeholder="搜索数据字典维护名称/编码/描述..."
-                    className="w-full bg-white border border-gray-200 rounded-lg py-1.5 pl-9 pr-3 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#1890ff] shadow-2xs transition-colors"
-                  />
-                  {dictSearchKeyword && (
-                    <button
-                      type="button"
-                      onClick={() => setDictSearchKeyword('')}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    >
-                      <span className="material-symbols-outlined text-[14px]">close</span>
-                    </button>
-                  )}
-                </div>
               </div>
 
               {/* Sub Tabs Bar and Add Action Button */}

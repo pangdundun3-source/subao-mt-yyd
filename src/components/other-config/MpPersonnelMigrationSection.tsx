@@ -209,306 +209,263 @@ export const MpPersonnelMigrationSection: React.FC<MpPersonnelMigrationSectionPr
   } = actions;
 
   return (
-    <div className="space-y-4 text-gray-800">
-      {/* 1. Clear, Simple Header Banner */}
-      <div className="bg-white rounded-2xl border border-gray-200/90 p-5 shadow-xs">
-        {/* Top Title & Primary Actions */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-gray-100">
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
-                <span className="w-1.5 h-4 bg-[#1890ff] rounded-xs" />
-                <span>人员一键换绑迁移</span>
-              </h3>
-              <span className="text-[11px] px-2 py-0.5 rounded-full bg-blue-50 text-[#1890ff] font-semibold border border-blue-200">
-                点点速报 → {targetMpName}
-              </span>
-            </div>
-            <p className="text-xs text-gray-500 mt-1">
-              单位切换为自有公众号后，点击「一键发起迁移」，采编员扫码关注新公众号即可完成换绑，<strong>原发稿记录与权限自动保留</strong>。
-            </p>
-          </div>
-
+    <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-2xs space-y-4 text-gray-800">
+      {/* 1. 顶部标题与主要操作 */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 border-b border-gray-100">
+        <div>
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setShowLaunchModal(true)}
-              className="px-4 py-2 rounded-xl text-xs font-bold bg-[#1890ff] text-white hover:bg-blue-600 shadow-xs transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
-            >
-              <span className="material-symbols-outlined text-[16px]">send</span>
-              <span>发起全员一键迁移</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                showToast(`已向待迁移的成员发送${channelText}催办提醒！`, 'success');
-              }}
-              className="px-3 py-2 rounded-xl text-xs font-semibold bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200 transition-all flex items-center gap-1 cursor-pointer whitespace-nowrap"
-            >
-              <span className="material-symbols-outlined text-[16px]">notifications_active</span>
-              <span>一键催办待换绑人员</span>
-            </button>
+            <h3 className="text-sm font-bold text-gray-900">人员一键换绑迁移</h3>
+            <span className="text-[11px] px-2 py-0.5 rounded-full bg-blue-50 text-[#1890ff] font-medium border border-blue-200">
+              点点速报 → {targetMpName}
+            </span>
           </div>
+          <p className="text-xs text-gray-500 mt-0.5">
+            机构切换公众号后，可向采编人员下发换绑提醒，扫码即可绑定新公众号，历史稿件、积分与权限全量保留
+          </p>
         </div>
 
-        {/* 3 Step Simple Visual Card Flow */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 mt-4">
-          {/* Status 1: Completed */}
-          <div className="p-3.5 rounded-xl bg-emerald-50/60 border border-emerald-200 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
-                <span className="material-symbols-outlined text-[20px]">check_circle</span>
-              </div>
-              <div>
-                <div className="text-xs font-bold text-emerald-900">已完成换绑 ({completedCount}人)</div>
-                <div className="text-[11px] text-emerald-700 mt-0.5">已正常在新公众号上岗收发</div>
-              </div>
-            </div>
-            <div className="text-xl font-black font-mono text-emerald-700">
-              {completedCount} <span className="text-xs font-normal">人</span>
-            </div>
-          </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowLaunchModal(true)}
+            className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#1890ff] text-white hover:bg-blue-600 shadow-2xs transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap"
+          >
+            <span className="material-symbols-outlined text-[15px]">send</span>
+            <span>发起全员迁移</span>
+          </button>
 
-          {/* Status 2: Pending Scan */}
-          <div className="p-3.5 rounded-xl bg-amber-50/60 border border-amber-200 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center font-bold">
-                <span className="material-symbols-outlined text-[20px]">pending</span>
-              </div>
-              <div>
-                <div className="text-xs font-bold text-amber-900">等待扫码换绑 ({pendingCount}人)</div>
-                <div className="text-[11px] text-amber-700 mt-0.5">已发送短信与微信通知</div>
-              </div>
-            </div>
-            <div className="text-xl font-black font-mono text-amber-700">
-              {pendingCount} <span className="text-xs font-normal">人</span>
-            </div>
-          </div>
+          <button
+            type="button"
+            onClick={() => {
+              showToast(`已向待换绑的成员发送${channelText}催办提醒！`, 'success');
+            }}
+            className="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200 transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap"
+          >
+            <span className="material-symbols-outlined text-[15px]">notifications_active</span>
+            <span>一键催办 ({pendingCount})</span>
+          </button>
 
-          {/* Status 3: Progress Bar */}
-          <div className="p-3.5 rounded-xl bg-blue-50/60 border border-blue-200 flex flex-col justify-between">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-blue-900">全员迁移进度</span>
-              <span className="text-xs font-black font-mono text-[#1890ff]">{completionRate}%</span>
-            </div>
-            <div className="w-full bg-blue-200/60 rounded-full h-2 overflow-hidden my-1">
+          <button
+            type="button"
+            onClick={() => setShowTaskDrawer(true)}
+            className="px-2 py-1.5 rounded-lg text-xs font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-colors flex items-center gap-0.5 cursor-pointer"
+            title="查看历史换绑下发记录"
+          >
+            <span className="material-symbols-outlined text-[16px]">history</span>
+            <span>记录 ({tasks.length})</span>
+          </button>
+        </div>
+      </div>
+
+      {/* 2. 紧凑集成式进度状态条 */}
+      <div className="p-3 rounded-xl bg-gray-50/80 border border-gray-200/80 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
+        <div className="flex flex-wrap items-center gap-3 sm:gap-5">
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-gray-700">迁移总进度</span>
+            <div className="w-24 sm:w-32 bg-gray-200 rounded-full h-2 overflow-hidden">
               <div
                 className="bg-[#1890ff] h-full rounded-full transition-all duration-500"
                 style={{ width: `${completionRate}%` }}
               />
             </div>
-            <div className="text-[11px] text-blue-700 flex items-center justify-between">
-              <span>总人数: {totalCount} 人</span>
-              <span className="text-gray-500">剩余: {totalCount - completedCount} 人</span>
-            </div>
+            <span className="font-bold text-[#1890ff] font-mono">{completionRate}%</span>
+          </div>
+
+          <div className="h-3 w-px bg-gray-300 hidden sm:block" />
+
+          <div className="flex items-center gap-4 text-xs">
+            <span className="text-emerald-700 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              已完成：<strong>{completedCount}</strong> 人
+            </span>
+            <span className="text-amber-700 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+              待换绑：<strong>{pendingCount}</strong> 人
+            </span>
+            <span className="text-gray-500">
+              共计 <strong>{totalCount}</strong> 人
+            </span>
           </div>
         </div>
 
-        {/* Explain Card Toggle */}
-        <div className="mt-3 pt-2.5 border-t border-gray-100 flex items-center justify-between text-xs">
-          <button
-            type="button"
-            onClick={() => setShowPrincipleHelp(!showPrincipleHelp)}
-            className="text-gray-500 hover:text-[#1890ff] flex items-center gap-1 font-medium cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-[15px] text-[#1890ff]">info</span>
-            <span>{showPrincipleHelp ? '收起换绑原理说明' : '采编人员怎么换绑？（点此查看说明）'}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setShowTaskDrawer(!showTaskDrawer)}
-            className="text-gray-500 hover:text-gray-900 flex items-center gap-1 font-medium cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-[15px]">history</span>
-            <span>查看历史下发日志 ({tasks.length}次)</span>
-          </button>
-        </div>
-
-        {/* Expandable Explanation */}
-        {showPrincipleHelp && (
-          <div className="mt-3 p-3.5 rounded-xl bg-gray-50 border border-gray-200 text-xs space-y-2 animate-fade-in text-gray-600">
-            <div className="font-bold text-gray-800 flex items-center gap-1">
-              <span className="material-symbols-outlined text-[15px] text-[#1890ff]">check_circle</span>
-              <span>换绑非常简单，只需 1 步：</span>
-            </div>
-            <ol className="list-decimal pl-4 space-y-1">
-              <li>管理员点击「发起全员一键迁移」后，系统会自动向采编员的微信和手机发送一条换绑指引通知；</li>
-              <li>采编员点击链接或扫描新公众号二维码关注，系统自动完成新老账号关联，历史稿件和积分 100% 保留；</li>
-              <li>如遇个别人员未收到通知，可点击右侧的「专属迁移码」单独发送给他，或直接点击「人工确认」。</li>
-            </ol>
-          </div>
-        )}
+        <button
+          type="button"
+          onClick={() => setShowPrincipleHelp(!showPrincipleHelp)}
+          className="text-gray-500 hover:text-[#1890ff] flex items-center gap-1 font-medium cursor-pointer text-xs shrink-0 self-end md:self-auto"
+        >
+          <span className="material-symbols-outlined text-[14px] text-[#1890ff]">help_outline</span>
+          <span>{showPrincipleHelp ? '收起换绑说明' : '换绑操作指引'}</span>
+        </button>
       </div>
 
-      {/* 2. Clear Personnel Table */}
-      <div className="bg-white rounded-2xl border border-gray-200/90 p-5 shadow-xs space-y-3.5">
-        {/* Table Search & Status Filter */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <h4 className="text-xs font-bold text-gray-900 flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-[16px] text-gray-600">group</span>
-              <span>机构人员换绑名单列表</span>
-            </h4>
-            <span className="text-[11px] text-gray-400">（共 {personnelList.length} 人）</span>
+      {/* 展开的换绑说明 */}
+      {showPrincipleHelp && (
+        <div className="p-3 rounded-lg bg-blue-50/50 border border-blue-100 text-xs space-y-1.5 text-gray-600 animate-fade-in">
+          <div className="font-semibold text-blue-900 flex items-center gap-1">
+            <span className="material-symbols-outlined text-[15px] text-[#1890ff]">check_circle</span>
+            <span>换绑流程说明：</span>
+          </div>
+          <ol className="list-decimal pl-4 space-y-0.5 text-gray-600 text-[11px] leading-relaxed">
+            <li>管理员点击「发起全员迁移」后，系统自动向采编员的微信和手机发送换绑通知；</li>
+            <li>采编员扫描新公众号二维码关注，系统自动完成身份关联，历史发稿与积分 100% 继承；</li>
+            <li>个别人员如未收到通知，可点击其右侧「专属码」单独发送，或由管理员点击「人工确认」。</li>
+          </ol>
+        </div>
+      )}
+
+      {/* 3. 筛选与人员列表 */}
+      <div className="space-y-3 pt-1">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          {/* 状态筛选 Tabs */}
+          <div className="flex items-center bg-gray-100/80 p-0.5 rounded-lg text-xs">
+            <button
+              type="button"
+              onClick={() => setStatusFilter('all')}
+              className={`px-3 py-1 rounded-md font-medium cursor-pointer transition-all ${
+                statusFilter === 'all' ? 'bg-white text-gray-900 shadow-2xs font-semibold' : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              全部 ({totalCount})
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter('pending_scan')}
+              className={`px-3 py-1 rounded-md font-medium cursor-pointer transition-all ${
+                statusFilter === 'pending_scan' ? 'bg-white text-amber-700 shadow-2xs font-semibold' : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              待换绑 ({pendingCount})
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter('completed')}
+              className={`px-3 py-1 rounded-md font-medium cursor-pointer transition-all ${
+                statusFilter === 'completed' ? 'bg-white text-emerald-700 shadow-2xs font-semibold' : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              已完成 ({completedCount})
+            </button>
           </div>
 
-          <div className="flex items-center gap-2">
-            {/* Status Quick Filter */}
-            <div className="flex items-center bg-gray-100 p-0.5 rounded-xl text-xs">
-              <button
-                type="button"
-                onClick={() => setStatusFilter('all')}
-                className={`px-2.5 py-1 rounded-lg font-medium cursor-pointer transition-all ${
-                  statusFilter === 'all' ? 'bg-white text-gray-900 shadow-2xs font-bold' : 'text-gray-600'
-                }`}
-              >
-                全部 ({totalCount})
-              </button>
-              <button
-                type="button"
-                onClick={() => setStatusFilter('pending_scan')}
-                className={`px-2.5 py-1 rounded-lg font-medium cursor-pointer transition-all ${
-                  statusFilter === 'pending_scan' ? 'bg-white text-amber-700 shadow-2xs font-bold' : 'text-gray-600'
-                }`}
-              >
-                待换绑 ({pendingCount})
-              </button>
-              <button
-                type="button"
-                onClick={() => setStatusFilter('completed')}
-                className={`px-2.5 py-1 rounded-lg font-medium cursor-pointer transition-all ${
-                  statusFilter === 'completed' ? 'bg-white text-emerald-700 shadow-2xs font-bold' : 'text-gray-600'
-                }`}
-              >
-                已完成 ({completedCount})
-              </button>
-            </div>
-
-            {/* Search */}
-            <div className="relative">
-              <span className="material-symbols-outlined absolute left-2.5 top-1.5 text-gray-400 text-[15px]">
-                search
-              </span>
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="搜索姓名或手机号..."
-                className="pl-7 pr-2.5 py-1 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:border-[#1890ff] w-40"
-              />
-            </div>
+          {/* 搜索 */}
+          <div className="relative">
+            <span className="material-symbols-outlined absolute left-2.5 top-1.5 text-gray-400 text-[14px]">
+              search
+            </span>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="搜索姓名或手机号..."
+              className="pl-7 pr-2.5 py-1 text-xs bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:outline-none focus:border-[#1890ff] w-48"
+            />
           </div>
         </div>
 
-        {/* Clean, Legible Table */}
-        <div className="border border-gray-200 rounded-xl overflow-hidden shadow-2xs">
+        {/* 简洁表格 */}
+        <div className="border border-gray-200/90 rounded-lg overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs min-w-[700px]">
-              <thead className="bg-gray-50 border-b border-gray-200 text-gray-600 font-bold select-none">
+            <table className="w-full text-left text-xs min-w-[650px]">
+              <thead className="bg-gray-50/80 border-b border-gray-200 text-gray-500 font-medium select-none">
                 <tr>
-                  <th className="py-2.5 px-4">人员姓名</th>
-                  <th className="py-2.5 px-4">部门与角色</th>
-                  <th className="py-2.5 px-4">历史保留资产</th>
-                  <th className="py-2.5 px-4">换绑状态</th>
-                  <th className="py-2.5 px-4 text-right">操作</th>
+                  <th className="py-2 px-3.5">采编人员</th>
+                  <th className="py-2 px-3.5">部门与角色</th>
+                  <th className="py-2 px-3.5">继承资产</th>
+                  <th className="py-2 px-3.5">换绑状态</th>
+                  <th className="py-2 px-3.5 text-right">操作</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 text-gray-700">
                 {filteredList.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="py-8 text-center text-gray-400">
-                      未找到相关人员
+                    <td colSpan={5} className="py-6 text-center text-gray-400">
+                      未找到匹配人员
                     </td>
                   </tr>
                 ) : (
                   filteredList.map((person) => {
                     const isCompleted = person.status === 'completed';
                     return (
-                      <tr key={person.id} className="hover:bg-gray-50/60 transition-colors">
-                        {/* 1. Name */}
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-2.5">
+                      <tr key={person.id} className="hover:bg-gray-50/50 transition-colors">
+                        {/* 姓名与头像 */}
+                        <td className="py-2.5 px-3.5">
+                          <div className="flex items-center gap-2">
                             <img
                               src={person.avatar}
                               alt={person.name}
-                              className="w-7 h-7 rounded-full object-cover border border-gray-200"
+                              className="w-6 h-6 rounded-full object-cover border border-gray-200 shrink-0"
                             />
                             <div>
-                              <div className="font-bold text-gray-900">{person.name}</div>
-                              <div className="text-[11px] text-gray-400 font-mono">{person.phone}</div>
+                              <span className="font-semibold text-gray-900">{person.name}</span>
+                              <span className="text-[11px] text-gray-400 font-mono ml-1.5">{person.phone}</span>
                             </div>
                           </div>
                         </td>
 
-                        {/* 2. Dept & Role */}
-                        <td className="py-3 px-4">
-                          <div className="font-medium text-gray-800">{person.department}</div>
-                          <span className="text-[10px] text-gray-500">
-                            {person.role}
+                        {/* 部门角色 */}
+                        <td className="py-2.5 px-3.5">
+                          <span className="text-gray-700">{person.department}</span>
+                          <span className="text-[11px] text-gray-400 ml-1.5">({person.role})</span>
+                        </td>
+
+                        {/* 资产 */}
+                        <td className="py-2.5 px-3.5">
+                          <span className="text-gray-600">
+                            稿件 <strong>{person.inheritedDraftsCount}</strong> 篇 · 积分 <strong>{person.inheritedPoints}</strong>
                           </span>
                         </td>
 
-                        {/* 3. Assets */}
-                        <td className="py-3 px-4">
-                          <div className="text-gray-600 text-[11px]">
-                            稿件: <strong>{person.inheritedDraftsCount}</strong>篇 · 积分: <strong>{person.inheritedPoints}</strong>分
-                          </div>
-                          <div className="text-[10px] text-emerald-600">权限与稿件已预留</div>
-                        </td>
-
-                        {/* 4. Status */}
-                        <td className="py-3 px-4">
+                        {/* 状态 */}
+                        <td className="py-2.5 px-3.5">
                           {isCompleted ? (
-                            <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 inline-flex items-center gap-1">
-                              <span className="material-symbols-outlined text-[13px]">check</span>
-                              已成功换绑
+                            <span className="text-[11px] font-medium text-emerald-700 inline-flex items-center gap-1">
+                              <span className="material-symbols-outlined text-[14px]">check_circle</span>
+                              已就绪
                             </span>
                           ) : (
-                            <div>
-                              <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200 inline-flex items-center gap-1">
+                            <div className="inline-flex items-center gap-1">
+                              <span className="text-[11px] font-medium text-amber-700 inline-flex items-center gap-0.5">
                                 <span className="material-symbols-outlined text-[13px]">schedule</span>
-                                待扫码换绑
+                                待换绑
                               </span>
                               {person.remindCount > 0 && (
-                                <span className="text-[10px] text-gray-400 ml-1.5">
-                                  (已提醒{person.remindCount}次)
+                                <span className="text-[10px] text-gray-400">
+                                  ({person.remindCount}次)
                                 </span>
                               )}
                             </div>
                           )}
                         </td>
 
-                        {/* 5. Actions */}
-                        <td className="py-3 px-4 text-right">
-                          <div className="flex items-center justify-end gap-2.5">
+                        {/* 操作 */}
+                        <td className="py-2.5 px-3.5 text-right">
+                          <div className="flex items-center justify-end gap-2">
                             {!isCompleted ? (
                               <>
                                 <button
                                   type="button"
                                   onClick={() => handleRemindPerson(person.id, person.name)}
-                                  className="text-xs text-[#1890ff] hover:underline font-semibold cursor-pointer"
+                                  className="text-[11px] text-[#1890ff] hover:underline cursor-pointer"
                                 >
-                                  重发提醒
+                                  催办
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => setSelectedPersonForQr(person)}
-                                  className="text-xs text-purple-600 hover:underline font-semibold cursor-pointer"
+                                  className="text-[11px] text-purple-600 hover:underline cursor-pointer"
                                 >
-                                  专属二维码
+                                  专属码
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => handleManualConfirmMigration(person.id, person.name)}
-                                  className="text-xs text-emerald-600 hover:underline font-semibold cursor-pointer"
+                                  className="text-[11px] text-emerald-600 hover:underline cursor-pointer"
                                 >
-                                  直接确认
+                                  人工确认
                                 </button>
                               </>
                             ) : (
-                              <span className="text-[11px] text-gray-400">已就绪</span>
+                              <span className="text-[11px] text-gray-400">无需操作</span>
                             )}
                           </div>
                         </td>

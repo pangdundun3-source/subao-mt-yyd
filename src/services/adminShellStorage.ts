@@ -101,9 +101,9 @@ export const adminShellStorage = {
       return saved as DetailTab;
     }
     if (saved === 'business_rules') {
-      return 'value_added';
+      return 'templates';
     }
-    return 'value_added';
+    return 'templates';
   },
 
   saveInstitutionDetailTab: (tab: DetailTab) =>
