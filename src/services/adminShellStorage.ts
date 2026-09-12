@@ -87,10 +87,10 @@ export const adminShellStorage = {
 
   readInstitutionDetailTab: (): 'basic' | 'business_rules' => {
     const saved = read(STORAGE_KEYS.institutionDetailTab);
-    if (saved === 'business_rules' || saved === 'templates') {
-      return 'business_rules';
+    if (saved === 'basic') {
+      return 'basic';
     }
-    return 'basic';
+    return 'business_rules';
   },
 
   saveInstitutionDetailTab: (tab: 'basic' | 'business_rules') =>

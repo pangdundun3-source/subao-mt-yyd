@@ -40,6 +40,18 @@ export const hashRouter = {
   parseRoute: (rawHash?: string): Partial<RouteState> => {
     const hash = cleanHash(rawHash !== undefined ? rawHash : (typeof window !== 'undefined' ? window.location.hash : ''));
 
+    if (!hash) {
+      return {
+        routeType: 'institutions_detail',
+        activeTab: 'institutions',
+        selectedInstitutionId: 1,
+        isAuthenticated: true,
+        activeView: 'operation',
+        isCreatingInstitution: false,
+        isEditingInstitution: false,
+      };
+    }
+
     if (hash === 'login') {
       return {
         routeType: 'login',

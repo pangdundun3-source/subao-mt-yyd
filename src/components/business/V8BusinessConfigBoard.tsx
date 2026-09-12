@@ -456,11 +456,20 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
   hideValueAddedStatusBadge = false,
 }) => {
   // Currently active configuration module in the left column
-  const [activeModule, setActiveModule] = useState<string>(initialModule || 'report_template');
+  const [activeModule, setActiveModule] = useState<string>(() => {
+    if (initialModule && initialModule !== 'evaluation_rule' && initialModule !== 'stats_metric') {
+      return initialModule;
+    }
+    return 'report_template';
+  });
 
   React.useEffect(() => {
     if (initialModule) {
-      setActiveModule(initialModule);
+      if (initialModule === 'evaluation_rule' || initialModule === 'stats_metric') {
+        setActiveModule('report_template');
+      } else {
+        setActiveModule(initialModule);
+      }
     }
   }, [initialModule]);
 
@@ -469,8 +478,6 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
     { id: 'report_template', label: '模版配置' },
     { id: 'audit_score', label: '审核打分规则' },
     { id: 'data_dict', label: '数据字典维护' },
-    { id: 'evaluation_rule', label: '考核规则' },
-    { id: 'stats_metric', label: '统计指标' },
     { id: 'audit_flow', label: '审核层级/流程' },
     { id: 'login_method', label: '登录验证方式' },
     { id: 'value_added', label: '增值业务配置' }

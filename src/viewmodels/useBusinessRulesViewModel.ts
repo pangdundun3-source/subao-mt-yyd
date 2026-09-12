@@ -20,8 +20,6 @@ export type BusinessRuleNavKey =
   | 'templates'
   | 'scoring'
   | 'dictionary'
-  | 'assessment'
-  | 'metrics'
   | 'workflow'
   | 'value_added'
   | 'qr_code'
@@ -78,8 +76,6 @@ export const useBusinessRulesViewModel = ({
       'templates',
       'scoring',
       'dictionary',
-      'assessment',
-      'metrics',
       'workflow',
       'value_added',
       'qr_code',
