@@ -40,7 +40,7 @@ const remove = (key: string) => {
 export const adminShellStorage = {
   readActiveTab: (): ActiveTab => {
     const saved = read(STORAGE_KEYS.activeTab);
-    return activeTabs.includes(saved as ActiveTab) ? (saved as ActiveTab) : 'config';
+    return activeTabs.includes(saved as ActiveTab) ? (saved as ActiveTab) : 'institutions';
   },
 
   saveActiveTab: (tab: ActiveTab) => write(STORAGE_KEYS.activeTab, tab),
@@ -54,10 +54,10 @@ export const adminShellStorage = {
 
   readSelectedInstitutionId: (): number | null => {
     const saved = read(STORAGE_KEYS.selectedInstitutionId);
-    if (!saved || saved === 'none' || saved === 'null') return null;
+    if (!saved || saved === 'none' || saved === 'null') return 1;
 
     const parsed = Number(saved);
-    return Number.isFinite(parsed) ? parsed : null;
+    return Number.isFinite(parsed) ? parsed : 1;
   },
 
   saveSelectedInstitutionId: (id: number | null) => {
@@ -86,9 +86,11 @@ export const adminShellStorage = {
     write(STORAGE_KEYS.isCreatingInstitution, String(isCreating)),
 
   readInstitutionDetailTab: (): 'basic' | 'business_rules' => {
-    return read(STORAGE_KEYS.institutionDetailTab) === 'basic'
-      ? 'basic'
-      : 'business_rules';
+    const saved = read(STORAGE_KEYS.institutionDetailTab);
+    if (saved === 'business_rules' || saved === 'templates') {
+      return 'business_rules';
+    }
+    return 'basic';
   },
 
   saveInstitutionDetailTab: (tab: 'basic' | 'business_rules') =>

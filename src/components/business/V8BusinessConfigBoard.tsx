@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { TemplateConfigBoard } from './TemplateConfigBoard';
 import {
   Search,
   Plus,
@@ -2712,57 +2713,59 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
         <div className={embedded ? 'w-full bg-white rounded-lg border border-gray-200/80 shadow-2xs p-5 flex flex-col justify-between min-h-[460px] space-y-4' : 'flex-1 w-full bg-white rounded-lg border border-gray-200/80 shadow-2xs p-5 flex flex-col justify-between min-h-[460px] space-y-4'}>
           <div className="space-y-4">
             {/* Action Bar Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-1.5 relative">
-                <h3 className="text-sm font-bold text-gray-800">{currentModuleLabel}</h3>
-                {activeModule === 'audit_flow' && (
-                  <>
+            {activeModule !== 'report_template' && (
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-1.5 relative">
+                  <h3 className="text-sm font-bold text-gray-800">{currentModuleLabel}</h3>
+                  {activeModule === 'audit_flow' && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => showConfigToast('审核流程仅支持配置到一级机构，一级机构下的子机构默认继承上级流程，不支持单独配置。')}
+                        title="审核流程仅支持配置到一级机构，一级机构下的子机构默认继承上级流程，不支持单独配置。"
+                        className="w-4 h-4 rounded-full border border-amber-200 bg-amber-50 text-amber-600 hover:bg-amber-100 hover:border-amber-300 flex items-center justify-center cursor-pointer transition-colors"
+                        aria-label="审核流程配置规则说明"
+                      >
+                        <Info className="w-3 h-3" />
+                      </button>
+                      {configToastMessage && (
+                        <div className="absolute left-full top-1/2 ml-2 z-[80] w-[360px] -translate-y-1/2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-bold text-amber-800 shadow-lg animate-in fade-in zoom-in-95">
+                          <span className="absolute -left-1 top-1/2 h-2 w-2 -translate-y-1/2 rotate-45 border-b border-l border-amber-200 bg-amber-50" />
+                          <span className="leading-relaxed">{configToastMessage}</span>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+
+                <div className="flex items-center space-x-3">
+                  {/* Search input (Hidden in value_added) */}
+                  {activeModule !== 'value_added' && activeModule !== 'stats_metric' && activeModule !== 'login_method' && (
+                    <div className="relative">
+                      <Search className="w-3.5 h-3.5 text-gray-400 absolute left-2.5 top-2.5" />
+                      <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
+                        placeholder={`搜索${currentModuleLabel}名称/编码/描述...`}
+                        className="pl-8 pr-3 py-1.5 text-xs border border-gray-200 rounded-md w-52 sm:w-64 focus:outline-none focus:ring-1 focus:ring-[#1E5ABB] bg-gray-50/50 text-gray-700 placeholder:text-gray-400"
+                      />
+                    </div>
+                  )}
+
+                  {/* + 新增 button */}
+                  {activeModule !== 'value_added' && activeModule !== 'stats_metric' && activeModule !== 'evaluation_rule' && activeModule !== 'login_method' && activeModule !== 'data_dict' && (
                     <button
-                      type="button"
-                      onClick={() => showConfigToast('审核流程仅支持配置到一级机构，一级机构下的子机构默认继承上级流程，不支持单独配置。')}
-                      title="审核流程仅支持配置到一级机构，一级机构下的子机构默认继承上级流程，不支持单独配置。"
-                      className="w-4 h-4 rounded-full border border-amber-200 bg-amber-50 text-amber-600 hover:bg-amber-100 hover:border-amber-300 flex items-center justify-center cursor-pointer transition-colors"
-                      aria-label="审核流程配置规则说明"
+                      onClick={openAddModal}
+                      className="px-3.5 py-1.5 bg-[#1E5ABB] hover:bg-[#134092] text-white text-xs font-bold rounded shadow-2xs flex items-center space-x-1 cursor-pointer whitespace-nowrap"
                     >
-                      <Info className="w-3 h-3" />
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>新增</span>
                     </button>
-                    {configToastMessage && (
-                      <div className="absolute left-full top-1/2 ml-2 z-[80] w-[360px] -translate-y-1/2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-bold text-amber-800 shadow-lg animate-in fade-in zoom-in-95">
-                        <span className="absolute -left-1 top-1/2 h-2 w-2 -translate-y-1/2 rotate-45 border-b border-l border-amber-200 bg-amber-50" />
-                        <span className="leading-relaxed">{configToastMessage}</span>
-                      </div>
-                    )}
-                  </>
-                )}
+                  )}
+                </div>
               </div>
-
-              <div className="flex items-center space-x-3">
-                {/* Search input (Hidden in value_added) */}
-                {activeModule !== 'value_added' && activeModule !== 'stats_metric' && activeModule !== 'login_method' && (
-                  <div className="relative">
-                    <Search className="w-3.5 h-3.5 text-gray-400 absolute left-2.5 top-2.5" />
-                    <input
-                      type="text"
-                      value={searchQuery}
-                      onChange={e => setSearchQuery(e.target.value)}
-                      placeholder={`搜索${currentModuleLabel}名称/编码/描述...`}
-                      className="pl-8 pr-3 py-1.5 text-xs border border-gray-200 rounded-md w-52 sm:w-64 focus:outline-none focus:ring-1 focus:ring-[#1E5ABB] bg-gray-50/50 text-gray-700 placeholder:text-gray-400"
-                    />
-                  </div>
-                )}
-
-                {/* + 新增 button */}
-                {activeModule !== 'value_added' && activeModule !== 'stats_metric' && activeModule !== 'evaluation_rule' && activeModule !== 'login_method' && activeModule !== 'data_dict' && (
-                  <button
-                    onClick={openAddModal}
-                    className="px-3.5 py-1.5 bg-[#1E5ABB] hover:bg-[#134092] text-white text-xs font-bold rounded shadow-2xs flex items-center space-x-1 cursor-pointer whitespace-nowrap"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>新增</span>
-                  </button>
-                )}
-              </div>
-            </div>
+            )}
 
             {/* Value Added Read-Only Info Banner */}
             {activeModule === 'value_added' && (
@@ -3312,205 +3315,10 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
                 )}
               </div>
             ) : activeModule === 'report_template' ? (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="inline-flex items-center gap-1 p-1 bg-gray-100 border border-gray-200 rounded-lg">
-                    {([
-                      { id: 'all' as const, label: '全部模板', icon: Layers },
-                      { id: '报送' as const, label: '报送模板', icon: FileText },
-                      { id: '激活' as const, label: '激活模板', icon: Zap }
-                    ]).map(tab => {
-                      const TabIcon = tab.icon;
-                      const tabCount = tab.id === 'all'
-                        ? currentList.length
-                        : currentList.filter(item => (item.templateType || '报送') === tab.id).length;
-                      const isActive = templateTypeFilter === tab.id;
-
-                      return (
-                        <button
-                          key={tab.id}
-                          type="button"
-                          aria-pressed={isActive}
-                          onClick={() => setTemplateTypeFilter(tab.id)}
-                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-colors cursor-pointer ${
-                            isActive
-                              ? 'bg-white text-[#1E5ABB] shadow-sm'
-                              : 'text-gray-500 hover:text-gray-700'
-                          }`}
-                        >
-                          <TabIcon className="w-3.5 h-3.5" />
-                          <span>{tab.label}</span>
-                          <span className={`text-[10px] ${isActive ? 'text-[#1E5ABB]' : 'text-gray-400'}`}>
-                            {tabCount}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <span className="text-[11px] text-gray-400 shrink-0">
-                    当前显示 {filteredList.length} 个
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-[repeat(auto-fill,minmax(285px,1fr))] gap-3">
-                  {filteredList.length === 0 ? (
-                    <div className="col-span-full py-12 text-center text-gray-400 text-xs bg-white rounded-lg border border-gray-100">
-                      暂无匹配的模板配置
-                    </div>
-                  ) : (
-                    filteredList.map(item => {
-                      const isSelected = selectedTemplateId === item.id;
-                      const isEnabled = item.status === '启用';
-                      const fieldCount = item.fields?.length || 0;
-
-                      return (
-                        <div
-                          key={item.id}
-                          onClick={() => setSelectedTemplateId(item.id)}
-                          className={`bg-white border rounded-lg transition-all cursor-pointer group overflow-hidden ${
-                            isSelected
-                              ? 'border-[#1E5ABB] shadow-sm'
-                              : isEnabled
-                                ? 'border-emerald-200 shadow-sm hover:border-emerald-300 hover:shadow-md'
-                                : 'border-gray-200/80 hover:border-blue-200 hover:shadow-md'
-                          }`}
-                        >
-                          <div className="p-3 space-y-3">
-                            <div className="space-y-1.5">
-                              <div className="flex items-start justify-between gap-3">
-                                <h3 className="min-w-0 font-bold text-sm text-gray-900 group-hover:text-[#1E5ABB] break-words">
-                                  {item.name}
-                                </h3>
-                                <button
-                                  type="button"
-                                  onClick={e => {
-                                    e.stopPropagation();
-                                    handleToggleStatus(item.id);
-                                  }}
-                                  className={`shrink-0 flex items-center gap-1.5 px-2 py-1 rounded-full border cursor-pointer transition-colors ${
-                                    item.status === '启用'
-                                      ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
-                                      : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-blue-50 hover:text-[#1E5ABB] hover:border-blue-200'
-                                  }`}
-                                  title={item.status === '启用' ? '点击停用' : '点击启用'}
-                                >
-                                  <span className="text-[10px] font-bold">{item.status}</span>
-                                  <div className={`w-7 h-3.5 flex items-center rounded-full p-0.5 transition-colors ${item.status === '启用' ? 'bg-emerald-500 justify-end' : 'bg-gray-300 justify-start'}`}>
-                                    <div className="w-2.5 h-2.5 bg-white rounded-full shadow-2xs" />
-                                  </div>
-                                </button>
-                              </div>
-
-                              <div className="flex items-center justify-between gap-2 min-w-0">
-                                <div className="flex items-center gap-2 min-w-0">
-                                  {item.isDefault ? (
-                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] bg-gray-100 text-gray-600 font-bold rounded border border-gray-200 shrink-0">
-                                      <Lock className="w-2.5 h-2.5 text-gray-400" />
-                                      系统默认
-                                    </span>
-                                  ) : (
-                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] bg-emerald-50 text-emerald-700 font-bold rounded border border-emerald-200 shrink-0">
-                                      <Sparkles className="w-2.5 h-2.5 text-emerald-600" />
-                                      自定义
-                                    </span>
-                                  )}
-                                  <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-bold rounded border shrink-0 ${
-                                    item.templateType === '激活'
-                                      ? 'bg-purple-50 text-purple-700 border-purple-200'
-                                      : 'bg-blue-50 text-blue-700 border-blue-200'
-                                  }`}>
-                                    {item.templateType === '激活' ? (
-                                      <Zap className="w-2.5 h-2.5 text-purple-600" />
-                                    ) : (
-                                      <FileText className="w-2.5 h-2.5 text-blue-600" />
-                                    )}
-                                    {item.templateType || '报送'}
-                                  </span>
-                                </div>
-                                <span className="inline-flex items-center gap-1 text-[10px] text-slate-500 shrink-0">
-                                  <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                                  <span className="font-mono whitespace-nowrap">{item.updateTime}</span>
-                                </span>
-                              </div>
-                            </div>
-
-                            <div className="rounded-md border border-gray-100 bg-gray-50/70 px-2.5 py-2">
-                              {fieldCount > 0 ? (
-                                <div className="flex items-center gap-1.5 overflow-hidden whitespace-nowrap">
-                                  {(item.fields || []).slice(0, 3).map(field => (
-                                    <span
-                                      key={field.id}
-                                      className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] bg-white text-gray-600 border border-gray-200 rounded min-w-0 shrink"
-                                      title={field.name}
-                                    >
-                                      {field.required && <span className="text-rose-500 font-bold">*</span>}
-                                      <span className="truncate">{field.name}</span>
-                                    </span>
-                                  ))}
-                                  {fieldCount > 3 && (
-                                    <span className="px-1.5 py-0.5 text-[10px] text-gray-400 shrink-0">+{fieldCount - 3} 个字段</span>
-                                  )}
-                                </div>
-                              ) : (
-                                <span className="text-[11px] text-gray-400">暂未配置字段</span>
-                              )}
-                            </div>
-
-                            <div className="rounded-md border border-gray-100 bg-gray-50/80 px-2.5 py-2">
-                              <p className="text-[11px] text-gray-500 truncate" title={item.description || '暂无模板说明'}>
-                                {item.description || '暂无模板说明'}
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="px-3 py-2 border-t border-gray-100 bg-gray-50/40 flex items-center justify-between">
-                            <span className="text-[10px] text-gray-400">
-                              点击卡片查看配置详情
-                            </span>
-                            <div className="flex items-center gap-2">
-                              <button
-                                type="button"
-                                onClick={e => {
-                                  e.stopPropagation();
-                                  setSelectedTemplateId(item.id);
-                                }}
-                                className="p-1.5 text-gray-400 hover:text-[#1E5ABB] cursor-pointer"
-                                title="查看详情"
-                              >
-                                <Eye className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                type="button"
-                                disabled={item.isDefault}
-                                onClick={e => {
-                                  e.stopPropagation();
-                                  openEditModal(item);
-                                }}
-                                className={item.isDefault ? 'p-1.5 text-gray-300 cursor-not-allowed' : 'p-1.5 text-[#1E5ABB] hover:bg-blue-50 rounded cursor-pointer'}
-                                title={item.isDefault ? '系统默认模板不支持修改' : '编辑模板'}
-                              >
-                                <Edit3 className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                type="button"
-                                disabled={item.isDefault}
-                                onClick={e => {
-                                  e.stopPropagation();
-                                  handleDelete(item);
-                                }}
-                                className={item.isDefault ? 'p-1.5 text-gray-300 cursor-not-allowed' : 'p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded cursor-pointer'}
-                                title={item.isDefault ? '系统默认模板不支持删除' : '删除模板'}
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
+              <TemplateConfigBoard
+                isGlobalScope={hideValueAddedStatusBadge}
+                onSaveNotice={(msg) => showConfigToast(msg)}
+              />
             ) : activeModule === 'evaluation_rule' ? (
               <div className="space-y-3">
                 <div className="bg-blue-50/60 border border-blue-100 rounded-lg px-3.5 py-3 flex items-start gap-2.5">

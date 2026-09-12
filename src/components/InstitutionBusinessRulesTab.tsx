@@ -1048,6 +1048,8 @@ interface Props {
   institution?: Institution | null;
   isCreateMode?: boolean;
   isGlobalScope?: boolean; // 是否全平台全局配置模式
+  initialNav?: BusinessRuleNavKey;
+  hideSubNav?: boolean;
   onSaveRules: (rules: InstitutionBusinessRules) => void;
   showToast: (msg: string, type?: 'success' | 'warning' | 'info') => void;
 }
@@ -1056,12 +1058,15 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
   institution,
   isCreateMode,
   isGlobalScope = false,
+  initialNav,
+  hideSubNav = false,
   onSaveRules,
   showToast,
 }) => {
   const { state, actions } = useBusinessRulesViewModel({
     institution,
     isGlobalScope,
+    initialNav,
     defaultRules: defaultInstitutionBusinessRules,
     defaultOtherBusinessConfig,
     defaultValueAddedServices,
@@ -1220,56 +1225,58 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
 
   return (
     <div className="space-y-6 pb-20">
-      {/* Main Two-Column Layout: Left Vertical Navigation, Right Content Panel */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      {/* Main Layout: Either Two-Column with Left Sub-Nav or Full-Width Panel */}
+      <div className={hideSubNav ? 'space-y-6 w-full' : 'grid grid-cols-1 lg:grid-cols-12 gap-6 items-start'}>
         {/* Left Vertical Sub-Nav */}
-        <div className="lg:col-span-3 bg-white rounded-lg border border-gray-200 shadow-2xs overflow-hidden sticky top-4">
-          <div className="p-2 space-y-1">
-            {RULE_NAV_ITEMS.map((item) => {
-              const isActive = activeNav === item.key;
-              return (
-                <button
-                  key={item.key}
-                  type="button"
-                  onClick={() => handleNavChange(item.key)}
-                  className={`w-full text-left px-3.5 py-3 rounded-md transition-all cursor-pointer flex items-center justify-between group ${
-                    isActive
-                      ? 'bg-blue-50 text-[#1890ff] font-bold shadow-2xs border border-blue-200/80'
-                      : 'text-gray-700 hover:bg-gray-50 border border-transparent'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <span
-                      className={`material-symbols-outlined text-[19px] transition-colors ${
-                        isActive ? 'text-[#1890ff]' : 'text-gray-400 group-hover:text-gray-600'
-                      }`}
-                    >
-                      {item.icon}
-                    </span>
-                    <div className="truncate">
-                      <div className="text-xs truncate">{item.label}</div>
+        {!hideSubNav && (
+          <div className="lg:col-span-3 bg-white rounded-lg border border-gray-200 shadow-2xs overflow-hidden sticky top-4">
+            <div className="p-2 space-y-1">
+              {RULE_NAV_ITEMS.map((item) => {
+                const isActive = activeNav === item.key;
+                return (
+                  <button
+                    key={item.key}
+                    type="button"
+                    onClick={() => handleNavChange(item.key)}
+                    className={`w-full text-left px-3.5 py-3 rounded-md transition-all cursor-pointer flex items-center justify-between group ${
+                      isActive
+                        ? 'bg-blue-50 text-[#1890ff] font-bold shadow-2xs border border-blue-200/80'
+                        : 'text-gray-700 hover:bg-gray-50 border border-transparent'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <span
+                        className={`material-symbols-outlined text-[19px] transition-colors ${
+                          isActive ? 'text-[#1890ff]' : 'text-gray-400 group-hover:text-gray-600'
+                        }`}
+                      >
+                        {item.icon}
+                      </span>
+                      <div className="truncate">
+                        <div className="text-xs truncate">{item.label}</div>
+                      </div>
                     </div>
-                  </div>
 
-                  {item.badge && (
-                    <span
-                      className={`text-[10px] px-1.5 py-0.2 rounded font-medium ${
-                        isActive
-                          ? 'bg-white text-[#1890ff] border border-blue-200'
-                          : 'bg-gray-100 text-gray-500'
-                      }`}
-                    >
-                      {item.badge}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+                    {item.badge && (
+                      <span
+                        className={`text-[10px] px-1.5 py-0.2 rounded font-medium ${
+                          isActive
+                            ? 'bg-white text-[#1890ff] border border-blue-200'
+                            : 'bg-gray-100 text-gray-500'
+                        }`}
+                      >
+                        {item.badge}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Right Configuration Content Panel */}
-        <div className="lg:col-span-9 space-y-6">
+        <div className={hideSubNav ? 'space-y-6 w-full' : 'lg:col-span-9 space-y-6'}>
           {/* 与 V8 业务配置维护 1:1 对齐的模块右侧内容（模板配置/审核打分/字典/考核/统计指标/审核流程/增值业务） */}
           {activeV8Module && (
             <V8BusinessConfigBoard

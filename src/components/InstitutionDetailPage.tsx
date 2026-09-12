@@ -955,7 +955,7 @@ export const InstitutionDetailPage: React.FC<InstitutionDetailPageProps> = ({
         </>
       )}
 
-      {/* Tab 2: 业务规则配置 (Business Rules Configuration) */}
+      {/* Tab: 业务规则配置 (Business Rules Configuration) */}
       {detailTab === 'business_rules' && (
         <InstitutionBusinessRulesTab
           institution={institution}

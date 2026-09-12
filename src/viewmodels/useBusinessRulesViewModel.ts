@@ -39,6 +39,7 @@ interface MetricItem {
 interface UseBusinessRulesViewModelOptions {
   institution?: Institution | null;
   isGlobalScope: boolean;
+  initialNav?: BusinessRuleNavKey;
   defaultRules: InstitutionBusinessRules;
   defaultOtherBusinessConfig: OtherBusinessConfig;
   defaultValueAddedServices: ValueAddedServiceItem[];
@@ -55,6 +56,7 @@ interface UseBusinessRulesViewModelOptions {
 export const useBusinessRulesViewModel = ({
   institution,
   isGlobalScope,
+  initialNav,
   defaultRules,
   defaultOtherBusinessConfig,
   defaultValueAddedServices,
@@ -70,6 +72,7 @@ export const useBusinessRulesViewModel = ({
       : mergeWithGlobal(institution?.businessRules, readGlobalRules())
   );
   const [activeNav, setActiveNav] = useState<BusinessRuleNavKey>(() => {
+    if (initialNav) return initialNav;
     const saved = localStorage.getItem('admin_business_rule_active_subnav');
     const validKeys: BusinessRuleNavKey[] = [
       'templates',
