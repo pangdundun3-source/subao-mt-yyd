@@ -187,7 +187,8 @@ export interface QrQuotaAddRecord {
 }
 
 export interface QrCodeUsageConfig {
-  totalLimit: number; // 二维码总数 (如: 50)
+  initialQuota?: number; // 初始化配置名额 (如: 20)
+  totalLimit: number; // 二维码当前总名额 (如: 50)
   usedCount: number; // 已用数量 (如: 18)
   historyRecords?: QrQuotaAddRecord[];
   allowSelfApply?: boolean;
@@ -463,6 +464,16 @@ export interface SystemAccountUser {
 }
 
 export type SystemLogCategory = 'login' | 'audit' | 'security' | 'data_change' | 'system_runtime';
+
+export type DetailTab =
+  | 'basic'
+  | 'templates'
+  | 'scoring'
+  | 'dictionary'
+  | 'workflow'
+  | 'value_added'
+  | 'qr_code'
+  | 'other';
 
 export interface SystemLogItem {
   id: string;

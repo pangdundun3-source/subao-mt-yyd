@@ -1,10 +1,11 @@
 import React from 'react';
 import { Institution, AuditLog } from '../types';
-import { InstitutionBusinessRulesTab } from './InstitutionBusinessRulesTab';
+import { BusinessRuleNavKey, InstitutionBusinessRulesTab } from './InstitutionBusinessRulesTab';
 import { OtherBusinessConfigTab } from './OtherBusinessConfigTab';
 import {
   AVAILABLE_ROLES,
   FORMAL_DURATION_PRESETS,
+  INSTITUTION_DETAIL_TABS,
   REGION_OPTIONS,
   TRIAL_DURATION_PRESETS,
   useInstitutionDetailViewModel,
@@ -139,40 +140,29 @@ export const InstitutionDetailPage: React.FC<InstitutionDetailPageProps> = ({
 
       {/* Navigation Tabs Switcher (Only shown in Detail/Edit mode, hidden in Create mode) */}
       {!isCreateMode && (
-        <div className="flex items-center gap-8 border-b border-gray-200 text-sm font-medium -mt-2">
-          <button
-            type="button"
-            onClick={() => {
-              handleDetailTabChange('basic');
-            }}
-            className={`pb-3.5 flex items-center gap-2 cursor-pointer transition-all border-b-2 font-semibold ${
-              detailTab === 'basic'
-                ? 'border-[#1890ff] text-[#1890ff]'
-                : 'border-transparent text-gray-500 hover:text-gray-900'
-            }`}
-          >
-            <span className="material-symbols-outlined text-[18px]">
-              corporate_fare
-            </span>
-            <span>基础信息与服务</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              handleDetailTabChange('business_rules');
-            }}
-            className={`pb-3.5 flex items-center gap-2 cursor-pointer transition-all border-b-2 font-semibold ${
-              detailTab === 'business_rules'
-                ? 'border-[#1890ff] text-[#1890ff]'
-                : 'border-transparent text-gray-500 hover:text-gray-900'
-            }`}
-          >
-            <span className="material-symbols-outlined text-[18px]">
-              tune
-            </span>
-            <span>业务规则配置</span>
-          </button>
+        <div className="flex items-center gap-2 sm:gap-4 border-b border-gray-200 text-sm font-medium -mt-2 overflow-x-auto no-scrollbar">
+          {INSTITUTION_DETAIL_TABS.map((tab) => {
+            const isActive = detailTab === tab.key;
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => {
+                  handleDetailTabChange(tab.key);
+                }}
+                className={`pb-3.5 px-1.5 flex items-center gap-1.5 cursor-pointer transition-all border-b-2 font-semibold whitespace-nowrap text-xs sm:text-sm ${
+                  isActive
+                    ? 'border-[#1890ff] text-[#1890ff]'
+                    : 'border-transparent text-gray-500 hover:text-gray-900'
+                }`}
+              >
+                <span className="material-symbols-outlined text-[18px]">
+                  {tab.icon}
+                </span>
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -955,11 +945,14 @@ export const InstitutionDetailPage: React.FC<InstitutionDetailPageProps> = ({
         </>
       )}
 
-      {/* Tab: 业务规则配置 (Business Rules Configuration) */}
-      {detailTab === 'business_rules' && (
+      {/* Tab: 各业务规则一级配置模块 (Templates, Scoring, Dict, Workflow, Value Added, QR, Other) */}
+      {detailTab !== 'basic' && (
         <InstitutionBusinessRulesTab
+          key={detailTab}
           institution={institution}
           isCreateMode={isCreateMode}
+          initialNav={detailTab as BusinessRuleNavKey}
+          hideSubNav={true}
           onSaveRules={(newRules) => {
             onSave({ businessRules: newRules });
             showToast('机构专属业务规则已成功保存并实时生效！');

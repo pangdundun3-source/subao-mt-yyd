@@ -1,4 +1,4 @@
-import { ActiveTab, SystemSubModule } from '../types';
+import { ActiveTab, DetailTab, SystemSubModule } from '../types';
 
 const STORAGE_KEYS = {
   activeTab: 'admin_active_tab',
@@ -85,15 +85,28 @@ export const adminShellStorage = {
   saveIsCreatingInstitution: (isCreating: boolean) =>
     write(STORAGE_KEYS.isCreatingInstitution, String(isCreating)),
 
-  readInstitutionDetailTab: (): 'basic' | 'business_rules' => {
+  readInstitutionDetailTab: (): DetailTab => {
     const saved = read(STORAGE_KEYS.institutionDetailTab);
-    if (saved === 'basic') {
-      return 'basic';
+    const validTabs: DetailTab[] = [
+      'basic',
+      'templates',
+      'scoring',
+      'dictionary',
+      'workflow',
+      'value_added',
+      'qr_code',
+      'other',
+    ];
+    if (saved && validTabs.includes(saved as DetailTab)) {
+      return saved as DetailTab;
     }
-    return 'business_rules';
+    if (saved === 'business_rules') {
+      return 'value_added';
+    }
+    return 'value_added';
   },
 
-  saveInstitutionDetailTab: (tab: 'basic' | 'business_rules') =>
+  saveInstitutionDetailTab: (tab: DetailTab) =>
     write(STORAGE_KEYS.institutionDetailTab, tab),
 
   readOtherConfigSubTab: (): 'wechat_mp' | 'mp_migration' => {

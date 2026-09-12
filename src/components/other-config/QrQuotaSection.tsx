@@ -12,8 +12,8 @@ export const defaultQuotaHistory: QrQuotaAddRecord[] = [
     addAmount: 20,
     previousLimit: 30,
     newLimit: 50,
-    reason: '曾都区、广水市网信采编通讯员团队扩容入驻',
-    operator: '系统超级管理员 (李主任)',
+    reason: '下辖通讯员队伍扩容入驻',
+    operator: '系统管理员 (李主任)',
     createdAt: '2026-08-25 14:30:22',
   },
   {
@@ -21,7 +21,7 @@ export const defaultQuotaHistory: QrQuotaAddRecord[] = [
     addAmount: 10,
     previousLimit: 20,
     newLimit: 30,
-    reason: '随县融媒体中心新增应急速报网格员',
+    reason: '新增应急速报网格员',
     operator: '机构管理员 (周建军)',
     createdAt: '2026-08-10 09:15:40',
   },
@@ -30,7 +30,7 @@ export const defaultQuotaHistory: QrQuotaAddRecord[] = [
     addAmount: 20,
     previousLimit: 0,
     newLimit: 20,
-    reason: '机构初始开通随州速报体系标准基础配额',
+    reason: '机构初始开通基础名额',
     operator: '平台开通专员 (张工)',
     createdAt: '2026-07-01 10:00:00',
   },
@@ -78,7 +78,9 @@ export const QrQuotaSection: React.FC<QrQuotaSectionProps> = ({
     onChangeQrConfig,
     showToast,
   });
+
   const {
+    initialQuota,
     totalLimit,
     usedCount,
     history,
@@ -93,6 +95,7 @@ export const QrQuotaSection: React.FC<QrQuotaSectionProps> = ({
     usagePercentage,
     filteredPersonnel,
   } = state;
+
   const {
     setActiveSubTab,
     setPersonnelSearch,
@@ -105,139 +108,127 @@ export const QrQuotaSection: React.FC<QrQuotaSectionProps> = ({
   } = actions;
 
   return (
-    <div className="space-y-6 animate-fade-in text-gray-800">
-      {/* 1. Header Overview & Stats Cards */}
-      <div className="bg-white rounded-2xl border border-gray-200/90 p-6 shadow-xs">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-gray-100">
-          <div className="flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 flex items-center justify-center text-[#1890ff] shadow-2xs">
-              <span className="material-symbols-outlined text-[24px]">qr_code_2</span>
-            </div>
-            <div>
-              <div className="flex items-center gap-2.5">
-                <h3 className="text-base font-bold text-gray-900">二维码使用名额与额度管理</h3>
-                <span className="text-xs px-2.5 py-0.5 rounded-full bg-blue-50 text-[#1890ff] border border-blue-200 font-semibold">
-                  机构专享名额库
-                </span>
-              </div>
-              <p className="text-xs text-gray-500 mt-0.5">
-                管理【{institution?.name || '当前机构'}】的采编入驻与关注二维码总额度、已占用人数及动态增发台账
-              </p>
-            </div>
+    <div className="space-y-5 animate-fade-in text-gray-800">
+      {/* 顶部核心信息与概览统计：功能 1 (初始化名额) + 功能 2 (使用情况) + 功能 3 (快捷追加) */}
+      <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-2xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-100">
+          <div>
+            <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
+              <span className="material-symbols-outlined text-[#1890ff] text-[22px]">key</span>
+              <span>激活码的名额与管理</span>
+            </h3>
           </div>
 
+          {/* 功能 3：新增激活码 入口 */}
           <button
             type="button"
             onClick={() => setShowAddModal(true)}
-            className="px-4 py-2.5 rounded-xl text-xs font-bold bg-[#1890ff] text-white hover:bg-blue-600 shadow-xs hover:shadow-md transition-all flex items-center gap-1.5 cursor-pointer self-start md:self-auto"
+            className="px-4 py-2 rounded-lg text-xs font-bold bg-[#1890ff] text-white hover:bg-blue-600 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer self-start sm:self-auto"
           >
             <span className="material-symbols-outlined text-[16px]">add_circle</span>
-            <span>增加二维码名额</span>
+            <span>新增激活码</span>
           </button>
         </div>
 
-        {/* Dynamic Metric Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mt-5">
-          {/* Card 1: Total Limit */}
-          <div className="bg-gray-50/80 p-4 rounded-xl border border-gray-200/80">
+        {/* 核心指标卡片：清晰一目了然 */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 mt-4">
+          {/* 功能 1：显示给机构配置的初始化二维码名额 */}
+          <div className="bg-gray-50/90 rounded-lg p-3.5 border border-gray-200/80">
             <div className="text-xs text-gray-500 font-medium flex items-center justify-between">
-              <span>二维码总名额</span>
-              <span className="material-symbols-outlined text-[18px] text-gray-400">confirmation_number</span>
+              <span>初始化基础名额</span>
+              <span className="material-symbols-outlined text-[16px] text-gray-400">flag</span>
             </div>
-            <div className="text-2xl font-black font-mono text-gray-900 mt-1.5">
-              {totalLimit} <span className="text-xs font-normal text-gray-500">个</span>
+            <div className="text-xl font-bold font-mono text-gray-800 mt-1">
+              {initialQuota} <span className="text-xs font-normal text-gray-500">个</span>
             </div>
             <div className="text-[11px] text-gray-400 mt-1">
-              累计核定最高支持扫码激活数
+              开通时初始分配配额
             </div>
           </div>
 
-          {/* Card 2: Used Count */}
-          <div className="bg-blue-50/70 p-4 rounded-xl border border-blue-200/70">
+          {/* 功能 2：当前总名额 (含追加) */}
+          <div className="bg-blue-50/60 rounded-lg p-3.5 border border-blue-100">
             <div className="text-xs text-blue-800 font-medium flex items-center justify-between">
-              <span>已绑定占用</span>
-              <span className="material-symbols-outlined text-[18px] text-[#1890ff]">how_to_reg</span>
+              <span>当前总名额</span>
+              <span className="material-symbols-outlined text-[16px] text-[#1890ff]">confirmation_number</span>
             </div>
-            <div className="text-2xl font-black font-mono text-[#1890ff] mt-1.5">
-              {usedCount} <span className="text-xs font-normal text-blue-600">人</span>
+            <div className="text-xl font-bold font-mono text-[#1890ff] mt-1">
+              {totalLimit} <span className="text-xs font-normal text-blue-600">个</span>
             </div>
             <div className="text-[11px] text-blue-600 mt-1">
-              已扫码激活并关联微信账号
+              含初始化与累计追加名额
             </div>
           </div>
 
-          {/* Card 3: Remaining */}
-          <div className="bg-emerald-50/70 p-4 rounded-xl border border-emerald-200/70">
-            <div className="text-xs text-emerald-800 font-medium flex items-center justify-between">
-              <span>剩余可用配额</span>
-              <span className="material-symbols-outlined text-[18px] text-emerald-600">check_circle</span>
+          {/* 功能 2：已绑定占用 */}
+          <div className="bg-amber-50/60 rounded-lg p-3.5 border border-amber-100">
+            <div className="text-xs text-amber-800 font-medium flex items-center justify-between">
+              <span>已绑定使用</span>
+              <span className="material-symbols-outlined text-[16px] text-amber-600">how_to_reg</span>
             </div>
-            <div className="text-2xl font-black font-mono text-emerald-700 mt-1.5">
+            <div className="text-xl font-bold font-mono text-amber-700 mt-1">
+              {usedCount} <span className="text-xs font-normal text-amber-600">人 ({usagePercentage}%)</span>
+            </div>
+            <div className="text-[11px] text-amber-600 mt-1">
+              已扫码绑定的在册采编人员
+            </div>
+          </div>
+
+          {/* 功能 2：剩余可用名额 */}
+          <div className="bg-emerald-50/60 rounded-lg p-3.5 border border-emerald-100">
+            <div className="text-xs text-emerald-800 font-medium flex items-center justify-between">
+              <span>剩余可用名额</span>
+              <span className="material-symbols-outlined text-[16px] text-emerald-600">check_circle</span>
+            </div>
+            <div className="text-xl font-bold font-mono text-emerald-700 mt-1">
               {remainingCount} <span className="text-xs font-normal text-emerald-600">个</span>
             </div>
             <div className="text-[11px] text-emerald-600 mt-1">
-              {remainingCount <= 5 ? '配额紧张，建议及时申请增发' : '名额充裕，可继续分发'}
-            </div>
-          </div>
-
-          {/* Card 4: Usage Percentage */}
-          <div className="bg-purple-50/70 p-4 rounded-xl border border-purple-200/70 flex flex-col justify-between">
-            <div>
-              <div className="text-xs text-purple-800 font-medium flex items-center justify-between">
-                <span>名额使用率</span>
-                <span className="text-xs font-black font-mono text-purple-700">{usagePercentage}%</span>
-              </div>
-              <div className="w-full bg-purple-100 rounded-full h-2.5 mt-2.5 overflow-hidden">
-                <div
-                  className="bg-purple-600 h-full rounded-full transition-all duration-500"
-                  style={{ width: `${Math.min(100, Number(usagePercentage))}%` }}
-                />
-              </div>
-            </div>
-            <div className="text-[11px] text-purple-700 mt-2 font-medium">
-              占用比例正常
+              可继续提供给人员扫码绑定
             </div>
           </div>
         </div>
       </div>
 
-      {/* 2. Sub-Tabs Section */}
-      <div className="bg-white rounded-2xl border border-gray-200/90 p-6 shadow-xs space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-100">
-          <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-xl w-fit">
+      {/* 下方切换卡片：功能 5 (查看绑定的人员名单) 与 功能 4 (查看调整和增发记录) */}
+      <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-2xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100">
+          {/* 一级功能切换：已绑定名单 vs 调整增发记录 */}
+          <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg w-fit">
             <button
               type="button"
-              onClick={() => setActiveSubTab('records')}
-              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                activeSubTab === 'records'
-                  ? 'bg-white text-gray-900 shadow-xs'
+              onClick={() => setActiveSubTab('personnel')}
+              className={`px-3.5 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                activeSubTab === 'personnel'
+                  ? 'bg-white text-gray-900 shadow-2xs'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              <span className="material-symbols-outlined text-[16px]">receipt_long</span>
-              <span>名额调整与增发记录</span>
-              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-blue-50 text-[#1890ff] font-mono">
-                {history.length}
+              <span className="material-symbols-outlined text-[16px]">groups</span>
+              <span>已绑定人员名单</span>
+              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-blue-50 text-[#1890ff] font-mono font-semibold">
+                {boundPersonnel.length}
               </span>
             </button>
 
             <button
               type="button"
-              onClick={() => setActiveSubTab('personnel')}
-              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                activeSubTab === 'personnel'
-                  ? 'bg-white text-gray-900 shadow-xs'
+              onClick={() => setActiveSubTab('records')}
+              className={`px-3.5 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                activeSubTab === 'records'
+                  ? 'bg-white text-gray-900 shadow-2xs'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              <span className="material-symbols-outlined text-[16px]">person_check</span>
-              <span>已绑定人员名单</span>
-              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-gray-200 text-gray-700 font-mono">
-                {boundPersonnel.length}
+              <span className="material-symbols-outlined text-[16px]">history</span>
+              <span>名额调整与增发记录</span>
+              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-gray-200 text-gray-700 font-mono font-semibold">
+                {history.length}
               </span>
             </button>
           </div>
 
+          {/* 搜索框：仅在人员名单时出现，简单实用 */}
           {activeSubTab === 'personnel' && (
             <div className="relative">
               <span className="material-symbols-outlined absolute left-2.5 top-2 text-gray-400 text-[16px]">
@@ -247,101 +238,107 @@ export const QrQuotaSection: React.FC<QrQuotaSectionProps> = ({
                 type="text"
                 value={personnelSearch}
                 onChange={(e) => setPersonnelSearch(e.target.value)}
-                placeholder="搜索姓名、科室、角色或手机号..."
-                className="pl-8 pr-3 py-1.5 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:border-[#1890ff] w-64"
+                placeholder="搜索姓名、部门、角色或手机号..."
+                className="pl-8 pr-3 py-1.5 text-xs bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:outline-none focus:border-[#1890ff] w-60"
               />
             </div>
           )}
         </div>
 
-        {/* Tab Content: Records */}
-        {activeSubTab === 'records' && (
-          <div className="border border-gray-200 rounded-xl overflow-hidden shadow-2xs">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-gray-50 border-b border-gray-200 text-gray-600 font-bold select-none">
-                <tr>
-                  <th className="py-3 px-4">流水单号</th>
-                  <th className="py-3 px-4">增发额度</th>
-                  <th className="py-3 px-4">变更前 → 变更后总数</th>
-                  <th className="py-3 px-4">调整事由</th>
-                  <th className="py-3 px-4">经办人</th>
-                  <th className="py-3 px-4 text-right">经办时间</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 text-gray-700">
-                {history.map((record) => (
-                  <tr key={record.id} className="hover:bg-gray-50/60 transition-colors">
-                    <td className="py-3 px-4 font-mono text-gray-500 font-medium">{record.id}</td>
-                    <td className="py-3 px-4">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono">
-                        +{record.addAmount}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 font-mono text-xs">
-                      <span className="text-gray-500">{record.previousLimit}</span>
-                      <span className="text-gray-400 mx-1.5">→</span>
-                      <span className="font-bold text-[#1890ff]">{record.newLimit} 个</span>
-                    </td>
-                    <td className="py-3 px-4 max-w-xs text-gray-800 truncate" title={record.reason}>
-                      {record.reason}
-                    </td>
-                    <td className="py-3 px-4 text-gray-700">{record.operator}</td>
-                    <td className="py-3 px-4 text-right text-gray-400 font-mono text-[11px]">
-                      {record.createdAt}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* Tab Content: Bound Personnel */}
+        {/* 功能 5：查看绑定的人员名单表格 */}
         {activeSubTab === 'personnel' && (
-          <div className="border border-gray-200 rounded-xl overflow-hidden shadow-2xs">
+          <div className="border border-gray-200 rounded-lg overflow-hidden">
             <table className="w-full text-left text-xs">
-              <thead className="bg-gray-50 border-b border-gray-200 text-gray-600 font-bold select-none">
+              <thead className="bg-gray-50/80 border-b border-gray-200 text-gray-600 font-semibold select-none">
                 <tr>
-                  <th className="py-3 px-4">姓名</th>
-                  <th className="py-3 px-4">所属部门 / 科室</th>
-                  <th className="py-3 px-4">角色身份</th>
-                  <th className="py-3 px-4">联系手机</th>
-                  <th className="py-3 px-4">扫码激活时间</th>
-                  <th className="py-3 px-4 text-right">操作</th>
+                  <th className="py-2.5 px-3.5">姓名</th>
+                  <th className="py-2.5 px-3.5">部门 / 科室</th>
+                  <th className="py-2.5 px-3.5">角色身份</th>
+                  <th className="py-2.5 px-3.5">手机号码</th>
+                  <th className="py-2.5 px-3.5">绑定时间</th>
+                  <th className="py-2.5 px-3.5 text-right">操作</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 text-gray-700">
                 {filteredPersonnel.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="py-8 text-center text-gray-400">
-                      暂无已绑定的在岗人员记录
+                      暂无符合条件的已绑定人员
                     </td>
                   </tr>
                 ) : (
                   filteredPersonnel.map((person) => (
                     <tr key={person.id} className="hover:bg-gray-50/60 transition-colors">
-                      <td className="py-3 px-4 font-bold text-gray-900 flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-blue-100 text-[#1890ff] flex items-center justify-center text-[10px] font-bold">
+                      <td className="py-2.5 px-3.5 font-bold text-gray-900 flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-blue-100 text-[#1890ff] flex items-center justify-center text-[11px] font-bold">
                           {person.name.slice(0, 1)}
                         </div>
                         <span>{person.name}</span>
                       </td>
-                      <td className="py-3 px-4 text-gray-800">{person.department}</td>
-                      <td className="py-3 px-4">
-                        <span className="px-2 py-0.5 rounded bg-blue-50 text-[#1890ff] font-semibold text-[11px] border border-blue-100">
+                      <td className="py-2.5 px-3.5 text-gray-700">{person.department}</td>
+                      <td className="py-2.5 px-3.5">
+                        <span className="px-2 py-0.5 rounded bg-blue-50 text-[#1890ff] font-medium text-[11px] border border-blue-100">
                           {person.role}
                         </span>
                       </td>
-                      <td className="py-3 px-4 font-mono text-gray-600">{person.phone}</td>
-                      <td className="py-3 px-4 font-mono text-gray-400 text-[11px]">{person.bindTime}</td>
-                      <td className="py-3 px-4 text-right">
+                      <td className="py-2.5 px-3.5 font-mono text-gray-600">{person.phone}</td>
+                      <td className="py-2.5 px-3.5 font-mono text-gray-400 text-[11px]">{person.bindTime}</td>
+                      <td className="py-2.5 px-3.5 text-right">
                         <button
                           type="button"
                           onClick={() => handleUnbindPersonnel(person.id, person.name)}
-                          className="text-xs text-rose-600 hover:text-rose-700 font-semibold cursor-pointer"
+                          className="text-xs text-rose-600 hover:text-rose-700 font-medium cursor-pointer"
                         >
-                          解绑并释放名额
+                          解绑 (释放名额)
                         </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* 功能 4：查看二维码的调整和增发记录表格 */}
+        {activeSubTab === 'records' && (
+          <div className="border border-gray-200 rounded-lg overflow-hidden">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-gray-50/80 border-b border-gray-200 text-gray-600 font-semibold select-none">
+                <tr>
+                  <th className="py-2.5 px-3.5">单号</th>
+                  <th className="py-2.5 px-3.5">追加名额</th>
+                  <th className="py-2.5 px-3.5">调整前 → 调整后</th>
+                  <th className="py-2.5 px-3.5">事由说明</th>
+                  <th className="py-2.5 px-3.5">经办人</th>
+                  <th className="py-2.5 px-3.5 text-right">经办时间</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 text-gray-700">
+                {history.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-8 text-center text-gray-400">
+                      暂无名额调整记录
+                    </td>
+                  </tr>
+                ) : (
+                  history.map((record) => (
+                    <tr key={record.id} className="hover:bg-gray-50/60 transition-colors">
+                      <td className="py-2.5 px-3.5 font-mono text-gray-500">{record.id}</td>
+                      <td className="py-2.5 px-3.5">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono">
+                          +{record.addAmount}
+                        </span>
+                      </td>
+                      <td className="py-2.5 px-3.5 font-mono text-xs">
+                        <span className="text-gray-500">{record.previousLimit}</span>
+                        <span className="text-gray-400 mx-1.5">→</span>
+                        <span className="font-bold text-[#1890ff]">{record.newLimit} 个</span>
+                      </td>
+                      <td className="py-2.5 px-3.5 text-gray-800">{record.reason}</td>
+                      <td className="py-2.5 px-3.5 text-gray-700">{record.operator}</td>
+                      <td className="py-2.5 px-3.5 text-right text-gray-400 font-mono text-[11px]">
+                        {record.createdAt}
                       </td>
                     </tr>
                   ))
@@ -352,102 +349,123 @@ export const QrQuotaSection: React.FC<QrQuotaSectionProps> = ({
         )}
       </div>
 
-      {/* Add Quota Modal */}
+      {/* 功能 3：新增激活码 弹窗 (轻量简单设计) */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-fade-in">
-          <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 w-full max-w-md overflow-hidden animate-scale-in">
-            <div className="px-6 py-4 bg-gradient-to-r from-[#1890ff] to-blue-600 text-white flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
-                  <span className="material-symbols-outlined text-[20px]">add_circle</span>
-                </div>
-                <div>
-                  <h3 className="text-base font-bold">增加二维码使用名额</h3>
-                  <p className="text-[11px] text-white/80">为当前机构增补扫码入驻与在册名额</p>
-                </div>
-              </div>
+          <div className="bg-white rounded-xl shadow-xl border border-gray-200 w-full max-w-sm overflow-hidden animate-scale-in">
+            <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
+              <h3 className="text-sm font-bold text-gray-900 flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-[#1890ff] text-[18px]">add_circle</span>
+                <span>新增激活码</span>
+              </h3>
               <button
                 type="button"
                 onClick={() => setShowAddModal(false)}
-                className="text-white/80 hover:text-white cursor-pointer"
+                className="text-gray-400 hover:text-gray-600 cursor-pointer"
               >
-                <span className="material-symbols-outlined text-[20px]">close</span>
+                <span className="material-symbols-outlined text-[18px]">close</span>
               </button>
             </div>
 
-            <form onSubmit={handleConfirmAddQuota} className="p-6 space-y-4 text-xs">
-              <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-between">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleConfirmAddQuota();
+              }}
+              className="p-5 space-y-3.5 text-xs"
+            >
+              {/* 计算示意 */}
+              <div className="p-3 bg-blue-50/60 rounded-lg border border-blue-100 flex items-center justify-between text-xs">
                 <div>
-                  <span className="text-gray-500">当前总额度</span>
-                  <div className="text-base font-black font-mono text-gray-900">{totalLimit} 个</div>
+                  <span className="text-gray-500">当前名额</span>
+                  <div className="font-bold font-mono text-gray-800 text-sm">{totalLimit} 个</div>
                 </div>
                 <div className="text-gray-400 font-bold">+</div>
                 <div>
-                  <span className="text-gray-500">本次增发</span>
-                  <div className="text-base font-black font-mono text-emerald-600">+{addAmount} 个</div>
+                  <span className="text-gray-500">本次新增</span>
+                  <div className="font-bold font-mono text-emerald-600 text-sm">+{Number(addAmount) || 0} 个</div>
                 </div>
                 <div className="text-gray-400 font-bold">=</div>
                 <div>
-                  <span className="text-gray-500">调整后总额度</span>
-                  <div className="text-base font-black font-mono text-[#1890ff]">{totalLimit + (Number(addAmount) || 0)} 个</div>
+                  <span className="text-gray-500">调整后总数</span>
+                  <div className="font-bold font-mono text-[#1890ff] text-sm">
+                    {totalLimit + (Number(addAmount) || 0)} 个
+                  </div>
                 </div>
               </div>
 
               <div>
-                <label className="block font-bold text-gray-700 mb-1">
-                  增发名额数量 (个) <span className="text-rose-500">*</span>
+                <label className="block font-medium text-gray-700 mb-1">
+                  新增激活码数量 <span className="text-rose-500">*</span>
                 </label>
-                <input
-                  type="number"
-                  min={1}
-                  max={500}
-                  required
-                  value={addAmount}
-                  onChange={(e) => setAddAmount(Number(e.target.value))}
-                  className="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs font-mono font-bold text-gray-900 focus:outline-none focus:border-[#1890ff]"
-                />
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min={1}
+                    max={500}
+                    required
+                    value={addAmount}
+                    onChange={(e) => setAddAmount(Number(e.target.value))}
+                    className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-xs font-mono font-bold text-gray-900 focus:outline-none focus:border-[#1890ff]"
+                  />
+                  {/* 常用快捷新增量 */}
+                  {[10, 20, 50].map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setAddAmount(preset)}
+                      className={`px-2 py-1.5 rounded-lg border text-xs font-medium cursor-pointer transition-colors ${
+                        addAmount === preset
+                          ? 'bg-[#1890ff] text-white border-[#1890ff]'
+                          : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
+                      }`}
+                    >
+                      +{preset}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div>
-                <label className="block font-bold text-gray-700 mb-1">
-                  经办人姓名 / 操作账号 <span className="text-rose-500">*</span>
+                <label className="block font-medium text-gray-700 mb-1">
+                  经办人姓名
                 </label>
                 <input
                   type="text"
                   required
                   value={operatorName}
                   onChange={(e) => setOperatorName(e.target.value)}
-                  className="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs text-gray-900 focus:outline-none focus:border-[#1890ff]"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-xs text-gray-900 focus:outline-none focus:border-[#1890ff]"
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-gray-700 mb-1">
-                  增发事由 / 扩容审批批复 <span className="text-rose-500">*</span>
+                <label className="block font-medium text-gray-700 mb-1">
+                  新增事由说明
                 </label>
-                <textarea
+                <input
+                  type="text"
                   required
-                  rows={3}
                   value={addReason}
                   onChange={(e) => setAddReason(e.target.value)}
-                  className="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs text-gray-900 focus:outline-none focus:border-[#1890ff]"
-                  placeholder="请输入增发原因，例如：下辖新增科室采编队伍扩容入驻..."
+                  placeholder="例如：新增采编通讯员入驻"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-xs text-gray-900 focus:outline-none focus:border-[#1890ff]"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-100">
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 cursor-pointer"
+                  className="px-3.5 py-1.5 rounded-lg text-xs text-gray-600 bg-gray-100 hover:bg-gray-200 cursor-pointer"
                 >
                   取消
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl text-xs font-bold bg-[#1890ff] text-white hover:bg-blue-600 shadow-xs cursor-pointer"
+                  className="px-4 py-1.5 rounded-lg text-xs font-bold bg-[#1890ff] text-white hover:bg-blue-600 shadow-2xs cursor-pointer"
                 >
-                  确认增发名额
+                  确认新增
                 </button>
               </div>
             </form>

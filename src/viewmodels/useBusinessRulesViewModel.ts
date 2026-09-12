@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   AssessmentRuleItem,
   DictItem,
@@ -85,6 +85,13 @@ export const useBusinessRulesViewModel = ({
       ? (saved as BusinessRuleNavKey)
       : 'value_added';
   });
+
+  useEffect(() => {
+    if (initialNav) {
+      setActiveNav(initialNav);
+    }
+  }, [initialNav]);
+
   const [templateFilterType, setTemplateFilterType] = useState<'all' | 'report' | 'active'>('active');
   const [templateSearchKeyword, setTemplateSearchKeyword] = useState('');
   const [viewingTemplate, setViewingTemplate] = useState<TemplateConfigItem | null>(null);

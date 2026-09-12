@@ -7,7 +7,7 @@ import {
 } from '../types';
 import { formatDateTime } from '../shared/date';
 
-interface BoundPersonnel {
+export interface BoundPersonnel {
   id: string;
   name: string;
   department: string;
@@ -34,17 +34,18 @@ export const useQrQuotaViewModel = ({
   onChangeQrConfig,
   showToast,
 }: UseQrQuotaViewModelOptions) => {
+  const initialQuota = qrConfig?.initialQuota ?? 20;
   const [totalLimit, setTotalLimit] = useState(qrConfig?.totalLimit ?? 50);
   const [usedCount, setUsedCount] = useState(qrConfig?.usedCount ?? 18);
   const [history, setHistory] = useState<QrQuotaAddRecord[]>(
     qrConfig?.historyRecords?.length ? qrConfig.historyRecords : defaultHistory
   );
-  const [activeSubTab, setActiveSubTab] = useState<'records' | 'personnel'>('records');
+  const [activeSubTab, setActiveSubTab] = useState<'personnel' | 'records'>('personnel');
   const [personnelSearch, setPersonnelSearch] = useState('');
   const [boundPersonnel, setBoundPersonnel] = useState(defaultPersonnel);
   const [showAddModal, setShowAddModal] = useState(false);
   const [addAmount, setAddAmount] = useState(20);
-  const [addReason, setAddReason] = useState('机构采编队伍扩充及下辖网格通讯员扫码入驻');
+  const [addReason, setAddReason] = useState('机构采编通讯团队扩充');
   const [operatorName, setOperatorName] = useState('系统管理员');
 
   const remainingCount = Math.max(0, totalLimit - usedCount);
@@ -68,25 +69,26 @@ export const useQrQuotaViewModel = ({
     const updatedPersonnel = boundPersonnel.filter((person) => person.id !== id);
     setBoundPersonnel(updatedPersonnel);
     setUsedCount(newUsed);
-    onChangeQrConfig({ totalLimit, usedCount: newUsed, historyRecords: history });
-    showToast(`已成功解绑人员【${name}】，二维码使用名额已释放 +1`, 'success');
+    onChangeQrConfig({ initialQuota, totalLimit, usedCount: newUsed, historyRecords: history });
+    showToast(`已成功解绑人员【${name}】，名额已释放并恢复可用`, 'success');
   };
 
-  const handleConfirmAddQuota = (event: FormEvent) => {
-    event.preventDefault();
-    if (addAmount <= 0) {
+  const handleConfirmAddQuota = (event?: FormEvent) => {
+    if (event) event.preventDefault();
+    const amount = Number(addAmount);
+    if (!amount || amount <= 0) {
       showToast('请输入有效的增加额度数量（必须大于0）', 'warning');
       return;
     }
 
     const previousLimit = totalLimit;
-    const newTotal = previousLimit + addAmount;
+    const newTotal = previousLimit + amount;
     const newRecord: QrQuotaAddRecord = {
       id: `REC-${Date.now().toString().slice(-8)}`,
-      addAmount,
+      addAmount: amount,
       previousLimit,
       newLimit: newTotal,
-      reason: addReason.trim() || '机构日常扩容分配',
+      reason: addReason.trim() || '机构日常扩充追加',
       operator: operatorName.trim() || '系统管理员',
       createdAt: formatDateTime(),
     };
@@ -94,16 +96,17 @@ export const useQrQuotaViewModel = ({
 
     setTotalLimit(newTotal);
     setHistory(updatedHistory);
-    onChangeQrConfig({ totalLimit: newTotal, usedCount, historyRecords: updatedHistory });
+    onChangeQrConfig({ initialQuota, totalLimit: newTotal, usedCount, historyRecords: updatedHistory });
     setShowAddModal(false);
     showToast(
-      `成功为【${institution?.name || '当前机构'}】增发 ${addAmount} 个二维码名额！当前总额度达 ${newTotal} 个。`,
+      `已成功新增 ${amount} 个激活码名额！当前总名额为 ${newTotal} 个。`,
       'success'
     );
   };
 
   return {
     state: {
+      initialQuota,
       totalLimit,
       usedCount,
       history,

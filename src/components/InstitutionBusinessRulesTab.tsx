@@ -1014,9 +1014,9 @@ const RULE_NAV_ITEMS: NavItem[] = [
   },
   {
     key: 'qr_code',
-    label: '二维码配置',
+    label: '激活码配置',
     icon: 'qr_code_2',
-    description: '当前机构专属二维码名额额度管理、增发记录与绑定人员名单',
+    description: '当前机构专属激活码名额额度管理、增发记录与绑定人员名单',
     badge: '名额',
   },
   {
@@ -1155,6 +1155,7 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
     value_added: 'value_added',
   };
   const activeV8Module = V8_NAV_TO_MODULE[activeNav];
+  const [showValueAddedBanner, setShowValueAddedBanner] = React.useState(true);
   const v8StorageKey = isGlobalScope
     ? 'mt_global_v8_business_config'
     : `mt_inst_v8_business_config_${institution?.id ?? 'new'}`;
@@ -2276,23 +2277,35 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
                 </div>
               </div>
 
-              {/* Yellow Banner */}
-              <div className="bg-[#fffbe6] border border-[#ffe58f] rounded-lg p-3.5 flex items-start gap-2.5 shadow-2xs">
-                <span className="material-symbols-outlined text-[#faad14] text-[19px] shrink-0 mt-0.5">
-                  info
-                </span>
-                <div className="space-y-0.5">
-                  <div className="text-xs font-bold text-[#d48806]">
-                    增值业务运营管控说明
+              {/* Yellow Banner with Dismiss/Delete Button */}
+              {showValueAddedBanner && (
+                <div className="bg-[#fffbe6] border border-[#ffe58f] rounded-lg p-3.5 flex items-start justify-between gap-2.5 shadow-2xs">
+                  <div className="flex items-start gap-2.5 min-w-0">
+                    <span className="material-symbols-outlined text-[#faad14] text-[19px] shrink-0 mt-0.5">
+                      info
+                    </span>
+                    <div className="space-y-0.5 min-w-0">
+                      <div className="text-xs font-bold text-[#d48806]">
+                        增值业务运营管控说明
+                      </div>
+                      <div className="text-xs text-gray-700 leading-relaxed">
+                        本模块面向平台运营人员统一管控。在全局配置中开启增值业务后，机构在添加或编辑时才能进行管理与开通；如果在此处未开启该增值业务，机构端将不会出现对应业务选项。
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-xs text-gray-700 leading-relaxed">
-                    本模块面向平台运营人员统一管控。在全局配置中开启增值业务后，机构在添加或编辑时才能进行管理与开通；如果在此处未开启该增值业务，机构端将不会出现对应业务选项。
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowValueAddedBanner(false)}
+                    className="p-1 rounded text-gray-400 hover:text-gray-700 hover:bg-amber-100/70 transition-colors cursor-pointer shrink-0"
+                    title="关闭说明"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">close</span>
+                  </button>
                 </div>
-              </div>
+              )}
 
-              {/* 2x2 Grid for Value-Added Services */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Responsive Grid for Value-Added Services (Auto-expands to 4 cols on wide screens) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                 {(rules.valueAddedServices || defaultValueAddedServices).map((service) => {
                   const isPurchased = service.isPurchased;
                   const isEnabled = service.isEnabled;
@@ -2300,112 +2313,71 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
                   return (
                     <div
                       key={service.id}
-                      className={`bg-white rounded-xl p-5 shadow-xs transition-all space-y-3.5 relative overflow-hidden flex flex-col justify-between ${
+                      className={`rounded-lg p-3.5 transition-all space-y-2 relative overflow-hidden flex flex-col justify-between ${
                         isPurchased && isEnabled
-                          ? 'border border-amber-300 ring-2 ring-amber-100/70 shadow-amber-500/5'
-                          : 'border border-gray-200 hover:border-gray-300'
+                          ? 'bg-gradient-to-b from-blue-50/70 via-blue-50/30 to-white border-2 border-blue-400/80 shadow-xs hover:shadow-sm hover:border-blue-500'
+                          : 'bg-gray-50/90 border border-gray-200 hover:border-gray-300 opacity-90'
                       }`}
                     >
-                      <div className="space-y-3.5">
+                      <div className="space-y-2">
                         {/* Card Header Top */}
-                        <div className="flex items-start justify-between gap-3">
-                          {/* Left: Icon + Title + Badges */}
-                          <div className="flex items-center gap-3">
-                            <div
-                              className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border ${
-                                isPurchased && !isEnabled
-                                  ? 'bg-gray-100 border-gray-200 text-gray-400'
-                                  : 'bg-amber-50 border-amber-200 text-amber-500'
-                              }`}
-                            >
-                              <span className="material-symbols-outlined text-[20px]">
-                                {service.icon || 'auto_awesome'}
-                              </span>
-                            </div>
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm font-bold text-gray-900">
-                                  {service.name}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-1.5 mt-1">
-                                {isPurchased ? (
-                                  <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-600 border border-emerald-200">
-                                    <span className="material-symbols-outlined text-[13px]">
-                                      check_circle
-                                    </span>
-                                    <span>已开通</span>
-                                  </span>
-                                ) : (
-                                  <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-500 border border-gray-200">
-                                    <span className="material-symbols-outlined text-[13px]">
-                                      lock
-                                    </span>
-                                    <span>未开通</span>
-                                  </span>
-                                )}
-
-                                <span
-                                  className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium border ${
-                                    isPurchased && !isEnabled
-                                      ? 'bg-gray-100 text-gray-500 border-gray-200'
-                                      : 'bg-amber-50 text-amber-700 border-amber-200'
-                                  }`}
-                                >
-                                  {service.tag || '增值扩展功能'}
-                                </span>
-                              </div>
-                            </div>
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <span className={`text-xs font-bold truncate block ${isPurchased && isEnabled ? 'text-gray-900' : 'text-gray-500'}`}>
+                              {service.name}
+                            </span>
                           </div>
 
                           {/* Right: Toggle Switch or Disabled Badge */}
                           {isPurchased ? (
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1.5 shrink-0">
                               <button
                                 type="button"
                                 onClick={() => toggleValueAddedService(service)}
-                                className={`relative inline-flex h-[22px] w-[42px] shrink-0 items-center rounded-full transition-colors cursor-pointer select-none px-[2px] ${
+                                className={`relative inline-flex h-[20px] w-[38px] shrink-0 items-center rounded-full transition-colors cursor-pointer select-none px-[2px] ${
                                   isEnabled ? 'bg-[#10b981]' : 'bg-gray-300'
                                 }`}
                               >
                                 <span
-                                  className={`inline-block h-[18px] w-[18px] rounded-full bg-white shadow-xs transition-transform ${
-                                    isEnabled ? 'translate-x-[20px]' : 'translate-x-0'
+                                  className={`inline-block h-[16px] w-[16px] rounded-full bg-white shadow-xs transition-transform ${
+                                    isEnabled ? 'translate-x-[18px]' : 'translate-x-0'
                                   }`}
                                 />
                               </button>
                               <span
-                                className={`text-xs font-medium select-none ${
-                                  isEnabled ? 'text-gray-900' : 'text-gray-400'
+                                className={`text-[10px] font-bold select-none ${
+                                  isEnabled ? 'text-emerald-700' : 'text-gray-500'
                                 }`}
                               >
-                                {isEnabled ? '已启用' : '已停用'}
+                                {isEnabled ? '已开通' : '未开通'}
                               </span>
                             </div>
                           ) : (
-                            <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-400 border border-gray-200 select-none">
-                              <span className="material-symbols-outlined text-[14px]">
+                            <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-400 border border-gray-200 select-none shrink-0">
+                              <span className="material-symbols-outlined text-[13px]">
                                 lock
                               </span>
-                              <span>未开通 (不可启禁)</span>
+                              <span>未开通</span>
                             </div>
                           )}
                         </div>
 
                         {/* Product Intro Label */}
                         <div
-                          className={`text-xs font-semibold flex items-center gap-1.5 ${
-                            isPurchased && !isEnabled ? 'text-gray-500' : 'text-[#d48806]'
+                          className={`text-[10px] font-bold flex items-center gap-1 ${
+                            isPurchased && isEnabled ? 'text-blue-600' : 'text-gray-400'
                           }`}
                         >
-                          <span className="material-symbols-outlined text-[16px]">
+                          <span className="material-symbols-outlined text-[14px]">
                             description
                           </span>
                           <span>产品功能介绍</span>
                         </div>
 
                         {/* Description Box */}
-                        <div className="bg-gray-50/80 rounded-lg p-3 border border-gray-100 text-xs text-gray-600 leading-relaxed">
+                        <div className={`rounded-md p-2 border text-[11px] leading-relaxed ${
+                          isPurchased && isEnabled ? 'bg-white text-gray-700 border-blue-200/60 shadow-2xs' : 'bg-gray-100/70 text-gray-400 border-gray-200'
+                        }`}>
                           {service.name === '报送首发重复识别'
                             ? '通过抓取报送链接的文章原文比对判断内容是否重复，并结合提交时间线智能判定首发，避免多头报送与重复审核计分。'
                             : service.description}
@@ -2414,9 +2386,9 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
 
                       {/* Bottom Info Banner for Unpurchased Services */}
                       {!isPurchased && (
-                        <div className="mt-2 bg-[#fffbe6] border border-[#ffe58f] rounded-lg px-3 py-2 text-xs text-[#d48806] flex items-center justify-between">
-                          <div className="flex items-center gap-1.5">
-                            <span className="material-symbols-outlined text-[16px] text-[#faad14]">
+                        <div className="mt-1 bg-amber-50/90 border border-amber-200/80 rounded-md px-2.5 py-1 text-[10px] text-amber-800 flex items-center justify-between">
+                          <div className="flex items-center gap-1">
+                            <span className="material-symbols-outlined text-[13px] text-amber-600">
                               info
                             </span>
                             <span>{service.contactSalesTip || '如需开通请联系对应的销售人员'}</span>
@@ -2429,12 +2401,12 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
                                 navigator.clipboard?.writeText?.(info);
                                 showToast(`已复制销售顾问联系信息：${info}`, 'success');
                               }}
-                              className="text-[11px] text-[#1677ff] hover:underline cursor-pointer flex items-center gap-0.5 ml-2 shrink-0"
+                              className="text-[10px] text-[#1677ff] hover:underline cursor-pointer flex items-center gap-0.5 ml-1 shrink-0 font-medium"
                             >
                               <span>
                                 {institution.salesName} ({institution.salesPhone})
                               </span>
-                              <span className="material-symbols-outlined text-[13px]">
+                              <span className="material-symbols-outlined text-[11px]">
                                 content_copy
                               </span>
                             </button>
