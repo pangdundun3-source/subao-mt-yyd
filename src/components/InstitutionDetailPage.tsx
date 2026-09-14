@@ -501,10 +501,10 @@ export const InstitutionDetailPage: React.FC<InstitutionDetailPageProps> = ({
 
         {/* Provisioning Control Box */}
         <div
-          className={`border rounded-lg p-5 shadow-2xs space-y-4 transition-colors ${
+          className={`rounded-lg p-5 shadow-2xs space-y-4 transition-colors ${
             isExpired && !isEditing && !isCreateMode
-              ? 'bg-[#fffafb] border-red-100'
-              : 'bg-[#f8faff] border-[#d6e4ff]'
+              ? 'bg-[#fffafb]'
+              : 'bg-[#f8faff]'
           }`}
         >
           <div
@@ -785,7 +785,7 @@ export const InstitutionDetailPage: React.FC<InstitutionDetailPageProps> = ({
         </div>
 
         {/* Personnel Table or Clean Empty State */}
-        <div className="border border-gray-200 rounded-xs overflow-hidden bg-white">
+        <div className="rounded-xs overflow-hidden bg-white">
           <table className="w-full text-left text-xs border-collapse table-fixed">
             <colgroup>
               <col className="w-14" />
@@ -945,14 +945,14 @@ export const InstitutionDetailPage: React.FC<InstitutionDetailPageProps> = ({
         </>
       )}
 
-      {/* Tab: 各业务规则一级配置模块 (Templates, Scoring, Dict, Workflow, Value Added, QR, Other) */}
+      {/* Tab 2: 其他业务配置 (Other Business Rules & Configurations) - Left Sub-Nav Layout */}
       {detailTab !== 'basic' && (
         <InstitutionBusinessRulesTab
-          key={detailTab}
+          key={institution?.id || 'rules'}
           institution={institution}
           isCreateMode={isCreateMode}
-          initialNav={detailTab as BusinessRuleNavKey}
-          hideSubNav={true}
+          isGlobalScope={false}
+          hideSubNav={false}
           onSaveRules={(newRules) => {
             onSave({ businessRules: newRules });
             showToast('机构专属业务规则已成功保存并实时生效！');

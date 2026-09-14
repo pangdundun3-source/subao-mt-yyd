@@ -141,13 +141,7 @@ export interface DetailTabItem {
 
 export const INSTITUTION_DETAIL_TABS: DetailTabItem[] = [
   { key: 'basic', label: '基础信息与服务', icon: 'corporate_fare' },
-  { key: 'templates', label: '模板配置', icon: 'dashboard_customize' },
-  { key: 'scoring', label: '审核打分规则', icon: 'fact_check' },
-  { key: 'dictionary', label: '数据字典维护', icon: 'menu_book' },
-  { key: 'workflow', label: '审核层级/流程', icon: 'account_tree' },
-  { key: 'value_added', label: '增值业务', icon: 'auto_awesome' },
-  { key: 'qr_code', label: '激活码配置', icon: 'qr_code_2' },
-  { key: 'other', label: '其他配置', icon: 'tune' },
+  { key: 'business_rules', label: '其他业务配置', icon: 'tune' },
 ];
 
 type ToastType = 'success' | 'warning';

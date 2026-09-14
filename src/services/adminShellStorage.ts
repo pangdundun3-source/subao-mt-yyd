@@ -89,6 +89,7 @@ export const adminShellStorage = {
     const saved = read(STORAGE_KEYS.institutionDetailTab);
     const validTabs: DetailTab[] = [
       'basic',
+      'business_rules',
       'templates',
       'scoring',
       'dictionary',
@@ -98,12 +99,12 @@ export const adminShellStorage = {
       'other',
     ];
     if (saved && validTabs.includes(saved as DetailTab)) {
+      if (['templates', 'scoring', 'dictionary', 'workflow', 'value_added', 'qr_code', 'other'].includes(saved)) {
+        return 'business_rules';
+      }
       return saved as DetailTab;
     }
-    if (saved === 'business_rules') {
-      return 'templates';
-    }
-    return 'templates';
+    return 'business_rules';
   },
 
   saveInstitutionDetailTab: (tab: DetailTab) =>

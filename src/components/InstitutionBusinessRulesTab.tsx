@@ -1021,8 +1021,8 @@ const RULE_NAV_ITEMS: NavItem[] = [
   },
   {
     key: 'other',
-    label: '其他配置',
-    icon: 'tune',
+    label: '公众号换绑',
+    icon: 'sync_alt',
     description: '微信公众号接入通道与采编人员一键换绑迁移',
     badge: '公众号',
   },
@@ -1209,11 +1209,11 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
   return (
     <div className="space-y-6 pb-20">
       {/* Main Layout: Either Two-Column with Left Sub-Nav or Full-Width Panel */}
-      <div className={hideSubNav ? 'space-y-6 w-full' : 'grid grid-cols-1 lg:grid-cols-12 gap-6 items-start'}>
+      <div className={hideSubNav ? 'space-y-6 w-full' : 'flex flex-col lg:flex-row gap-5 items-start'}>
         {/* Left Vertical Sub-Nav */}
         {!hideSubNav && (
-          <div className="lg:col-span-3 bg-white rounded-lg border border-gray-200 shadow-2xs overflow-hidden sticky top-4">
-            <div className="p-2 space-y-1">
+          <div className="w-full lg:w-48 shrink-0 bg-white rounded-lg border border-gray-200/80 shadow-2xs overflow-hidden sticky top-4">
+            <div className="p-1.5 space-y-1">
               {RULE_NAV_ITEMS.map((item) => {
                 const isActive = activeNav === item.key;
                 return (
@@ -1221,7 +1221,7 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
                     key={item.key}
                     type="button"
                     onClick={() => handleNavChange(item.key)}
-                    className={`w-full text-left px-3.5 py-3 rounded-md transition-all cursor-pointer flex items-center justify-between group ${
+                    className={`w-full text-left px-3 py-2.5 rounded-md transition-all cursor-pointer flex items-center group ${
                       isActive
                         ? 'bg-blue-50 text-[#1890ff] font-bold shadow-2xs border border-blue-200/80'
                         : 'text-gray-700 hover:bg-gray-50 border border-transparent'
@@ -1229,28 +1229,14 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       <span
-                        className={`material-symbols-outlined text-[19px] transition-colors ${
+                        className={`material-symbols-outlined text-[19px] shrink-0 transition-colors ${
                           isActive ? 'text-[#1890ff]' : 'text-gray-400 group-hover:text-gray-600'
                         }`}
                       >
                         {item.icon}
                       </span>
-                      <div className="truncate">
-                        <div className="text-xs truncate">{item.label}</div>
-                      </div>
+                      <span className="text-xs truncate font-medium">{item.label}</span>
                     </div>
-
-                    {item.badge && (
-                      <span
-                        className={`text-[10px] px-1.5 py-0.2 rounded font-medium ${
-                          isActive
-                            ? 'bg-white text-[#1890ff] border border-blue-200'
-                            : 'bg-gray-100 text-gray-500'
-                        }`}
-                      >
-                        {item.badge}
-                      </span>
-                    )}
                   </button>
                 );
               })}
@@ -1259,7 +1245,7 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
         )}
 
         {/* Right Configuration Content Panel */}
-        <div className={hideSubNav ? 'space-y-6 w-full' : 'lg:col-span-9 space-y-6'}>
+        <div className={hideSubNav ? 'space-y-6 w-full' : 'flex-1 min-w-0 space-y-6'}>
           {/* 与 V8 业务配置维护 1:1 对齐的模块右侧内容（模板配置/审核打分/字典/审核流程/增值业务） */}
           {activeV8Module && (
             <V8BusinessConfigBoard

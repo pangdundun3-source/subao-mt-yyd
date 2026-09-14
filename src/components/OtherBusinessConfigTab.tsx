@@ -48,7 +48,7 @@ interface NavSegmentItem {
 const SEGMENT_ITEMS: NavSegmentItem[] = [
   {
     key: 'wechat_mp',
-    title: '微信公众号配置',
+    title: '公众号配置',
     badge: '运行中',
     icon: 'chat',
     summary: '公众号接入与发稿通道',
@@ -56,7 +56,7 @@ const SEGMENT_ITEMS: NavSegmentItem[] = [
   },
   {
     key: 'mp_migration',
-    title: '人员一键换绑迁移',
+    title: '人员换绑',
     badge: '3/6人',
     icon: 'swap_horiz',
     summary: '采编人员无损跨号迁移',
@@ -87,23 +87,27 @@ export const OtherBusinessConfigTab: React.FC<OtherBusinessConfigTabProps> = ({
     defaultOtherBusinessConfig,
     onShowToast: showToast,
   });
-  const { activeSubTab, showHelpGuide, otherConfig, institutionName } = state;
+  const { activeSubTab, otherConfig } = state;
   const {
-    setShowHelpGuide,
     handleSubTabChange,
     handleUpdateWechatMp,
     handleUpdateMigration,
   } = actions;
 
-  return (
-    <div className="flex flex-col lg:flex-row gap-5 items-start">
-      {/* 1. 左侧分类导航菜单 */}
-      <div className="w-full lg:w-60 xl:w-64 shrink-0 space-y-3">
-        <div className="bg-white rounded-xl border border-gray-200 p-2 shadow-2xs space-y-1">
-          <div className="px-3 pt-2 pb-1.5 text-[11px] font-semibold text-gray-400 select-none">
-            其他配置项
-          </div>
+  const isCustomBound =
+    otherConfig.wechatMp?.mode === 'custom_official' &&
+    Boolean(otherConfig.wechatMp?.isCustomBound);
 
+  const currentMpName = isCustomBound
+    ? otherConfig.wechatMp?.mpName || '随州融媒发布 (官方服务号)'
+    : otherConfig.wechatMp?.sourceMpName || '点点速报 (平台统配)';
+
+  return (
+    <div className="space-y-4">
+      {/* 顶部横向切换导航栏 */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-2.5 rounded-xl border border-gray-200/80 shadow-2xs">
+        {/* 横向 Tab 选项 */}
+        <div className="inline-flex items-center gap-1 p-1 bg-gray-100/90 rounded-lg border border-gray-200/60">
           {SEGMENT_ITEMS.map((item) => {
             const isActive = activeSubTab === item.key;
             return (
@@ -111,45 +115,36 @@ export const OtherBusinessConfigTab: React.FC<OtherBusinessConfigTabProps> = ({
                 key={item.key}
                 type="button"
                 onClick={() => handleSubTabChange(item.key)}
-                className={`w-full text-left p-3 rounded-lg text-xs transition-all cursor-pointer flex items-center justify-between group ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-md text-xs font-bold transition-all cursor-pointer ${
                   isActive
-                    ? 'bg-blue-50 text-[#1890ff] font-semibold border border-blue-200/80 shadow-2xs'
-                    : 'text-gray-700 hover:bg-gray-50 border border-transparent'
+                    ? 'bg-white text-[#1890ff] shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200/50'
                 }`}
               >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <span
-                    className={`material-symbols-outlined text-[20px] shrink-0 transition-colors ${
-                      isActive ? 'text-[#1890ff]' : 'text-gray-400 group-hover:text-gray-600'
-                    }`}
-                  >
-                    {item.icon}
-                  </span>
-                  <div className="min-w-0">
-                    <div className="truncate text-xs font-medium text-gray-900 group-hover:text-[#1890ff]">
-                      {item.title}
-                    </div>
-                    <div className="text-[11px] text-gray-400 font-normal truncate mt-0.5">
-                      {item.summary}
-                    </div>
-                  </div>
-                </div>
-
                 <span
-                  className={`text-[10px] px-1.5 py-0.5 rounded font-normal shrink-0 ml-1.5 border ${
-                    isActive ? item.badgeClass : 'bg-gray-100 text-gray-400 border-transparent'
+                  className={`material-symbols-outlined text-[17px] ${
+                    isActive ? 'text-[#1890ff]' : 'text-gray-500'
                   }`}
                 >
-                  {item.badge}
+                  {item.icon}
                 </span>
+                <span>{item.title}</span>
               </button>
             );
           })}
         </div>
+
+        {/* 右侧当前生效公众号展示 */}
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50/80 rounded-lg border border-gray-200/60 text-xs text-gray-600 shrink-0">
+          <span className="material-symbols-outlined text-[16px] text-[#07c160]">chat</span>
+          <span>
+            当前公众号：<strong className="text-gray-900 font-semibold">{currentMpName}</strong>
+          </span>
+        </div>
       </div>
 
-      {/* 2. 右侧主体配置区 */}
-      <div className="flex-1 min-w-0 w-full">
+      {/* 下方主体配置面板 (全宽显示) */}
+      <div className="w-full">
         {/* Sub-Tab 1: Wechat MP Config */}
         {activeSubTab === 'wechat_mp' && (
           <WechatMpConfigSection
@@ -157,6 +152,7 @@ export const OtherBusinessConfigTab: React.FC<OtherBusinessConfigTabProps> = ({
             config={otherConfig.wechatMp || defaultWechatMpConfig}
             onChangeConfig={handleUpdateWechatMp}
             showToast={showToast}
+            onNavigateToMigration={() => handleSubTabChange('mp_migration')}
           />
         )}
 
@@ -168,6 +164,7 @@ export const OtherBusinessConfigTab: React.FC<OtherBusinessConfigTabProps> = ({
             migrationConfig={otherConfig.migration}
             onChangeMigration={handleUpdateMigration}
             showToast={showToast}
+            onNavigateToMpConfig={() => handleSubTabChange('wechat_mp')}
           />
         )}
       </div>

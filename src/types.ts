@@ -205,9 +205,23 @@ export interface WechatMpTemplateConfig {
   dailyReportTemplateId: string; // 每日舆情晨报模板ID
 }
 
+export interface CustomWechatMpItem {
+  id: string;
+  mpName: string; // 公众号名称，如 "随州融媒发布"
+  wechatAccount: string; // 微信号，如 "suizhou_mt_news"
+  appId: string; // 开发者 AppID
+  appSecret?: string; // 开发者 AppSecret
+  originalId: string; // 微信原始ID，如 "gh_88392104bf71"
+  authStatus: 'authorized' | 'unauthorized' | 'verifying' | 'abnormal';
+  isBound: boolean; // 是否为当前生效换绑的自有公众号 (多个中只能启用1个)
+  boundTime?: string; // 换绑启用时间
+  createdAt: string; // 创建添加时间
+  remark?: string;
+}
+
 export interface WechatMpConfig {
   mode: WechatMpMode; // 'platform_default' | 'custom_official'
-  mpName: string; // 公众号名称，如 "随州融媒发布" 或 "点点速报"
+  mpName: string; // 当前生效公众号名称，如 "随州融媒发布" 或 "点点速报"
   wechatAccount: string; // 微信号，如 "suizhou_mt_news"
   originalId: string; // 微信原始ID，如 "gh_a87293b610c4"
   appId: string; // 开发者 AppID
@@ -223,6 +237,12 @@ export interface WechatMpConfig {
   jsSafeDomains?: string[]; // JS 接口安全域名
   ipWhitelist?: string; // 白名单 IP
   remark?: string;
+  // 自有公众号列表管理与换绑状态控制
+  customMps?: CustomWechatMpItem[];
+  activeCustomMpId?: string; // 当前启用的自有公众号ID
+  sourceMpName?: string; // 换绑来源公众号（如 平台默认：点点速报）
+  lastBoundTime?: string; // 最近成功换绑时间
+  isCustomBound?: boolean; // 是否已完成自有公众号换绑（为 true 方可开启人员迁移）
 }
 
 // 公众号人员迁移状态
@@ -232,7 +252,7 @@ export interface MpPersonnelMigrationItem {
   id: string;
   avatar: string;
   name: string;
-  nickname: string;
+  nickname?: string;
   department: string;
   role: string;
   phone: string;
@@ -242,11 +262,11 @@ export interface MpPersonnelMigrationItem {
   targetOpenId?: string; // 目标公众号 OpenID
   unionId?: string; // 微信 UnionID (如打通同一开放平台)
   status: MpMigrationStatus;
-  matchedVia: 'union_id' | 'wechat_template_card' | 'sms_invite' | 'qr_scan' | 'manual';
+  matchedVia?: 'union_id' | 'wechat_template_card' | 'sms_invite' | 'qr_scan' | 'manual';
   invitationSentTime?: string;
   migratedTime?: string;
   remindCount: number;
-  inheritedRoles: string[];
+  inheritedRoles?: string[];
   inheritedDraftsCount: number;
   inheritedPoints: number;
   lastRemindTime?: string;
@@ -467,6 +487,7 @@ export type SystemLogCategory = 'login' | 'audit' | 'security' | 'data_change' |
 
 export type DetailTab =
   | 'basic'
+  | 'business_rules'
   | 'templates'
   | 'scoring'
   | 'dictionary'

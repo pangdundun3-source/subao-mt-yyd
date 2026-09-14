@@ -34,7 +34,9 @@ import {
   GitBranch,
   Wand2,
   ExternalLink,
-  ChevronDown
+  ChevronDown,
+  Clock,
+  Layers
 } from 'lucide-react';
 
 export type TemplateType = '报送' | '激活';
@@ -89,7 +91,118 @@ interface TemplateConfigBoardProps {
   institutionId?: number | string | null;
   isGlobalScope?: boolean;
   onSaveNotice?: (msg: string) => void;
+  onNavigateToWorkflow?: () => void;
 }
+
+export interface ScoringRuleOptionItem {
+  id: string;
+  name: string;
+  maxScore: number;
+  grades: { name: string; score: number }[];
+}
+
+export const SCORING_RULE_OPTIONS: ScoringRuleOptionItem[] = [
+  {
+    id: 'sr_100_standard',
+    name: '标准五级百分制打分规则组',
+    maxScore: 100,
+    grades: [
+      { name: '一等（特优）', score: 100 },
+      { name: '二等（优秀）', score: 90 },
+      { name: '三等（良好）', score: 80 },
+      { name: '四等（合格）', score: 70 },
+      { name: '五等（基本）', score: 60 }
+    ]
+  },
+  {
+    id: 'sr_30_simple',
+    name: '三级简易打分规则组',
+    maxScore: 30,
+    grades: [
+      { name: '一等（采用）', score: 30 },
+      { name: '二等（存留）', score: 20 },
+      { name: '三等（参考）', score: 10 }
+    ]
+  },
+  {
+    id: 'sr_custom_score',
+    name: '自定义加减分评价规则组',
+    maxScore: 100,
+    grades: [
+      { name: '重特大正面', score: 100 },
+      { name: '常规正面', score: 80 },
+      { name: '一般动态', score: 60 },
+      { name: '瑕疵需整改', score: 30 }
+    ]
+  }
+];
+
+export interface AuditFlowNodePreview {
+  order: number;
+  name: string;
+  role: string;
+  duration: string;
+}
+
+export interface AuditFlowOptionItem {
+  id: string;
+  name: string;
+  depth: number;
+  fallbackText: string;
+  applyScopeText: string;
+  nodes: AuditFlowNodePreview[];
+}
+
+export const AUDIT_FLOW_PRESET_OPTIONS: AuditFlowOptionItem[] = [
+  {
+    id: 'flow_adaptive_tree_3',
+    name: '逐级审核流程（组织树自适应）（3级）',
+    depth: 3,
+    fallbackText: '兜底: 直转上级',
+    applyScopeText: '全辖机构适用',
+    nodes: [
+      { order: 1, name: '本级机构初审', role: '本级机构负责人', duration: '15m' },
+      { order: 2, name: '上级机构逐级复核', role: '上级机构负责人', duration: '30m' },
+      { order: 3, name: '总机构终审并评分', role: '总机构管理员', duration: '60m' }
+    ]
+  },
+  {
+    id: 'flow_max_3_fast',
+    name: '最多3级快速审核流程（2级/3级）',
+    depth: 3,
+    fallbackText: '兜底: 越级送审',
+    applyScopeText: '直报模板适用',
+    nodes: [
+      { order: 1, name: '本级机构初审', role: '本级机构负责人', duration: '15m' },
+      { order: 2, name: '中继机构复核（至多3级）', role: '归属机构负责人', duration: '20m' },
+      { order: 3, name: '总机构终审并评分', role: '总机构管理员', duration: '60m' }
+    ]
+  },
+  {
+    id: 'flow_direct_2_fast',
+    name: '两级极速直签研判流程（2级）',
+    depth: 2,
+    fallbackText: '兜底: 超时默认签发',
+    applyScopeText: '应急模板适用',
+    nodes: [
+      { order: 1, name: '应急初审与研判', role: '归属机构负责人', duration: '10m' },
+      { order: 2, name: '总机构终审并评分', role: '总机构管理员', duration: '30m' }
+    ]
+  },
+  {
+    id: 'flow_multi_4_level',
+    name: '四级跨层级全辖联审流程（4级）',
+    depth: 4,
+    fallbackText: '兜底: 联合会商转办',
+    applyScopeText: '重点事件模板适用',
+    nodes: [
+      { order: 1, name: '本级机构初审', role: '本级机构负责人', duration: '15m' },
+      { order: 2, name: '区县中心复核', role: '区县级网信负责人', duration: '30m' },
+      { order: 3, name: '市级应急指挥中心初核', role: '市级值班负责人', duration: '45m' },
+      { order: 4, name: '总机构终审并评分', role: '总机构管理员', duration: '60m' }
+    ]
+  }
+];
 
 // System standard preset fields for 报送模板
 export const standardReportFields: TemplateFieldItem[] = [
@@ -133,7 +246,7 @@ const initialDefaultTemplates: BusinessTemplateItem[] = [
     scoreRuleId: 'sr_100_standard',
     scoreTiming: '终审打分',
     includeInEvaluation: true,
-    auditFlowId: 'flow_std_2step'
+    auditFlowId: 'flow_adaptive_tree_3'
   },
   {
     id: 'tpl_report_quick',
@@ -152,7 +265,7 @@ const initialDefaultTemplates: BusinessTemplateItem[] = [
     scoreRuleId: 'sr_100_standard',
     scoreTiming: '初审打分',
     includeInEvaluation: true,
-    auditFlowId: 'flow_std_2step'
+    auditFlowId: 'flow_max_3_fast'
   },
   {
     id: 'tpl_act_std',
@@ -198,7 +311,8 @@ const initialDefaultTemplates: BusinessTemplateItem[] = [
 export const TemplateConfigBoard: React.FC<TemplateConfigBoardProps> = ({
   institutionId,
   isGlobalScope = false,
-  onSaveNotice
+  onSaveNotice,
+  onNavigateToWorkflow
 }) => {
   const storageKey = `v8_template_board_data_${institutionId ?? 'global'}`;
 
@@ -242,11 +356,32 @@ export const TemplateConfigBoard: React.FC<TemplateConfigBoardProps> = ({
   const [designerDesc, setDesignerDesc] = useState('');
   const [designerFields, setDesignerFields] = useState<TemplateFieldItem[]>([]);
 
-  // Right column sub-tab for 报送模板: 'score' | 'flow'
-  const [rightSubTab, setRightSubTab] = useState<'score' | 'flow'>('score');
+  // Right column sub-tab for 报送模板: 'score' | 'flow' (Default to 'flow' per user audit flow optimization)
+  const [rightSubTab, setRightSubTab] = useState<'score' | 'flow'>('flow');
+
+  // Pending changes for right side other config (规则打分 / 审核流程 / 实名核验 / 适配角色)
+  const [pendingOtherConfig, setPendingOtherConfig] = useState<{
+    templateId: string;
+    scoreRuleId?: string;
+    scoreTiming?: '初审打分' | '终审打分';
+    includeInEvaluation?: boolean;
+    auditFlowId?: string;
+    verificationOptions?: {
+      phoneVerify: boolean;
+      idCardVerify: boolean;
+      bankCardVerify: boolean;
+    };
+    adaptedRoles?: string[];
+  } | null>(null);
+
+  // When selectedTemplateId or topTab changes, reset pending changes
+  useEffect(() => {
+    setPendingOtherConfig(null);
+  }, [selectedTemplateId, topTab]);
 
   // Interactive phone preview input states
   const [phoneFormValues, setPhoneFormValues] = useState<Record<string, any>>({});
+  const [submittedSimulate, setSubmittedSimulate] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Trigger Toast
@@ -264,6 +399,73 @@ export const TemplateConfigBoard: React.FC<TemplateConfigBoardProps> = ({
     currentCategoryTemplates.find(t => t.id === selectedTemplateId) ||
     currentCategoryTemplates[0] ||
     templates[0];
+
+  // Active scoreRuleId with pending state fallback
+  const currentScoreRuleId =
+    pendingOtherConfig?.templateId === activeTemplate?.id && pendingOtherConfig.scoreRuleId !== undefined
+      ? pendingOtherConfig.scoreRuleId
+      : activeTemplate?.scoreRuleId || 'sr_100_standard';
+
+  // Active scoreTiming with pending state fallback
+  const currentScoreTiming =
+    pendingOtherConfig?.templateId === activeTemplate?.id && pendingOtherConfig.scoreTiming !== undefined
+      ? pendingOtherConfig.scoreTiming
+      : activeTemplate?.scoreTiming || '终审打分';
+
+  // Active includeInEvaluation with pending state fallback
+  const currentIncludeInEvaluation =
+    pendingOtherConfig?.templateId === activeTemplate?.id && pendingOtherConfig.includeInEvaluation !== undefined
+      ? pendingOtherConfig.includeInEvaluation
+      : activeTemplate?.includeInEvaluation ?? true;
+
+  // Active auditFlowId with pending state fallback
+  const currentAuditFlowId =
+    pendingOtherConfig?.templateId === activeTemplate?.id && pendingOtherConfig.auditFlowId !== undefined
+      ? pendingOtherConfig.auditFlowId
+      : activeTemplate?.auditFlowId || 'flow_adaptive_tree_3';
+
+  // Default verification options fallback
+  const defaultVerificationOptions = {
+    phoneVerify: true,
+    idCardVerify: true,
+    bankCardVerify: false
+  };
+
+  // Active verification options with pending state fallback
+  const currentVerificationOptions =
+    pendingOtherConfig?.templateId === activeTemplate?.id && pendingOtherConfig.verificationOptions !== undefined
+      ? pendingOtherConfig.verificationOptions
+      : activeTemplate?.verificationOptions || defaultVerificationOptions;
+
+  // Default adapted roles fallback
+  const defaultAdaptedRoles = ['上报员', '审核员'];
+
+  // Active adapted roles with pending state fallback
+  const currentAdaptedRoles =
+    pendingOtherConfig?.templateId === activeTemplate?.id && pendingOtherConfig.adaptedRoles !== undefined
+      ? pendingOtherConfig.adaptedRoles
+      : activeTemplate?.adaptedRoles || defaultAdaptedRoles;
+
+  // Check if there are unsaved pending changes compared to activeTemplate
+  const isOtherConfigDirty = Boolean(
+    pendingOtherConfig &&
+    pendingOtherConfig.templateId === activeTemplate?.id &&
+    (
+      (pendingOtherConfig.scoreRuleId !== undefined && pendingOtherConfig.scoreRuleId !== (activeTemplate?.scoreRuleId || 'sr_100_standard')) ||
+      (pendingOtherConfig.scoreTiming !== undefined && pendingOtherConfig.scoreTiming !== (activeTemplate?.scoreTiming || '终审打分')) ||
+      (pendingOtherConfig.includeInEvaluation !== undefined && pendingOtherConfig.includeInEvaluation !== (activeTemplate?.includeInEvaluation ?? true)) ||
+      (pendingOtherConfig.auditFlowId !== undefined && pendingOtherConfig.auditFlowId !== (activeTemplate?.auditFlowId || 'flow_adaptive_tree_3')) ||
+      (pendingOtherConfig.verificationOptions !== undefined && (
+        pendingOtherConfig.verificationOptions.phoneVerify !== (activeTemplate?.verificationOptions?.phoneVerify ?? defaultVerificationOptions.phoneVerify) ||
+        pendingOtherConfig.verificationOptions.idCardVerify !== (activeTemplate?.verificationOptions?.idCardVerify ?? defaultVerificationOptions.idCardVerify) ||
+        pendingOtherConfig.verificationOptions.bankCardVerify !== (activeTemplate?.verificationOptions?.bankCardVerify ?? defaultVerificationOptions.bankCardVerify)
+      )) ||
+      (pendingOtherConfig.adaptedRoles !== undefined && (
+        pendingOtherConfig.adaptedRoles.length !== (activeTemplate?.adaptedRoles || defaultAdaptedRoles).length ||
+        pendingOtherConfig.adaptedRoles.some(r => !(activeTemplate?.adaptedRoles || defaultAdaptedRoles).includes(r))
+      ))
+    )
+  );
 
   // Auto ensure valid selectedTemplateId on topTab change
   useEffect(() => {
@@ -429,44 +631,122 @@ export const TemplateConfigBoard: React.FC<TemplateConfigBoardProps> = ({
     ];
   };
 
-  // Update right side business config (score rules / verification switches)
+  // Update right side business config (score rules / verification switches / adapted roles)
   const handleSaveOtherConfig = () => {
-    saveTemplates([...templates]);
+    if (!activeTemplate) return;
+    const updatedTpl: BusinessTemplateItem = {
+      ...activeTemplate,
+      scoreRuleId: currentScoreRuleId,
+      scoreTiming: currentScoreTiming,
+      includeInEvaluation: currentIncludeInEvaluation,
+      auditFlowId: currentAuditFlowId,
+      verificationOptions: currentVerificationOptions,
+      adaptedRoles: currentAdaptedRoles
+    };
+    const updatedList = templates.map(t => (t.id === activeTemplate.id ? updatedTpl : t));
+    saveTemplates(updatedList);
+    setPendingOtherConfig(null);
     showToast('其他业务配置已成功保存并实时生效！');
   };
 
-  // Update active template verification option
-  const handleToggleVerificationOption = (key: 'phoneVerify' | 'idCardVerify' | 'bankCardVerify') => {
+  // Select score rule (pending modification)
+  const handleSelectScoreRule = (ruleId: string) => {
     if (!activeTemplate) return;
-    const currentOpts = activeTemplate.verificationOptions || {
-      phoneVerify: true,
-      idCardVerify: true,
-      bankCardVerify: false
-    };
-    const updatedTpl: BusinessTemplateItem = {
-      ...activeTemplate,
-      verificationOptions: {
-        ...currentOpts,
-        [key]: !currentOpts[key]
-      }
-    };
-    const updatedList = templates.map(t => (t.id === activeTemplate.id ? updatedTpl : t));
-    saveTemplates(updatedList);
+    setPendingOtherConfig(prev => ({
+      templateId: activeTemplate.id,
+      scoreRuleId: ruleId,
+      scoreTiming: prev?.templateId === activeTemplate.id && prev.scoreTiming !== undefined ? prev.scoreTiming : (activeTemplate.scoreTiming || '终审打分'),
+      includeInEvaluation: prev?.templateId === activeTemplate.id && prev.includeInEvaluation !== undefined ? prev.includeInEvaluation : (activeTemplate.includeInEvaluation ?? true),
+      auditFlowId: prev?.templateId === activeTemplate.id && prev.auditFlowId !== undefined ? prev.auditFlowId : (activeTemplate.auditFlowId || 'flow_adaptive_tree_3'),
+      verificationOptions: prev?.templateId === activeTemplate.id && prev.verificationOptions !== undefined ? prev.verificationOptions : (activeTemplate.verificationOptions || defaultVerificationOptions),
+      adaptedRoles: prev?.templateId === activeTemplate.id && prev.adaptedRoles !== undefined ? prev.adaptedRoles : (activeTemplate.adaptedRoles || defaultAdaptedRoles)
+    }));
   };
 
-  // Update active template adapted roles
+  // Select score timing (pending modification)
+  const handleSelectScoreTiming = (timing: '初审打分' | '终审打分') => {
+    if (!activeTemplate) return;
+    setPendingOtherConfig(prev => ({
+      templateId: activeTemplate.id,
+      scoreRuleId: prev?.templateId === activeTemplate.id && prev.scoreRuleId !== undefined ? prev.scoreRuleId : (activeTemplate.scoreRuleId || 'sr_100_standard'),
+      scoreTiming: timing,
+      includeInEvaluation: prev?.templateId === activeTemplate.id && prev.includeInEvaluation !== undefined ? prev.includeInEvaluation : (activeTemplate.includeInEvaluation ?? true),
+      auditFlowId: prev?.templateId === activeTemplate.id && prev.auditFlowId !== undefined ? prev.auditFlowId : (activeTemplate.auditFlowId || 'flow_adaptive_tree_3'),
+      verificationOptions: prev?.templateId === activeTemplate.id && prev.verificationOptions !== undefined ? prev.verificationOptions : (activeTemplate.verificationOptions || defaultVerificationOptions),
+      adaptedRoles: prev?.templateId === activeTemplate.id && prev.adaptedRoles !== undefined ? prev.adaptedRoles : (activeTemplate.adaptedRoles || defaultAdaptedRoles)
+    }));
+  };
+
+  // Toggle include in evaluation (pending modification)
+  const handleToggleIncludeInEvaluation = () => {
+    if (!activeTemplate) return;
+    setPendingOtherConfig(prev => ({
+      templateId: activeTemplate.id,
+      scoreRuleId: prev?.templateId === activeTemplate.id && prev.scoreRuleId !== undefined ? prev.scoreRuleId : (activeTemplate.scoreRuleId || 'sr_100_standard'),
+      scoreTiming: prev?.templateId === activeTemplate.id && prev.scoreTiming !== undefined ? prev.scoreTiming : (activeTemplate.scoreTiming || '终审打分'),
+      includeInEvaluation: !currentIncludeInEvaluation,
+      auditFlowId: prev?.templateId === activeTemplate.id && prev.auditFlowId !== undefined ? prev.auditFlowId : (activeTemplate.auditFlowId || 'flow_adaptive_tree_3'),
+      verificationOptions: prev?.templateId === activeTemplate.id && prev.verificationOptions !== undefined ? prev.verificationOptions : (activeTemplate.verificationOptions || defaultVerificationOptions),
+      adaptedRoles: prev?.templateId === activeTemplate.id && prev.adaptedRoles !== undefined ? prev.adaptedRoles : (activeTemplate.adaptedRoles || defaultAdaptedRoles)
+    }));
+  };
+
+  // Switch and select audit flow (pending modification)
+  const handleSelectAuditFlow = (flowId: string) => {
+    if (!activeTemplate) return;
+    setPendingOtherConfig(prev => ({
+      templateId: activeTemplate.id,
+      scoreRuleId: prev?.templateId === activeTemplate.id && prev.scoreRuleId !== undefined ? prev.scoreRuleId : (activeTemplate.scoreRuleId || 'sr_100_standard'),
+      scoreTiming: prev?.templateId === activeTemplate.id && prev.scoreTiming !== undefined ? prev.scoreTiming : (activeTemplate.scoreTiming || '终审打分'),
+      includeInEvaluation: prev?.templateId === activeTemplate.id && prev.includeInEvaluation !== undefined ? prev.includeInEvaluation : (activeTemplate.includeInEvaluation ?? true),
+      auditFlowId: flowId,
+      verificationOptions: prev?.templateId === activeTemplate.id && prev.verificationOptions !== undefined ? prev.verificationOptions : (activeTemplate.verificationOptions || defaultVerificationOptions),
+      adaptedRoles: prev?.templateId === activeTemplate.id && prev.adaptedRoles !== undefined ? prev.adaptedRoles : (activeTemplate.adaptedRoles || defaultAdaptedRoles)
+    }));
+  };
+
+  // Jump to workflow management model
+  const handleManageWorkflowModel = () => {
+    if (onNavigateToWorkflow) {
+      onNavigateToWorkflow();
+    } else {
+      showToast('已直达审核流程模型管理');
+    }
+  };
+
+  // Update active template verification option (pending modification)
+  const handleToggleVerificationOption = (key: 'phoneVerify' | 'idCardVerify' | 'bankCardVerify') => {
+    if (!activeTemplate) return;
+    const nextVerification = {
+      ...currentVerificationOptions,
+      [key]: !currentVerificationOptions[key]
+    };
+    setPendingOtherConfig(prev => ({
+      templateId: activeTemplate.id,
+      scoreRuleId: prev?.templateId === activeTemplate.id && prev.scoreRuleId !== undefined ? prev.scoreRuleId : (activeTemplate.scoreRuleId || 'sr_100_standard'),
+      scoreTiming: prev?.templateId === activeTemplate.id && prev.scoreTiming !== undefined ? prev.scoreTiming : (activeTemplate.scoreTiming || '终审打分'),
+      includeInEvaluation: prev?.templateId === activeTemplate.id && prev.includeInEvaluation !== undefined ? prev.includeInEvaluation : (activeTemplate.includeInEvaluation ?? true),
+      auditFlowId: prev?.templateId === activeTemplate.id && prev.auditFlowId !== undefined ? prev.auditFlowId : (activeTemplate.auditFlowId || 'flow_adaptive_tree_3'),
+      verificationOptions: nextVerification,
+      adaptedRoles: prev?.templateId === activeTemplate.id && prev.adaptedRoles !== undefined ? prev.adaptedRoles : (activeTemplate.adaptedRoles || defaultAdaptedRoles)
+    }));
+  };
+
+  // Update active template adapted roles (pending modification)
   const handleToggleAdaptedRole = (role: string) => {
     if (!activeTemplate) return;
-    const currentRoles = activeTemplate.adaptedRoles || ['上报员', '审核员'];
-    const nextRoles = currentRoles.includes(role)
-      ? currentRoles.filter(r => r !== role)
-      : [...currentRoles, role];
-    const updatedTpl: BusinessTemplateItem = {
-      ...activeTemplate,
+    const nextRoles = currentAdaptedRoles.includes(role)
+      ? currentAdaptedRoles.filter(r => r !== role)
+      : [...currentAdaptedRoles, role];
+    setPendingOtherConfig(prev => ({
+      templateId: activeTemplate.id,
+      scoreRuleId: prev?.templateId === activeTemplate.id && prev.scoreRuleId !== undefined ? prev.scoreRuleId : (activeTemplate.scoreRuleId || 'sr_100_standard'),
+      scoreTiming: prev?.templateId === activeTemplate.id && prev.scoreTiming !== undefined ? prev.scoreTiming : (activeTemplate.scoreTiming || '终审打分'),
+      includeInEvaluation: prev?.templateId === activeTemplate.id && prev.includeInEvaluation !== undefined ? prev.includeInEvaluation : (activeTemplate.includeInEvaluation ?? true),
+      auditFlowId: prev?.templateId === activeTemplate.id && prev.auditFlowId !== undefined ? prev.auditFlowId : (activeTemplate.auditFlowId || 'flow_adaptive_tree_3'),
+      verificationOptions: prev?.templateId === activeTemplate.id && prev.verificationOptions !== undefined ? prev.verificationOptions : (activeTemplate.verificationOptions || defaultVerificationOptions),
       adaptedRoles: nextRoles
-    };
-    const updatedList = templates.map(t => (t.id === activeTemplate.id ? updatedTpl : t));
-    saveTemplates(updatedList);
+    }));
   };
 
   // Helper: Get icon for field type in mobile preview & designer (1:1 with design)
@@ -507,155 +787,220 @@ export const TemplateConfigBoard: React.FC<TemplateConfigBoardProps> = ({
     }
   };
 
-  // Interactive Phone Simulator Control Renderer (1:1 with Screenshot image.png)
+  // Interactive Form Preview Simulator Control Renderer (1:1 Restoration with Screenshot)
   const renderPhoneSimulator = (
     fields: TemplateFieldItem[],
     headerTitle: string,
     isActivation: boolean
   ) => {
     return (
-      <div className="w-full max-w-[340px] mx-auto bg-white rounded-[32px] p-2.5 shadow-[0_10px_35px_rgba(0,0,0,0.06)] border border-slate-200/90 transition-all">
-        {/* Inner Phone Screen Container */}
-        <div className="rounded-[24px] overflow-hidden bg-[#EEF2F7] border border-slate-200/70 flex flex-col shadow-inner">
-          {/* 1. Phone Status Bar (Dark Deep Navy/Black) */}
-          <div className="bg-[#0B1528] text-white px-4 py-2 flex items-center justify-between text-[11px] font-sans select-none">
-            <span className="font-semibold text-white tracking-tight text-[12px]">09:41</span>
-            {/* Center Dynamic Notch Pill */}
-            <div className="w-20 h-3.5 bg-black rounded-full shadow-inner flex items-center justify-center">
-              <div className="w-2.5 h-2.5 rounded-full bg-slate-900/80" />
-            </div>
-            {/* Right Cellular & Battery Indicator */}
-            <div className="flex items-center gap-1.5 text-white">
-              <span className="text-[10px] font-bold tracking-tight">5G</span>
-              <div className="w-5 h-2.5 border border-white/90 rounded-[3px] p-[1.5px] flex items-center">
-                <div className="w-full h-full bg-white rounded-[1px]" />
-              </div>
-            </div>
+      <div className="w-full max-w-[420px] mx-auto bg-white rounded-2xl border border-gray-200/90 p-3 shadow-2xs transition-all">
+        {/* Inner Container */}
+        <div className="rounded-xl overflow-hidden bg-[#EEF2F7] flex flex-col border border-slate-200/60">
+          {/* Top Banner (Solid Royal Blue #1E5ABB) */}
+          <div className="bg-[#1E5ABB] text-white py-3 px-4 text-center select-none shadow-xs">
+            <div className="font-bold text-sm tracking-wide">{headerTitle || (isActivation ? '账号激活' : '快速上报')}</div>
           </div>
 
-          {/* 2. Phone Top Bar / Navigation Header (Solid Royal Blue #1E5ABB) */}
-          <div className="bg-[#1E5ABB] text-white py-3.5 px-4 text-center font-bold text-sm tracking-wide shadow-xs select-none">
-            {headerTitle}
-          </div>
-
-          {/* 3. Phone Form Body (Soft Light Background #EEF2F7, Individual White Cards) */}
-          <div className="p-3 space-y-2.5 bg-[#EEF2F7] max-h-[560px] overflow-y-auto scrollbar-thin">
-            {fields.map(field => {
-              const currentValue = phoneFormValues[field.id];
-              const selectedRole = phoneFormValues[`${field.id}_role`] || '超级管理员';
-              const selectedGender = phoneFormValues[`${field.id}_gender`] || '男';
-
-              return (
-                <div
-                  key={field.id}
-                  className="bg-white rounded-xl p-3.5 shadow-[0_1px_3px_rgba(0,0,0,0.03)] border border-slate-100 space-y-2.5 transition-all"
-                >
-                  {/* Card Header: Icon + Label + Asterisk */}
-                  <div className="flex items-center gap-1.5 text-xs text-slate-800 font-bold">
-                    {renderFieldIcon(field.type)}
-                    <span>{field.name}</span>
-                    {field.required && <span className="text-rose-500 font-bold ml-0.5">*</span>}
-                  </div>
-
-                  {/* Card Body by Field Type */}
-                  {field.type === 'identity' ? (
-                    <div className="flex flex-wrap gap-2 pt-0.5">
-                      {(field.options && field.options.length > 0
-                        ? field.options
-                        : ['超级管理员', '机构管理员', '上报员', '审核员', '运营管理员', '临时审核员']
-                      ).map((role, rIdx) => {
-                        const isRoleSelected = selectedRole === role;
-                        return (
-                          <button
-                            key={rIdx}
-                            type="button"
-                            onClick={() =>
-                              setPhoneFormValues(prev => ({
-                                ...prev,
-                                [`${field.id}_role`]: role
-                              }))
-                            }
-                            className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors cursor-pointer ${
-                              isRoleSelected
-                                ? 'bg-blue-50/80 border-[#1E5ABB] text-[#1E5ABB] font-bold shadow-2xs'
-                                : 'bg-white border-slate-200 text-slate-700 hover:border-blue-300 hover:text-[#1E5ABB]'
-                            }`}
-                          >
-                            {role}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  ) : field.type === 'gender' ? (
-                    <div className="grid grid-cols-2 gap-2 pt-0.5">
-                      {['男', '女'].map(g => {
-                        const isGenderSelected = selectedGender === g;
-                        return (
-                          <button
-                            key={g}
-                            type="button"
-                            onClick={() =>
-                              setPhoneFormValues(prev => ({
-                                ...prev,
-                                [`${field.id}_gender`]: g
-                              }))
-                            }
-                            className={`py-2 text-center rounded-lg border text-xs font-medium transition-colors cursor-pointer ${
-                              isGenderSelected
-                                ? 'bg-blue-50/80 border-[#1E5ABB] text-[#1E5ABB] font-bold shadow-2xs'
-                                : 'bg-white border-slate-200 text-slate-700 hover:border-blue-300 hover:text-[#1E5ABB]'
-                            }`}
-                          >
-                            {g}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  ) : field.type === 'file' ? (
-                    <div
-                      onClick={() => showToast('已模拟唤起手机相册与文件选择器')}
-                      className="border border-dashed border-slate-300 bg-white rounded-xl p-5 text-center flex flex-col items-center justify-center gap-1.5 transition-colors cursor-pointer hover:border-blue-400 group"
-                    >
-                      <Paperclip className="w-7 h-7 text-slate-400 -rotate-45 group-hover:text-[#1E5ABB] transition-colors stroke-[1.5]" />
-                      <span className="text-xs font-medium text-slate-700">
-                        上传图片、视频或证明材料
-                      </span>
-                      <span className="text-[11px] text-slate-400">
-                        {field.placeholder || '请输入身份证照片或授权证明材料'}
-                      </span>
-                    </div>
-                  ) : field.type === 'date' ? (
-                    <div className="flex items-center justify-between px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-400">
-                      <span>{field.placeholder || '年 / 月 / 日 --:--'}</span>
-                      <CalendarIcon className="w-3.5 h-3.5 text-slate-400" />
-                    </div>
-                  ) : field.type === 'select' ? (
-                    <div className="flex items-center justify-between px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-500">
-                      <span>{field.placeholder || '请选择...'}</span>
-                      <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-                    </div>
-                  ) : field.type === 'link' ? (
-                    <div className="flex items-center justify-between px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-400">
-                      <span>{field.placeholder || 'https://...'}</span>
-                      <LinkIcon className="w-3.5 h-3.5 text-slate-400" />
-                    </div>
-                  ) : (
-                    <input
-                      type="text"
-                      value={currentValue ?? ''}
-                      onChange={e =>
-                        setPhoneFormValues(prev => ({
-                          ...prev,
-                          [field.id]: e.target.value
-                        }))
-                      }
-                      placeholder={field.placeholder || `请输入${field.name}`}
-                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-[#1E5ABB] transition-colors"
-                    />
-                  )}
+          {/* Form Body (Soft Light Background #EEF2F7, Individual White Cards) */}
+          <div className="p-3.5 space-y-3 bg-[#EEF2F7]">
+            {/* Submission Result Notice */}
+            {submittedSimulate && (
+              <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 flex items-center justify-between text-xs text-emerald-800 animate-in fade-in slide-in-from-top-2">
+                <div className="flex items-center gap-2 font-bold">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>模拟填报已成功提交！</span>
                 </div>
-              );
-            })}
+                <button
+                  type="button"
+                  onClick={() => setSubmittedSimulate(false)}
+                  className="text-emerald-700 hover:underline text-[11px] font-medium cursor-pointer shrink-0 ml-1"
+                >
+                  继续模拟
+                </button>
+              </div>
+            )}
+
+            {fields.length === 0 ? (
+              <div className="py-12 text-center text-slate-400 text-xs bg-white rounded-xl border border-dashed border-slate-200">
+                请在左侧添加表单字段以实时预览
+              </div>
+            ) : (
+              fields.map(field => {
+                const currentValue = phoneFormValues[field.id];
+                const selectedRole = phoneFormValues[`${field.id}_role`] || '超级管理员';
+                const selectedGender = phoneFormValues[`${field.id}_gender`] || '男';
+
+                return (
+                  <div
+                    key={field.id}
+                    className="bg-white rounded-xl p-3.5 shadow-[0_1px_3px_rgba(0,0,0,0.03)] border border-slate-100 space-y-2.5 transition-all"
+                  >
+                    {/* Card Header: Icon + Label + Asterisk */}
+                    <div className="flex items-center gap-1.5 text-xs text-slate-800 font-bold">
+                      {renderFieldIcon(field.type)}
+                      <span>{field.name}</span>
+                      {field.required && <span className="text-rose-500 font-bold ml-0.5">*</span>}
+                    </div>
+
+                    {/* Card Body by Field Type */}
+                    {field.type === 'identity' ? (
+                      <div className="flex flex-wrap gap-2 pt-0.5">
+                        {(field.options && field.options.length > 0
+                          ? field.options
+                          : ['超级管理员', '机构管理员', '上报员', '审核员', '运营管理员', '临时审核员']
+                        ).map((role, rIdx) => {
+                          const isRoleSelected = selectedRole === role;
+                          return (
+                            <button
+                              key={rIdx}
+                              type="button"
+                              onClick={() => {
+                                setPhoneFormValues(prev => ({
+                                  ...prev,
+                                  [`${field.id}_role`]: role
+                                }));
+                                setSubmittedSimulate(false);
+                              }}
+                              className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors cursor-pointer ${
+                                isRoleSelected
+                                  ? 'bg-blue-50/80 border-[#1E5ABB] text-[#1E5ABB] font-bold shadow-2xs'
+                                  : 'bg-white border-slate-200 text-slate-700 hover:border-blue-300 hover:text-[#1E5ABB]'
+                              }`}
+                            >
+                              {role}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ) : field.type === 'gender' ? (
+                      <div className="grid grid-cols-2 gap-2 pt-0.5">
+                        {['男', '女'].map(g => {
+                          const isGenderSelected = selectedGender === g;
+                          return (
+                            <button
+                              key={g}
+                              type="button"
+                              onClick={() => {
+                                setPhoneFormValues(prev => ({
+                                  ...prev,
+                                  [`${field.id}_gender`]: g
+                                }));
+                                setSubmittedSimulate(false);
+                              }}
+                              className={`py-2 text-center rounded-lg border text-xs font-medium transition-colors cursor-pointer ${
+                                isGenderSelected
+                                  ? 'bg-blue-50/80 border-[#1E5ABB] text-[#1E5ABB] font-bold shadow-2xs'
+                                  : 'bg-white border-slate-200 text-slate-700 hover:border-blue-300 hover:text-[#1E5ABB]'
+                              }`}
+                            >
+                              {g}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ) : field.type === 'file' ? (
+                      <div
+                        onClick={() => showToast('已模拟唤起文件选择器')}
+                        className="border border-dashed border-slate-300 bg-white rounded-xl p-5 text-center flex flex-col items-center justify-center gap-1.5 transition-colors cursor-pointer hover:border-blue-400 group"
+                      >
+                        <Paperclip className="w-7 h-7 text-slate-400 -rotate-45 group-hover:text-[#1E5ABB] transition-colors stroke-[1.5]" />
+                        <span className="text-xs font-medium text-slate-700">
+                          上传图片、视频或证明材料
+                        </span>
+                        <span className="text-[11px] text-slate-400">
+                          {field.placeholder || '支持图片、视频、PDF证明文档'}
+                        </span>
+                      </div>
+                    ) : field.type === 'date' ? (
+                      <div className="flex items-center justify-between px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-400">
+                        <div className="flex items-center gap-2">
+                          <CalendarIcon className="w-3.5 h-3.5 text-slate-400" />
+                          <span>{currentValue || field.placeholder || '年 /月/日 --:--'}</span>
+                        </div>
+                        <CalendarIcon className="w-3.5 h-3.5 text-slate-700" />
+                      </div>
+                    ) : field.type === 'select' ? (
+                      <div className="relative">
+                        <select
+                          value={currentValue ?? ''}
+                          onChange={e => {
+                            setPhoneFormValues(prev => ({
+                              ...prev,
+                              [field.id]: e.target.value
+                            }));
+                            setSubmittedSimulate(false);
+                          }}
+                          className="w-full appearance-none px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:border-[#1E5ABB] transition-colors pr-8 cursor-pointer"
+                        >
+                          <option value="" disabled hidden>
+                            {field.placeholder || '请选择事件分类'}
+                          </option>
+                          {(field.options && field.options.length > 0
+                            ? field.options
+                            : ['重大突发', '网络舆情', '安全隐患', '民生诉求', '日常报送']
+                          ).map((opt, oIdx) => (
+                            <option key={oIdx} value={opt}>
+                              {opt}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="absolute inset-y-0 right-0 flex items-center px-2.5 pointer-events-none text-slate-700">
+                          <ChevronDown className="w-4 h-4 text-slate-800" />
+                        </div>
+                      </div>
+                    ) : field.type === 'link' ? (
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+                          <LinkIcon className="w-3.5 h-3.5 text-slate-400" />
+                        </div>
+                        <input
+                          type="url"
+                          value={currentValue ?? ''}
+                          onChange={e => {
+                            setPhoneFormValues(prev => ({
+                              ...prev,
+                              [field.id]: e.target.value
+                            }));
+                            setSubmittedSimulate(false);
+                          }}
+                          placeholder={field.placeholder || 'https://...'}
+                          className="w-full pl-8 pr-3 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-[#1E5ABB] transition-colors"
+                        />
+                      </div>
+                    ) : field.type === 'number' ? (
+                      <input
+                        type="number"
+                        value={currentValue ?? ''}
+                        onChange={e => {
+                          setPhoneFormValues(prev => ({
+                            ...prev,
+                            [field.id]: e.target.value
+                          }));
+                          setSubmittedSimulate(false);
+                        }}
+                        placeholder={field.placeholder || '请输入传播量/阅读量等数据'}
+                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-[#1E5ABB] transition-colors"
+                      />
+                    ) : (
+                      <input
+                        type="text"
+                        value={currentValue ?? ''}
+                        onChange={e => {
+                          setPhoneFormValues(prev => ({
+                            ...prev,
+                            [field.id]: e.target.value
+                          }));
+                          setSubmittedSimulate(false);
+                        }}
+                        placeholder={field.placeholder || `请输入${field.name}`}
+                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-[#1E5ABB] transition-colors"
+                      />
+                    )}
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
       </div>
@@ -980,14 +1325,14 @@ export const TemplateConfigBoard: React.FC<TemplateConfigBoardProps> = ({
               </button>
             </div>
 
-            {/* Right Column: Live Phone Mockup */}
-            <div className="lg:col-span-5 bg-gray-50/70 rounded-2xl p-4 border border-gray-200">
-              <div className="flex items-center justify-between pb-3 border-b border-gray-200/60 mb-4">
+            {/* Right Column: Live Form Mockup (1:1 Restoration with Screenshot) */}
+            <div className="lg:col-span-5 bg-white rounded-2xl p-4 border border-gray-200/90 shadow-2xs">
+              <div className="flex items-center justify-between pb-3.5 border-b border-gray-100 mb-4">
                 <div className="flex items-center gap-1.5 text-xs font-bold text-gray-800">
-                  <Eye className="w-3.5 h-3.5 text-[#1890ff]" />
+                  <Eye className="w-3.5 h-3.5 text-[#1E5ABB]" />
                   <span>用户填报界面实时交互预览</span>
                 </div>
-                <span className="px-2 py-0.5 bg-purple-50 text-purple-700 text-[10px] font-bold rounded border border-purple-200">
+                <span className="px-2.5 py-0.5 bg-blue-50/80 text-[#1E5ABB] text-[11px] font-medium rounded border border-blue-200">
                   {isActivation ? '激活填报模式' : '报送填报模式'}
                 </span>
               </div>
@@ -1021,7 +1366,7 @@ export const TemplateConfigBoard: React.FC<TemplateConfigBoardProps> = ({
       )}
 
       {/* Top Segmented Tabs & Action Button */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-2.5 rounded-xl border border-gray-200/90 shadow-2xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-2.5 rounded-xl border border-gray-200/80 shadow-2xs">
         {/* Left Segmented Pill Tabs */}
         <div className="inline-flex items-center gap-1 p-1 bg-gray-100/90 rounded-lg border border-gray-200/60">
           <button
@@ -1062,187 +1407,181 @@ export const TemplateConfigBoard: React.FC<TemplateConfigBoardProps> = ({
         </button>
       </div>
 
-      {/* Main 3-Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+      {/* ================================================================= */}
+      {/* UNIFIED 3-COLUMN WORKBENCH CONTAINER (Figma / Axure Prototype)    */}
+      {/* ================================================================= */}
+      <div className="bg-white rounded-xl border border-gray-200/80 shadow-2xs flex flex-col lg:flex-row min-h-[760px] overflow-hidden">
         {/* ================================================================= */}
-        {/* COLUMN 1: 模板目录 (Left Column, col-span-3) */}
+        {/* COLUMN 1: 模板目录 (Left Column, ~340px) */}
         {/* ================================================================= */}
-        <div className="lg:col-span-3 space-y-3">
-          <div className="bg-white rounded-xl border border-gray-200/90 shadow-2xs overflow-hidden">
-            {/* Header */}
-            <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-[#1890ff] text-[18px]">
-                  category
-                </span>
-                <span className="text-xs font-bold text-gray-800">模板目录</span>
-                <span className="px-1.5 py-0.2 bg-blue-50 text-[#1890ff] text-[10px] font-bold rounded-full border border-blue-200">
-                  {currentCategoryTemplates.length}
-                </span>
-              </div>
-              <span className="text-[11px] text-gray-400">点击切换右侧预览</span>
+        <div className="w-full lg:w-[340px] shrink-0 border-b lg:border-b-0 lg:border-r border-gray-200/80 flex flex-col bg-white">
+          {/* Header */}
+          <div className="h-[52px] px-3.5 border-b border-gray-200/80 flex items-center justify-between shrink-0 bg-white">
+            <div className="flex items-center gap-1.5">
+              <Layers className="w-4 h-4 text-[#1890ff]" />
+              <span className="text-xs font-bold text-gray-800">模板目录</span>
+              <span className="w-4.5 h-4.5 rounded-full bg-gray-100 text-gray-600 text-[11px] font-medium flex items-center justify-center border border-gray-200">
+                {currentCategoryTemplates.length}
+              </span>
             </div>
+            <span className="text-[11px] text-gray-400">点击切换右侧预览</span>
+          </div>
 
-            {/* Template Cards List */}
-            <div className="p-2.5 space-y-2.5">
-              {currentCategoryTemplates.map(tpl => {
-                const isSelected = activeTemplate?.id === tpl.id;
-                const isEnabled = tpl.status === '启用';
+          {/* Template Cards List */}
+          <div className="p-2.5 space-y-2.5 flex-1 overflow-y-auto bg-white">
+            {currentCategoryTemplates.map(tpl => {
+              const isSelected = activeTemplate?.id === tpl.id;
+              const isEnabled = tpl.status === '启用';
 
-                return (
-                  <div
-                    key={tpl.id}
-                    onClick={() => setSelectedTemplateId(tpl.id)}
-                    className={`rounded-xl border p-3.5 space-y-2.5 transition-all cursor-pointer ${
-                      isSelected
-                        ? 'border-[#1890ff] bg-blue-50/20 shadow-xs'
-                        : 'border-gray-200 hover:border-blue-200 bg-white'
-                    }`}
-                  >
-                    {/* Row 1: Title & Tag & Status Switch */}
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="space-y-1 min-w-0">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="text-xs font-bold text-gray-900 truncate">
-                            {tpl.name}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          {tpl.isDefault ? (
-                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-gray-100 text-gray-600 text-[10px] font-bold rounded border border-gray-200">
-                              <Lock className="w-2.5 h-2.5 text-gray-400" />
-                              系统默认
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-bold rounded border border-emerald-200">
-                              <Sparkles className="w-2.5 h-2.5 text-emerald-600" />
-                              自定义
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Enable Toggle Switch */}
-                      <button
-                        type="button"
-                        onClick={e => handleToggleTemplateStatus(tpl.id, e)}
-                        className="flex items-center gap-1 shrink-0 cursor-pointer"
-                        title={isEnabled ? '点击停用' : '点击启用'}
-                      >
-                        <span className={`text-[10px] font-bold ${isEnabled ? 'text-emerald-600' : 'text-gray-400'}`}>
-                          {isEnabled ? '启用' : '停用'}
-                        </span>
-                        <div
-                          className={`w-7 h-4 flex items-center rounded-full p-0.5 transition-colors ${
-                            isEnabled ? 'bg-emerald-500 justify-end' : 'bg-gray-300 justify-start'
-                          }`}
-                        >
-                          <div className="w-3 h-3 bg-white rounded-full shadow-2xs" />
-                        </div>
-                      </button>
-                    </div>
-
-                    {/* Row 2: Description & Update time */}
-                    <div className="space-y-1">
-                      <p className="text-[11px] text-gray-500 line-clamp-1 leading-relaxed" title={tpl.description}>
-                        {tpl.description || '暂无描述信息'}
-                      </p>
-                      <div className="text-[10px] text-gray-400 font-mono">
-                        {tpl.updateTime}
-                      </div>
-                    </div>
-
-                    {/* Row 3: Footer Actions */}
-                    <div className="pt-2 border-t border-gray-100 flex items-center justify-between text-xs">
-                      {isSelected ? (
-                        <span className="text-[#1890ff] text-[11px] font-bold flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#1890ff]" />
-                          <span>正在右侧预览 &gt;</span>
+              return (
+                <div
+                  key={tpl.id}
+                  onClick={() => setSelectedTemplateId(tpl.id)}
+                  className={`rounded-xl border p-3 space-y-2 transition-all cursor-pointer ${
+                    isSelected
+                      ? 'border-[#1890ff] bg-blue-50/20 shadow-xs'
+                      : 'border-gray-200/90 hover:border-blue-200 bg-white'
+                  }`}
+                >
+                  {/* Row 1: Title & Tag & Status Switch (Strictly single-line, no wrapping) */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 min-w-0 flex-nowrap">
+                      <span className="text-xs font-bold text-gray-900 truncate whitespace-nowrap">
+                        {tpl.name}
+                      </span>
+                      {tpl.isDefault ? (
+                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 bg-gray-100 text-gray-600 text-[10px] font-bold rounded border border-gray-200 shrink-0 whitespace-nowrap">
+                          <Lock className="w-2.5 h-2.5 text-gray-400" />
+                          系统默认
                         </span>
                       ) : (
-                        <span className="text-gray-400 text-[11px]">点击查看右侧预览</span>
+                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 bg-emerald-50 text-emerald-700 text-[10px] font-bold rounded border border-emerald-200 shrink-0 whitespace-nowrap">
+                          <Sparkles className="w-2.5 h-2.5 text-emerald-600" />
+                          自定义
+                        </span>
                       )}
+                    </div>
 
-                      <div className="flex items-center gap-2 text-gray-500">
-                        <button
-                          type="button"
-                          onClick={e => handleCopyTemplate(tpl, e)}
-                          className="hover:text-[#1890ff] flex items-center gap-0.5 text-[11px] cursor-pointer"
-                          title="复制为新模板"
-                        >
-                          <Copy className="w-3 h-3" />
-                          <span>复制</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={e => {
-                            e.stopPropagation();
-                            handleOpenDesigner('edit', tpl);
-                          }}
-                          className="hover:text-[#1890ff] flex items-center gap-0.5 text-[11px] cursor-pointer"
-                          title={tpl.isDefault ? '查看详情' : '编辑模板'}
-                        >
-                          <Edit3 className="w-3 h-3" />
-                          <span>{tpl.isDefault ? '详情' : '编辑'}</span>
-                        </button>
-
-                        {!tpl.isDefault && (
-                          <button
-                            type="button"
-                            onClick={e => handleDeleteTemplate(tpl.id, e)}
-                            className="hover:text-rose-600 p-0.5 cursor-pointer"
-                            title="删除"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </button>
-                        )}
+                    {/* Enable Toggle Switch */}
+                    <button
+                      type="button"
+                      onClick={e => handleToggleTemplateStatus(tpl.id, e)}
+                      className="flex items-center gap-1 shrink-0 cursor-pointer whitespace-nowrap"
+                      title={isEnabled ? '点击停用' : '点击启用'}
+                    >
+                      <span className={`text-[10px] font-bold ${isEnabled ? 'text-emerald-600' : 'text-gray-400'}`}>
+                        {isEnabled ? '启用' : '停用'}
+                      </span>
+                      <div
+                        className={`w-7 h-4 flex items-center rounded-full p-0.5 transition-colors ${
+                          isEnabled ? 'bg-emerald-500 justify-end' : 'bg-gray-300 justify-start'
+                        }`}
+                      >
+                        <div className="w-3 h-3 bg-white rounded-full shadow-2xs" />
                       </div>
+                    </button>
+                  </div>
+
+                  {/* Row 2: Description & Update time */}
+                  <div className="space-y-1">
+                    <p className="text-[11px] text-gray-500 line-clamp-1 leading-relaxed" title={tpl.description}>
+                      {tpl.description || '暂无描述信息'}
+                    </p>
+                    <div className="text-[10px] text-gray-400 font-mono">
+                      {tpl.updateTime}
                     </div>
                   </div>
-                );
-              })}
-            </div>
+
+                  {/* Row 3: Footer Actions */}
+                  <div className="pt-2 border-t border-gray-100 flex items-center justify-between text-xs">
+                    {isSelected ? (
+                      <span className="text-[#1890ff] text-[11px] font-bold flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#1890ff]" />
+                        <span>正在右侧预览 &gt;</span>
+                      </span>
+                    ) : (
+                      <span className="text-gray-400 text-[11px]">点击查看右侧预览</span>
+                    )}
+
+                    <div className="flex items-center gap-2 text-gray-500">
+                      <button
+                        type="button"
+                        onClick={e => handleCopyTemplate(tpl, e)}
+                        className="hover:text-[#1890ff] flex items-center gap-0.5 text-[11px] cursor-pointer"
+                        title="复制为新模板"
+                      >
+                        <Copy className="w-3 h-3" />
+                        <span>复制</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={e => {
+                          e.stopPropagation();
+                          handleOpenDesigner('edit', tpl);
+                        }}
+                        className="hover:text-[#1890ff] flex items-center gap-0.5 text-[11px] cursor-pointer"
+                        title={tpl.isDefault ? '查看详情' : '编辑模板'}
+                      >
+                        <Edit3 className="w-3 h-3" />
+                        <span>{tpl.isDefault ? '详情' : '编辑'}</span>
+                      </button>
+
+                      {!tpl.isDefault && (
+                        <button
+                          type="button"
+                          onClick={e => handleDeleteTemplate(tpl.id, e)}
+                          className="hover:text-rose-600 p-0.5 cursor-pointer"
+                          title="删除"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 
         {/* ================================================================= */}
-        {/* COLUMN 2: 移动端填报实时模拟 (Middle Column, col-span-5) */}
+        {/* COLUMN 2: 移动端填报实时模拟 (Center Column, flex-1) */}
         {/* ================================================================= */}
-        <div className="lg:col-span-5 space-y-3">
-          <div className="bg-white rounded-xl border border-gray-200/90 shadow-2xs p-4 space-y-4">
-            {/* Top Info Header */}
-            <div className="flex items-center justify-between pb-3 border-b border-gray-100 gap-2">
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-                <span className="text-xs font-bold text-gray-800 truncate">
-                  当前预览: {activeTemplate?.name}
+        <div className="flex-1 min-w-0 flex flex-col bg-white">
+          {/* Top Info Header */}
+          <div className="h-[52px] px-4 border-b border-gray-200/80 flex items-center justify-between shrink-0 bg-white gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+              <span className="text-xs font-bold text-gray-800 truncate">
+                当前预览: {activeTemplate?.name}
+              </span>
+              <span className="px-1.5 py-0.2 bg-emerald-50 text-emerald-700 text-[10px] font-bold rounded border border-emerald-200 shrink-0">
+                {activeTemplate?.status}
+              </span>
+              {activeTemplate?.isDefault && (
+                <span className="px-1.5 py-0.2 bg-gray-100 text-gray-600 text-[10px] font-bold rounded border border-gray-200 shrink-0">
+                  系统默认
                 </span>
-                <span className="px-1.5 py-0.2 bg-emerald-50 text-emerald-700 text-[10px] font-bold rounded border border-emerald-200 shrink-0">
-                  {activeTemplate?.status}
-                </span>
-                {activeTemplate?.isDefault && (
-                  <span className="px-1.5 py-0.2 bg-gray-100 text-gray-600 text-[10px] font-bold rounded border border-gray-200 shrink-0">
-                    系统默认
-                  </span>
-                )}
-              </div>
-
-              {/* View / Edit Button */}
-              <button
-                type="button"
-                onClick={() => handleOpenDesigner('edit', activeTemplate)}
-                className="flex items-center gap-1 px-3 py-1.5 bg-[#1890ff] hover:bg-blue-600 text-white rounded-lg text-xs font-bold shadow-2xs transition-colors cursor-pointer shrink-0"
-              >
-                <Edit3 className="w-3.5 h-3.5" />
-                <span>
-                  {activeTemplate?.isDefault ? '查看 / 复制模板 &rarr;' : '查看 / 编辑模板 &rarr;'}
-                </span>
-              </button>
+              )}
             </div>
 
+            {/* Edit Button */}
+            <button
+              type="button"
+              onClick={() => handleOpenDesigner('edit', activeTemplate)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1890ff] hover:bg-blue-600 text-white rounded-lg text-xs font-medium shadow-2xs transition-colors cursor-pointer shrink-0"
+              title="编辑当前模板"
+            >
+              <Edit3 className="w-3.5 h-3.5" />
+              <span>编辑</span>
+            </button>
+          </div>
+
+          {/* Center Body: Preview Area */}
+          <div className="p-4 flex-1 flex flex-col bg-[#F8FAFC]/60 overflow-y-auto">
             {/* Sub-header */}
-            <div className="flex items-center justify-between text-xs text-gray-500">
+            <div className="flex items-center justify-between text-xs text-gray-500 mb-3 shrink-0">
               <div className="flex items-center gap-1.5 font-bold text-gray-700">
                 <Smartphone className="w-3.5 h-3.5 text-[#1890ff]" />
                 <span>移动端填报实时模拟</span>
@@ -1252,203 +1591,288 @@ export const TemplateConfigBoard: React.FC<TemplateConfigBoardProps> = ({
               </span>
             </div>
 
-            {/* Phone Frame Mockup Container 1:1 Restoration */}
-            {renderPhoneSimulator(
-              activeTemplate?.fields || [],
-              isActivationMode ? '账号激活' : activeTemplate?.name || '快速上报',
-              isActivationMode
-            )}
+            {/* Phone Mockup in Center */}
+            <div className="flex-1 flex items-start justify-center pb-2">
+              {renderPhoneSimulator(
+                activeTemplate?.fields || [],
+                isActivationMode ? '账号激活' : activeTemplate?.name || '快速上报',
+                isActivationMode
+              )}
+            </div>
           </div>
         </div>
 
         {/* ================================================================= */}
-        {/* COLUMN 3: 其他业务配置 (Right Column, col-span-4) */}
+        {/* COLUMN 3: 其他业务配置 (Right Column, ~380px) */}
         {/* ================================================================= */}
-        <div className="lg:col-span-4 space-y-3">
-          <div className="bg-white rounded-xl border border-gray-200/90 shadow-2xs p-4 space-y-4">
-            {/* Header */}
-            <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-gray-800">
-                <span className="material-symbols-outlined text-[#1890ff] text-[18px]">
-                  tune
-                </span>
-                <span>其他业务配置</span>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleSaveOtherConfig}
-                className="flex items-center gap-1 px-3 py-1.5 border border-gray-200 hover:bg-gray-50 rounded-lg text-xs font-bold text-gray-700 transition-colors cursor-pointer"
-              >
-                <Save className="w-3.5 h-3.5 text-gray-500" />
-                <span>保存配置</span>
-              </button>
+        <div className="w-full lg:w-[380px] shrink-0 border-t lg:border-t-0 lg:border-l border-gray-200/80 flex flex-col bg-white">
+          {/* Header */}
+          <div className="h-[52px] px-4 border-b border-gray-200/80 flex items-center justify-between shrink-0 bg-white">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-gray-800">
+              <span className="material-symbols-outlined text-[#1890ff] text-[18px]">
+                tune
+              </span>
+              <span>其他业务配置</span>
             </div>
 
-            {/* FOR 报送模板 (Screenshot 1: 规则打分 & 审核流程) */}
-            {!isActivationMode && (
-              <div className="space-y-4">
-                {/* Segmented Sub-Tabs */}
-                <div className="grid grid-cols-2 gap-1 p-1 bg-gray-100 rounded-lg border border-gray-200/60">
-                  <button
-                    type="button"
-                    onClick={() => setRightSubTab('score')}
-                    className={`flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer ${
-                      rightSubTab === 'score'
-                        ? 'bg-white text-amber-800 shadow-sm'
-                        : 'text-gray-500 hover:text-gray-800'
-                    }`}
-                  >
-                    <Award className="w-3.5 h-3.5 text-amber-500" />
-                    <span>规则打分</span>
-                  </button>
+            {/* Dynamic Save Configuration Button */}
+            <button
+              type="button"
+              onClick={handleSaveOtherConfig}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
+                isOtherConfigDirty
+                  ? 'bg-[#1890ff] hover:bg-blue-600 text-white shadow-2xs'
+                  : 'border border-gray-200 hover:bg-gray-50 text-gray-600 bg-white'
+              }`}
+              title={isOtherConfigDirty ? '配置已修改，点击保存生效' : '配置已是最新状态'}
+            >
+              <Save className={`w-3.5 h-3.5 ${isOtherConfigDirty ? 'text-white' : 'text-gray-400'}`} />
+              <span>保存配置</span>
+            </button>
+          </div>
 
-                  <button
-                    type="button"
-                    onClick={() => setRightSubTab('flow')}
-                    className={`flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer ${
-                      rightSubTab === 'flow'
-                        ? 'bg-white text-[#1890ff] shadow-sm'
-                        : 'text-gray-500 hover:text-gray-800'
-                    }`}
-                  >
-                    <GitBranch className="w-3.5 h-3.5 text-[#1890ff]" />
-                    <span>审核流程</span>
-                  </button>
+          {/* Right Body */}
+          <div className="p-4 flex-1 overflow-y-auto space-y-4 bg-white">
+            {!isActivationMode && (() => {
+              const selectedFlow =
+                AUDIT_FLOW_PRESET_OPTIONS.find(
+                  f => f.id === currentAuditFlowId || f.name === currentAuditFlowId
+                ) || AUDIT_FLOW_PRESET_OPTIONS[0];
+
+              const selectedScoreRule =
+                SCORING_RULE_OPTIONS.find(r => r.id === currentScoreRuleId) ||
+                SCORING_RULE_OPTIONS[0];
+
+              return (
+                <div className="space-y-3.5">
+                  {/* Segmented Sub-Tabs (Consistent Font Size) */}
+                  <div className="grid grid-cols-2 gap-1 p-1 bg-[#f0f2f5] rounded-xl border border-gray-200/50">
+                    <button
+                      type="button"
+                      onClick={() => setRightSubTab('score')}
+                      className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs transition-all cursor-pointer ${
+                        rightSubTab === 'score'
+                          ? 'bg-white text-gray-800 font-semibold shadow-2xs'
+                          : 'text-gray-500 hover:text-gray-700 font-medium'
+                      }`}
+                    >
+                      <Award className={`w-3.5 h-3.5 ${rightSubTab === 'score' ? 'text-gray-700' : 'text-gray-400'}`} />
+                      <span>规则打分</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setRightSubTab('flow')}
+                      className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs transition-all cursor-pointer ${
+                        rightSubTab === 'flow'
+                          ? 'bg-white text-[#873bf5] font-semibold shadow-2xs'
+                          : 'text-gray-500 hover:text-gray-700 font-medium'
+                      }`}
+                    >
+                      <GitBranch className={`w-3.5 h-3.5 ${rightSubTab === 'flow' ? 'text-[#873bf5]' : 'text-gray-400'}`} />
+                      <span>审核流程</span>
+                    </button>
+                  </div>
+
+                  {/* Tab 1: 规则打分 Content */}
+                  {rightSubTab === 'score' && (
+                    <div className="space-y-3">
+                      {/* Select Rule */}
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                          关联打分规则
+                        </label>
+                        <div className="relative">
+                          <select
+                            value={selectedScoreRule.id}
+                            onChange={(e) => handleSelectScoreRule(e.target.value)}
+                            className="w-full appearance-none px-3 py-1.5 bg-white border border-gray-200 hover:border-gray-300 focus:border-[#1890ff] rounded-lg text-xs font-medium text-gray-800 pr-8 focus:outline-none transition-colors cursor-pointer shadow-2xs"
+                          >
+                            {SCORING_RULE_OPTIONS.map((rule) => (
+                              <option key={rule.id} value={rule.id}>
+                                {rule.name} ({rule.maxScore}分)
+                              </option>
+                            ))}
+                          </select>
+                          <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        </div>
+                      </div>
+
+                      {/* Rule Card Box */}
+                      <div className="border border-amber-200/90 rounded-xl p-3.5 bg-amber-50/30 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-gray-900">
+                            {selectedScoreRule.name}
+                          </span>
+                          <span className="text-xs font-bold text-amber-600">
+                            满分 {selectedScoreRule.maxScore} 分
+                          </span>
+                        </div>
+
+                        {/* Score Breakdown Standard Badges */}
+                        <div className="space-y-1.5">
+                          <div className="text-[11px] font-medium text-gray-500">分级得分标准</div>
+                          <div className="grid grid-cols-2 gap-1.5">
+                            {selectedScoreRule.grades.slice(0, 4).map((g, idx) => (
+                              <div
+                                key={idx}
+                                className="px-2 py-1 bg-amber-50 text-amber-900 border border-amber-200/90 rounded text-[11px] font-medium text-center truncate"
+                              >
+                                {g.name}：{g.score}分
+                              </div>
+                            ))}
+                          </div>
+                          {selectedScoreRule.grades[4] && (
+                            <div className="px-2 py-1 bg-amber-50 text-amber-900 border border-amber-200/90 rounded text-[11px] font-medium text-center">
+                              {selectedScoreRule.grades[4].name}：{selectedScoreRule.grades[4].score}分
+                            </div>
+                          )}
+                        </div>
+
+                        {/* 打分时机 */}
+                        <div className="flex items-center justify-between pt-1">
+                          <span className="text-xs text-gray-600 font-medium">打分时机</span>
+                          <div className="inline-flex rounded-md border border-gray-200 p-0.5 bg-white">
+                            <button
+                              type="button"
+                              onClick={() => handleSelectScoreTiming('初审打分')}
+                              className={`px-2.5 py-1 text-[11px] rounded transition-colors cursor-pointer ${
+                                currentScoreTiming === '初审打分'
+                                  ? 'bg-amber-50 text-amber-800 font-bold border border-amber-200'
+                                  : 'text-gray-600 hover:text-gray-900'
+                              }`}
+                            >
+                              初审打分
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleSelectScoreTiming('终审打分')}
+                              className={`px-2.5 py-1 text-[11px] rounded transition-colors cursor-pointer ${
+                                currentScoreTiming === '终审打分'
+                                  ? 'bg-amber-50 text-amber-800 font-bold border border-amber-200'
+                                  : 'text-gray-600 hover:text-gray-900'
+                              }`}
+                            >
+                              终审打分
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* 计入考核绩效 */}
+                        <div className="flex items-center justify-between pt-1 border-t border-amber-200/60">
+                          <span className="text-xs text-gray-600 font-medium">计入考核绩效</span>
+                          <div
+                            onClick={handleToggleIncludeInEvaluation}
+                            className={`w-8 h-4.5 rounded-full p-0.5 flex items-center cursor-pointer transition-colors ${
+                              currentIncludeInEvaluation ? 'bg-amber-500 justify-end' : 'bg-gray-300 justify-start'
+                            }`}
+                          >
+                            <div className="w-3.5 h-3.5 bg-white rounded-full shadow-2xs" />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Bottom Link */}
+                      <div className="text-center pt-1">
+                        <button
+                          type="button"
+                          onClick={() => showToast('已直达打分规则库维护模块')}
+                          className="text-xs text-[#1890ff] hover:underline flex items-center justify-center gap-1 mx-auto cursor-pointer font-medium"
+                        >
+                          <span>管理打分规则库</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Tab 2: 审核流程 Content (Consistent Font Size) */}
+                  {rightSubTab === 'flow' && (
+                    <div className="space-y-3.5">
+                      {/* 关联审核流程 Dropdown */}
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                          关联审核流程
+                        </label>
+                        <div className="relative">
+                          <select
+                            value={selectedFlow.id}
+                            onChange={(e) => handleSelectAuditFlow(e.target.value)}
+                            className="w-full appearance-none px-3 py-1.5 bg-white border border-gray-200 hover:border-gray-300 focus:border-[#873bf5] rounded-lg text-xs font-medium text-gray-800 pr-8 focus:outline-none transition-colors cursor-pointer shadow-2xs"
+                          >
+                            {AUDIT_FLOW_PRESET_OPTIONS.map((flow) => (
+                              <option key={flow.id} value={flow.id}>
+                                {flow.name}
+                              </option>
+                            ))}
+                          </select>
+                          <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        </div>
+                      </div>
+
+                      {/* 审批节点链路 Card Box */}
+                      <div className="border border-[#f0e6ff] rounded-xl p-3 bg-[#fbf9fe] space-y-2">
+                        {/* Header */}
+                        <div className="text-xs font-medium text-gray-400">
+                          审批节点链路
+                        </div>
+
+                        {/* Nodes List */}
+                        <div className="space-y-2">
+                          {selectedFlow.nodes.map((node) => (
+                            <div
+                              key={node.order}
+                              className="bg-white rounded-lg border border-[#efe7fa] px-3 py-2 flex items-center justify-between shadow-2xs"
+                            >
+                              {/* Left: Number circle & node name */}
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className="w-4.5 h-4.5 rounded-full bg-[#873bf5] text-white font-bold text-[10px] flex items-center justify-center shrink-0">
+                                  {node.order}
+                                </span>
+                                <span className="font-semibold text-xs text-gray-800 truncate tracking-tight">
+                                  {node.name}
+                                </span>
+                              </div>
+
+                              {/* Right: Role pill & duration */}
+                              <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#fbf7ff] text-[#873bf5] border border-[#f0e4ff] text-[11px] font-medium">
+                                  <User className="w-3 h-3 text-[#873bf5]" />
+                                  <span>{node.role}</span>
+                                </span>
+
+                                <span className="inline-flex items-center gap-1 text-[11px] text-gray-400 font-normal">
+                                  <Clock className="w-3 h-3 text-gray-400 stroke-[1.75]" />
+                                  <span>{node.duration}</span>
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Card Footer: 兜底 & 适用范围 */}
+                        <div className="pt-2 mt-2 border-t border-[#f5ecff] flex items-center justify-between text-[11px] text-gray-400 font-normal">
+                          <span>{selectedFlow.fallbackText}</span>
+                          <span>{selectedFlow.applyScopeText}</span>
+                        </div>
+                      </div>
+
+                      {/* Bottom Link: 管理审核流程模型 */}
+                      <div className="text-center pt-1.5">
+                        <button
+                          type="button"
+                          onClick={handleManageWorkflowModel}
+                          className="inline-flex items-center justify-center gap-1 text-xs font-medium text-[#1890ff] hover:text-blue-700 transition-colors cursor-pointer group"
+                        >
+                          <span>管理审核流程模型</span>
+                          <ExternalLink className="w-3 h-3 text-[#1890ff] group-hover:translate-x-0.5 transition-transform" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
-
-                {/* Tab 1: 规则打分 Content */}
-                {rightSubTab === 'score' && (
-                  <div className="space-y-3.5">
-                    {/* Select Rule */}
-                    <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                        关联打分规则
-                      </label>
-                      <select className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs font-medium text-gray-800 bg-white focus:outline-none focus:border-[#1890ff]">
-                        <option>标准五级百分制打分规则组 (100分)</option>
-                        <option>三级简易打分规则组 (30分)</option>
-                        <option>自定义加减分评价规则组 (100分)</option>
-                      </select>
-                    </div>
-
-                    {/* Rule Card Box */}
-                    <div className="border border-amber-200/90 rounded-xl p-4 bg-amber-50/30 space-y-3.5">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-gray-900">
-                          标准五级百分制打分规则组
-                        </span>
-                        <span className="text-xs font-bold text-amber-600">
-                          满分 100 分
-                        </span>
-                      </div>
-
-                      {/* Score Breakdown Standard Badges */}
-                      <div className="space-y-1.5">
-                        <div className="text-[11px] font-medium text-gray-500">分级得分标准</div>
-                        <div className="grid grid-cols-2 gap-1.5">
-                          <div className="px-2 py-1 bg-amber-50 text-amber-900 border border-amber-200/90 rounded text-[11px] font-medium text-center">
-                            一等（特优）：100分
-                          </div>
-                          <div className="px-2 py-1 bg-amber-50 text-amber-900 border border-amber-200/90 rounded text-[11px] font-medium text-center">
-                            二等（优秀）：90分
-                          </div>
-                          <div className="px-2 py-1 bg-amber-50 text-amber-900 border border-amber-200/90 rounded text-[11px] font-medium text-center">
-                            三等（良好）：80分
-                          </div>
-                          <div className="px-2 py-1 bg-amber-50 text-amber-900 border border-amber-200/90 rounded text-[11px] font-medium text-center">
-                            四等（合格）：70分
-                          </div>
-                        </div>
-                        <div className="px-2 py-1 bg-amber-50 text-amber-900 border border-amber-200/90 rounded text-[11px] font-medium text-center">
-                          五等（基本）：60分
-                        </div>
-                      </div>
-
-                      {/* 打分时机 */}
-                      <div className="flex items-center justify-between pt-1">
-                        <span className="text-xs text-gray-600 font-medium">打分时机</span>
-                        <div className="inline-flex rounded-lg border border-gray-200 p-0.5 bg-white">
-                          <button
-                            type="button"
-                            className="px-2.5 py-1 text-[11px] rounded text-gray-600 hover:text-gray-900"
-                          >
-                            初审打分
-                          </button>
-                          <button
-                            type="button"
-                            className="px-2.5 py-1 text-[11px] rounded bg-amber-50 text-amber-800 font-bold border border-amber-200"
-                          >
-                            终审打分
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* 计入考核绩效 */}
-                      <div className="flex items-center justify-between pt-1 border-t border-amber-200/60">
-                        <span className="text-xs text-gray-600 font-medium">计入考核绩效</span>
-                        <div className="w-8 h-4.5 bg-amber-500 rounded-full p-0.5 flex items-center justify-end cursor-pointer">
-                          <div className="w-3.5 h-3.5 bg-white rounded-full shadow-2xs" />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Bottom Link */}
-                    <div className="text-center pt-1">
-                      <button
-                        type="button"
-                        onClick={() => showToast('已直达打分规则库维护模块')}
-                        className="text-xs text-[#1890ff] hover:underline flex items-center justify-center gap-1 mx-auto cursor-pointer"
-                      >
-                        <span>管理打分规则库</span>
-                        <ExternalLink className="w-3 h-3" />
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Tab 2: 审核流程 Content */}
-                {rightSubTab === 'flow' && (
-                  <div className="space-y-3.5">
-                    <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                        关联审批流程
-                      </label>
-                      <select className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs font-medium text-gray-800 bg-white focus:outline-none focus:border-[#1890ff]">
-                        <option>默认两级研判复核流程（初审 + 负责人复核）</option>
-                        <option>应急直通一级快速签发流程</option>
-                        <option>三级复杂事件联合会商流程</option>
-                      </select>
-                    </div>
-
-                    <div className="border border-blue-100 rounded-xl p-4 bg-blue-50/40 space-y-3">
-                      <div className="text-xs font-bold text-gray-900">节点流转路径</div>
-                      <div className="space-y-2 text-xs">
-                        <div className="flex items-center gap-2 p-2 bg-white rounded-lg border border-gray-200">
-                          <span className="w-5 h-5 rounded-full bg-blue-100 text-[#1890ff] font-bold text-[11px] flex items-center justify-center shrink-0">
-                            1
-                          </span>
-                          <div className="min-w-0 flex-1">
-                            <div className="font-bold text-gray-800">基础初审</div>
-                            <div className="text-[10px] text-gray-400">审批角色：初审员 · 限时 15 分钟</div>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-2 p-2 bg-white rounded-lg border border-gray-200">
-                          <span className="w-5 h-5 rounded-full bg-blue-100 text-[#1890ff] font-bold text-[11px] flex items-center justify-center shrink-0">
-                            2
-                          </span>
-                          <div className="min-w-0 flex-1">
-                            <div className="font-bold text-gray-800">终审签发</div>
-                            <div className="text-[10px] text-gray-400">审批角色：归属机构负责人 · 限时 30 分钟</div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
+              );
+            })()}
 
             {/* FOR 激活模板 (Screenshot 2: 实名核验开关 & 适配注册角色) */}
             {isActivationMode && (
@@ -1464,9 +1888,9 @@ export const TemplateConfigBoard: React.FC<TemplateConfigBoardProps> = ({
                       已开启{' '}
                       {
                         [
-                          activeTemplate?.verificationOptions?.phoneVerify ?? true,
-                          activeTemplate?.verificationOptions?.idCardVerify ?? true,
-                          activeTemplate?.verificationOptions?.bankCardVerify ?? false
+                          currentVerificationOptions.phoneVerify,
+                          currentVerificationOptions.idCardVerify,
+                          currentVerificationOptions.bankCardVerify
                         ].filter(Boolean).length
                       }
                       /3 项
@@ -1490,7 +1914,7 @@ export const TemplateConfigBoard: React.FC<TemplateConfigBoardProps> = ({
                       type="button"
                       onClick={() => handleToggleVerificationOption('phoneVerify')}
                       className={`w-9 h-5 flex items-center rounded-full p-0.5 transition-colors cursor-pointer shrink-0 ${
-                        activeTemplate?.verificationOptions?.phoneVerify ?? true
+                        currentVerificationOptions.phoneVerify
                           ? 'bg-[#1890ff] justify-end'
                           : 'bg-gray-300 justify-start'
                       }`}
@@ -1516,7 +1940,7 @@ export const TemplateConfigBoard: React.FC<TemplateConfigBoardProps> = ({
                       type="button"
                       onClick={() => handleToggleVerificationOption('idCardVerify')}
                       className={`w-9 h-5 flex items-center rounded-full p-0.5 transition-colors cursor-pointer shrink-0 ${
-                        activeTemplate?.verificationOptions?.idCardVerify ?? true
+                        currentVerificationOptions.idCardVerify
                           ? 'bg-[#1890ff] justify-end'
                           : 'bg-gray-300 justify-start'
                       }`}
@@ -1542,7 +1966,7 @@ export const TemplateConfigBoard: React.FC<TemplateConfigBoardProps> = ({
                       type="button"
                       onClick={() => handleToggleVerificationOption('bankCardVerify')}
                       className={`w-9 h-5 flex items-center rounded-full p-0.5 transition-colors cursor-pointer shrink-0 ${
-                        activeTemplate?.verificationOptions?.bankCardVerify
+                        currentVerificationOptions.bankCardVerify
                           ? 'bg-[#1890ff] justify-end'
                           : 'bg-gray-300 justify-start'
                       }`}
@@ -1560,7 +1984,7 @@ export const TemplateConfigBoard: React.FC<TemplateConfigBoardProps> = ({
                       <span>适配注册角色</span>
                     </div>
                     <span className="text-[11px] text-gray-400">
-                      已选 {activeTemplate?.adaptedRoles?.length || 2} 个
+                      已选 {currentAdaptedRoles.length} 个
                     </span>
                   </div>
 
@@ -1569,23 +1993,23 @@ export const TemplateConfigBoard: React.FC<TemplateConfigBoardProps> = ({
                     <div
                       onClick={() => handleToggleAdaptedRole('上报员')}
                       className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
-                        (activeTemplate?.adaptedRoles || ['上报员', '审核员']).includes('上报员')
+                        currentAdaptedRoles.includes('上报员')
                           ? 'bg-purple-50/40 border-purple-200'
                           : 'bg-gray-50/50 border-gray-200'
                       }`}
                     >
                       <div>
-                        <div className="text-xs font-bold text-gray-800">上报员</div>
+                        <div className="text-xs font-bold text-purple-900">上报员</div>
                         <div className="text-[10px] text-gray-400">填报岗</div>
                       </div>
                       <div
                         className={`w-4 h-4 rounded flex items-center justify-center ${
-                          (activeTemplate?.adaptedRoles || ['上报员', '审核员']).includes('上报员')
-                            ? 'bg-[#1890ff] text-white'
+                          currentAdaptedRoles.includes('上报员')
+                            ? 'bg-[#873bf5] text-white'
                             : 'border border-gray-300'
                         }`}
                       >
-                        {(activeTemplate?.adaptedRoles || ['上报员', '审核员']).includes('上报员') && (
+                        {currentAdaptedRoles.includes('上报员') && (
                           <Check className="w-3 h-3" />
                         )}
                       </div>
@@ -1595,23 +2019,23 @@ export const TemplateConfigBoard: React.FC<TemplateConfigBoardProps> = ({
                     <div
                       onClick={() => handleToggleAdaptedRole('审核员')}
                       className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
-                        (activeTemplate?.adaptedRoles || ['上报员', '审核员']).includes('审核员')
+                        currentAdaptedRoles.includes('审核员')
                           ? 'bg-purple-50/40 border-purple-200'
                           : 'bg-gray-50/50 border-gray-200'
                       }`}
                     >
                       <div>
-                        <div className="text-xs font-bold text-gray-800">审核员</div>
+                        <div className="text-xs font-bold text-purple-900">审核员</div>
                         <div className="text-[10px] text-gray-400">审核岗</div>
                       </div>
                       <div
                         className={`w-4 h-4 rounded flex items-center justify-center ${
-                          (activeTemplate?.adaptedRoles || ['上报员', '审核员']).includes('审核员')
-                            ? 'bg-[#1890ff] text-white'
+                          currentAdaptedRoles.includes('审核员')
+                            ? 'bg-[#873bf5] text-white'
                             : 'border border-gray-300'
                         }`}
                       >
-                        {(activeTemplate?.adaptedRoles || ['上报员', '审核员']).includes('审核员') && (
+                        {currentAdaptedRoles.includes('审核员') && (
                           <Check className="w-3 h-3" />
                         )}
                       </div>

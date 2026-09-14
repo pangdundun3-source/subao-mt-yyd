@@ -110,7 +110,7 @@ export const QrQuotaSection: React.FC<QrQuotaSectionProps> = ({
   return (
     <div className="space-y-5 animate-fade-in text-gray-800">
       {/* 顶部核心信息与概览统计：功能 1 (初始化名额) + 功能 2 (使用情况) + 功能 3 (快捷追加) */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-2xs">
+      <div className="bg-white rounded-xl border border-gray-200/80 p-5 shadow-2xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-100">
           <div>
             <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
@@ -191,7 +191,7 @@ export const QrQuotaSection: React.FC<QrQuotaSectionProps> = ({
       </div>
 
       {/* 下方切换卡片：功能 5 (查看绑定的人员名单) 与 功能 4 (查看调整和增发记录) */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-2xs space-y-4">
+      <div className="bg-white rounded-xl border border-gray-200/80 p-5 shadow-2xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100">
           {/* 一级功能切换：已绑定名单 vs 调整增发记录 */}
           <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg w-fit">

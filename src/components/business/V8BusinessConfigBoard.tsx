@@ -36,7 +36,8 @@ import {
   GripVertical,
   X,
   ArrowRight,
-  Settings2
+  Settings2,
+  ChevronDown
 } from 'lucide-react';
 
 export type FieldType = 'text' | 'number' | 'date' | 'file' | 'link' | 'select' | 'phone' | 'gender' | 'id_card' | 'bank_card' | 'email' | 'address' | 'identity';
@@ -1849,15 +1850,15 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
     templateType: ConfigModuleItem['templateType'] = formTemplateType,
     variant: 'compact' | 'full' = 'compact'
   ) => (
-    <div className="bg-slate-100 rounded-lg border border-gray-200 overflow-hidden">
-      <div className={`${variant === 'full' ? 'w-full' : 'mx-auto max-w-[430px]'} bg-white min-h-[520px] shadow-2xs`}>
-        <div className="h-11 bg-[#1E5ABB] text-white flex items-center justify-center px-3">
-          <span className="text-sm font-bold">{templateType === '激活' ? '账号激活' : '快速上报'}</span>
+    <div className="w-full max-w-[420px] mx-auto bg-white rounded-2xl border border-gray-200/90 p-3 shadow-2xs transition-all">
+      <div className="rounded-xl overflow-hidden bg-[#EEF2F7] flex flex-col border border-slate-200/60">
+        <div className="bg-[#1E5ABB] text-white py-3 px-4 text-center select-none shadow-xs">
+          <span className="text-sm font-bold tracking-wide">{templateType === '激活' ? '账号激活' : (formName.trim() || '快速上报')}</span>
         </div>
 
-        <div className={`bg-slate-100 p-3 ${variant === 'full' ? 'space-y-3' : 'space-y-2.5'}`}>
+        <div className="p-3.5 space-y-3 bg-[#EEF2F7]">
           {fields.length === 0 ? (
-            <div className="py-12 text-center text-gray-400 text-xs bg-white rounded-lg border border-dashed border-gray-200">
+            <div className="py-12 text-center text-slate-400 text-xs bg-white rounded-xl border border-dashed border-slate-200">
               {emptyText}
             </div>
           ) : (
@@ -1871,31 +1872,29 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
                 : ['一般信息', '重点关注', '紧急处置'];
 
               return (
-                <div key={field.id || idx} className="bg-white rounded-lg border border-gray-100 p-3 space-y-2">
-                  <label className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-bold text-gray-800 flex items-center gap-1.5 min-w-0">
-                      <IconComp className="w-3.5 h-3.5 text-[#1E5ABB] shrink-0" />
-                      <span className="truncate">{field.name}</span>
-                      {field.required && <span className="text-rose-500 shrink-0">*</span>}
-                    </span>
-                  </label>
+                <div key={field.id || idx} className="bg-white rounded-xl p-3.5 shadow-[0_1px_3px_rgba(0,0,0,0.03)] border border-slate-100 space-y-2.5 transition-all">
+                  <div className="flex items-center gap-1.5 text-xs text-slate-800 font-bold">
+                    <IconComp className="w-3.5 h-3.5 text-[#1E5ABB] shrink-0" />
+                    <span className="truncate">{field.name}</span>
+                    {field.required && <span className="text-rose-500 font-bold ml-0.5">*</span>}
+                  </div>
 
                   {field.type === 'text' && (
                     isLongText ? (
                       <textarea
-                        rows={4}
+                        rows={3}
                         value={fieldValue}
                         onChange={(e) => handlePreviewValueChange(field.id, e.target.value)}
-                        placeholder={field.placeholder || '请输入相关内容'}
-                        className="w-full px-3 py-2 text-xs border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-[#1E5ABB] resize-none bg-white placeholder:text-gray-400"
+                        placeholder={field.placeholder || `请输入${field.name}`}
+                        className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:border-[#1E5ABB] resize-none bg-white placeholder:text-slate-400"
                       />
                     ) : (
                       <input
                         type="text"
                         value={fieldValue}
                         onChange={(e) => handlePreviewValueChange(field.id, e.target.value)}
-                        placeholder={field.placeholder || '请输入相关内容'}
-                        className="w-full px-3 py-2 text-xs border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-[#1E5ABB] bg-white placeholder:text-gray-400"
+                        placeholder={field.placeholder || `请输入${field.name}`}
+                        className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:border-[#1E5ABB] bg-white placeholder:text-slate-400"
                       />
                     )
                   )}
@@ -1905,8 +1904,8 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
                       type="number"
                       value={fieldValue}
                       onChange={(e) => handlePreviewValueChange(field.id, e.target.value)}
-                      placeholder={field.placeholder || '请输入数值'}
-                      className="w-full px-3 py-2 text-xs border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-[#1E5ABB] bg-white placeholder:text-gray-400"
+                      placeholder={field.placeholder || '请输入传播量/阅读量等数据'}
+                      className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:border-[#1E5ABB] bg-white placeholder:text-slate-400"
                     />
                   )}
 
@@ -1916,31 +1915,31 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
                       value={fieldValue}
                       onChange={(e) => handlePreviewValueChange(field.id, e.target.value)}
                       placeholder={field.placeholder || getDefaultFieldPlaceholder(field.type)}
-                      className="w-full px-3 py-2 text-xs border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-[#1E5ABB] bg-white placeholder:text-gray-400"
+                      className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:border-[#1E5ABB] bg-white placeholder:text-slate-400"
                     />
                   )}
 
                   {field.type === 'address' && (
                     <textarea
-                      rows={3}
+                      rows={2}
                       value={fieldValue}
                       onChange={(e) => handlePreviewValueChange(field.id, e.target.value)}
                       placeholder={field.placeholder || getDefaultFieldPlaceholder(field.type)}
-                      className="w-full px-3 py-2 text-xs border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-[#1E5ABB] resize-none bg-white placeholder:text-gray-400"
+                      className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:border-[#1E5ABB] resize-none bg-white placeholder:text-slate-400"
                     />
                   )}
 
                   {field.type === 'gender' && (
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-2 gap-2 pt-0.5">
                       {['男', '女'].map(option => (
                         <button
                           key={option}
                           type="button"
                           onClick={() => handlePreviewValueChange(field.id, option)}
-                          className={`px-3 py-2 text-xs rounded-md border font-bold ${
+                          className={`py-2 text-center rounded-lg border text-xs font-medium transition-colors cursor-pointer ${
                             fieldValue === option
-                              ? 'bg-blue-50 text-[#1E5ABB] border-blue-200'
-                              : 'bg-white text-gray-600 border-gray-200'
+                              ? 'bg-blue-50/80 border-[#1E5ABB] text-[#1E5ABB] font-bold shadow-2xs'
+                              : 'bg-white border-slate-200 text-slate-700 hover:border-blue-300 hover:text-[#1E5ABB]'
                           }`}
                         >
                           {option}
@@ -1950,62 +1949,62 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
                   )}
 
                   {field.type === 'date' && (
-                    <div className="relative">
-                      <input
-                        type="datetime-local"
-                        value={fieldValue}
-                        onChange={(e) => handlePreviewValueChange(field.id, e.target.value)}
-                        className="w-full pl-9 pr-3 py-2 text-xs border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-[#1E5ABB] bg-white"
-                      />
-                      <Calendar className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" />
+                    <div className="flex items-center justify-between px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-400">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                        <span>{fieldValue || field.placeholder || '年 /月/日 --:--'}</span>
+                      </div>
+                      <Calendar className="w-3.5 h-3.5 text-slate-700" />
                     </div>
                   )}
 
                   {field.type === 'file' && (
-                    <label className="block border border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-[#1E5ABB] transition-colors cursor-pointer bg-gray-50">
-                      <input
-                        type="file"
-                        className="sr-only"
-                        onChange={(e) => handlePreviewValueChange(field.id, e.target.files?.[0]?.name || '')}
-                      />
-                      <Paperclip className="w-7 h-7 text-gray-400 mx-auto mb-1" />
-                      <p className="text-xs text-gray-700 font-medium break-words">
-                        {fieldValue || '上传图片、视频或证明材料'}
-                      </p>
-                      <p className="text-gray-400 text-[11px] mt-0.5">
-                        {field.placeholder || '支持图片、视频、PDF 等附件'}
-                      </p>
-                    </label>
+                    <div className="border border-dashed border-slate-300 bg-white rounded-xl p-5 text-center flex flex-col items-center justify-center gap-1.5 transition-colors cursor-pointer hover:border-blue-400 group">
+                      <Paperclip className="w-7 h-7 text-slate-400 -rotate-45 group-hover:text-[#1E5ABB] transition-colors stroke-[1.5]" />
+                      <span className="text-xs font-medium text-slate-700">
+                        上传图片、视频或证明材料
+                      </span>
+                      <span className="text-[11px] text-slate-400">
+                        {field.placeholder || '支持图片、视频、PDF证明文档'}
+                      </span>
+                    </div>
                   )}
 
                   {field.type === 'link' && (
                     <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+                        <LinkIcon className="w-3.5 h-3.5 text-slate-400" />
+                      </div>
                       <input
                         type="url"
                         value={fieldValue}
                         onChange={(e) => handlePreviewValueChange(field.id, e.target.value)}
-                        placeholder={field.placeholder || 'https://example.com'}
-                        className="w-full pl-9 pr-3 py-2 text-xs border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-[#1E5ABB] bg-white placeholder:text-gray-400"
+                        placeholder={field.placeholder || 'https://...'}
+                        className="w-full pl-8 pr-3 py-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:border-[#1E5ABB] bg-white placeholder:text-slate-400"
                       />
-                      <LinkIcon className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" />
                     </div>
                   )}
 
                   {field.type === 'select' && (
-                    <select
-                      value={fieldValue}
-                      onChange={(e) => handlePreviewValueChange(field.id, e.target.value)}
-                      className="w-full px-3 py-2 text-xs border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-[#1E5ABB] bg-white"
-                    >
-                      <option value="">{field.placeholder || '请选择'}</option>
-                      {selectOptions.map(option => (
-                        <option key={option} value={option}>{option}</option>
-                      ))}
-                    </select>
+                    <div className="relative">
+                      <select
+                        value={fieldValue}
+                        onChange={(e) => handlePreviewValueChange(field.id, e.target.value)}
+                        className="w-full appearance-none px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:border-[#1E5ABB] transition-colors pr-8 cursor-pointer"
+                      >
+                        <option value="" disabled hidden>{field.placeholder || '请选择事件分类'}</option>
+                        {selectOptions.map(option => (
+                          <option key={option} value={option}>{option}</option>
+                        ))}
+                      </select>
+                      <div className="absolute inset-y-0 right-0 flex items-center px-2.5 pointer-events-none text-slate-700">
+                        <ChevronDown className="w-4 h-4 text-slate-800" />
+                      </div>
+                    </div>
                   )}
 
                   {field.type === 'identity' && (
-                    <div className="flex flex-wrap gap-1.5">
+                    <div className="flex flex-wrap gap-2 pt-0.5">
                       {(field.options && field.options.length > 0 ? field.options : systemRoleOptions).map(option => {
                         const selectedRoles = fieldValue ? fieldValue.split('、').filter(Boolean) : [];
                         const checked = selectedRoles.includes(option);
@@ -2019,10 +2018,10 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
                                 : [...selectedRoles, option];
                               handlePreviewValueChange(field.id, next.join('、'));
                             }}
-                            className={`px-2.5 py-1.5 text-[11px] rounded-md border font-bold ${
+                            className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors cursor-pointer ${
                               checked
-                                ? 'bg-blue-50 text-[#1E5ABB] border-blue-200'
-                                : 'bg-white text-gray-600 border-gray-200'
+                                ? 'bg-blue-50/80 border-[#1E5ABB] text-[#1E5ABB] font-bold shadow-2xs'
+                                : 'bg-white border-slate-200 text-slate-700 hover:border-blue-300 hover:text-[#1E5ABB]'
                             }`}
                           >
                             {option}
@@ -2036,7 +2035,6 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
             })
           )}
         </div>
-
       </div>
     </div>
   );
@@ -3354,6 +3352,7 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
               <TemplateConfigBoard
                 isGlobalScope={hideValueAddedStatusBadge}
                 onSaveNotice={(msg) => showConfigToast(msg)}
+                onNavigateToWorkflow={() => setActiveModule('audit_flow')}
               />
             ) : activeModule === 'evaluation_rule' ? (
               <div className="space-y-3">
