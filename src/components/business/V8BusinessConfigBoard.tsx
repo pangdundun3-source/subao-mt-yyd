@@ -906,6 +906,7 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
   const [formTotalScore, setFormTotalScore] = useState<number>(100);
   const [formLevelCount, setFormLevelCount] = useState<number>(5);
   const [formScoreLevels, setFormScoreLevels] = useState<ScoreLevel[]>([]);
+  const [draggingScoreLevelIndex, setDraggingScoreLevelIndex] = useState<number | null>(null);
   const [formScoreStatus, setFormScoreStatus] = useState<'启用' | '停用'>('停用');
   const [formRelatedTemplateId, setFormRelatedTemplateId] = useState<string>('');
   const [formTemplateApplyMode, setFormTemplateApplyMode] = useState<AuditTemplateApplyMode>('single_template');
@@ -1727,6 +1728,20 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
     }
     setFormScoreLevels(prev => prev.filter((_, i) => i !== index));
     setFormLevelCount(prev => prev - 1);
+  };
+
+  const handleDropScoreLevel = (targetIndex: number) => {
+    if (draggingScoreLevelIndex === null || draggingScoreLevelIndex === targetIndex) {
+      setDraggingScoreLevelIndex(null);
+      return;
+    }
+    setFormScoreLevels(prev => {
+      const next = [...prev];
+      const [moved] = next.splice(draggingScoreLevelIndex, 1);
+      next.splice(targetIndex, 0, moved);
+      return next;
+    });
+    setDraggingScoreLevelIndex(null);
   };
 
   // Field element handlers
@@ -3349,12 +3364,8 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
                               <span className="px-2 py-0.5 bg-blue-50 text-[#1890ff] rounded border border-blue-200 text-[11px] font-medium">
                                 {levels.length || item.levelCount || 0} 个打分等级
                               </span>
-                              <span className={`px-2 py-0.5 rounded border text-[11px] font-medium ${
-                                isEnabled
-                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                  : 'bg-gray-100 text-gray-500 border-gray-200'
-                              }`}>
-                                {isEnabled ? '已启用' : '已禁用'}
+                              <span className="text-[11px] text-gray-400 font-mono tracking-tight ml-auto shrink-0">
+                                {item.createTime || item.updateTime || '2023-10-24 10:00:00'}
                               </span>
                             </div>
 
@@ -3639,13 +3650,6 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
                               </span>
                               <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded border border-slate-200 text-[11px] font-medium">
                                 {(item.auditNodes || []).length || (item.name.includes('三') ? 3 : item.name.includes('两') ? 2 : 1)} 级审核节点
-                              </span>
-                              <span className={`px-2 py-0.5 rounded border text-[11px] font-medium ${
-                                isEnabled
-                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                  : 'bg-gray-100 text-gray-500 border-gray-200'
-                              }`}>
-                                {isEnabled ? '已启用 (当前流转)' : '已停用 (未指派)'}
                               </span>
                               <span className="text-[11px] text-gray-400 font-mono tracking-tight ml-auto shrink-0">
                                 {item.updateTime || '2023-10-05 10:00:00'}
@@ -5708,9 +5712,30 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
 
                       <div className="bg-gray-50/70 p-3 rounded-lg border border-gray-200 space-y-2 max-h-[300px] overflow-y-auto">
                         {formScoreLevels.map((lvl, index) => (
-                          <div key={lvl.id} className="bg-white p-2.5 rounded-md border border-gray-200 shadow-2xs grid grid-cols-1 sm:grid-cols-[42px_130px_90px_1fr_28px] items-center gap-2">
-                            <div className="flex items-center gap-1 text-gray-400 font-mono text-[11px]">
-                              <GripVertical className="w-3.5 h-3.5 text-gray-300" />
+                          <div
+                            key={lvl.id}
+                            draggable
+                            onDragStart={e => {
+                              setDraggingScoreLevelIndex(index);
+                              e.dataTransfer.effectAllowed = 'move';
+                            }}
+                            onDragOver={e => {
+                              e.preventDefault();
+                              e.dataTransfer.dropEffect = 'move';
+                            }}
+                            onDrop={() => handleDropScoreLevel(index)}
+                            onDragEnd={() => setDraggingScoreLevelIndex(null)}
+                            className={`p-2.5 rounded-md border shadow-2xs grid grid-cols-1 sm:grid-cols-[42px_130px_90px_1fr_28px] items-center gap-2 transition-all ${
+                              draggingScoreLevelIndex === index
+                                ? 'border-blue-400 bg-blue-50/70 opacity-60 scale-[0.99]'
+                                : 'bg-white border-gray-200 hover:border-blue-200'
+                            }`}
+                          >
+                            <div
+                              className="flex items-center gap-1 text-gray-400 hover:text-blue-600 font-mono text-[11px] cursor-grab active:cursor-grabbing select-none p-1 -m-1 rounded hover:bg-gray-100"
+                              title="按住拖拽以调整等级顺序"
+                            >
+                              <GripVertical className="w-3.5 h-3.5 text-gray-400" />
                               <span>#{index + 1}</span>
                             </div>
 

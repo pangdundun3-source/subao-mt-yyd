@@ -22,6 +22,7 @@ import {
   User,
   Eye,
   RotateCcw,
+  Undo2,
   Save,
   CheckCircle2,
   XCircle,
@@ -357,6 +358,22 @@ export const TemplateConfigBoard: React.FC<TemplateConfigBoardProps> = ({
   const [designerName, setDesignerName] = useState('');
   const [designerDesc, setDesignerDesc] = useState('');
   const [designerFields, setDesignerFields] = useState<TemplateFieldItem[]>([]);
+  const [draggingFieldIndex, setDraggingFieldIndex] = useState<number | null>(null);
+
+  // Drag and drop sorting for template designer fields
+  const handleDropDesignerField = (targetIndex: number) => {
+    if (draggingFieldIndex === null || draggingFieldIndex === targetIndex) {
+      setDraggingFieldIndex(null);
+      return;
+    }
+    setDesignerFields(prev => {
+      const next = [...prev];
+      const [moved] = next.splice(draggingFieldIndex, 1);
+      next.splice(targetIndex, 0, moved);
+      return next;
+    });
+    setDraggingFieldIndex(null);
+  };
 
   // Right column sub-tab for 报送模板: 'score' | 'flow' (Default to 'flow' per user audit flow optimization)
   const [rightSubTab, setRightSubTab] = useState<'score' | 'flow'>('flow');
@@ -651,6 +668,13 @@ export const TemplateConfigBoard: React.FC<TemplateConfigBoardProps> = ({
     showToast('其他业务配置已成功保存并实时生效！');
   };
 
+  // Revert / Undo pending changes in right side business config
+  const handleUndoOtherConfig = () => {
+    if (!isOtherConfigDirty) return;
+    setPendingOtherConfig(null);
+    showToast('已撤回更改，恢复为已保存配置');
+  };
+
   // Select score rule (pending modification)
   const handleSelectScoreRule = (ruleId: string) => {
     if (!activeTemplate) return;
@@ -796,7 +820,7 @@ export const TemplateConfigBoard: React.FC<TemplateConfigBoardProps> = ({
     isActivation: boolean
   ) => {
     return (
-      <div className="w-full max-w-[420px] mx-auto bg-white rounded-2xl border border-gray-200/90 p-3 shadow-2xs transition-all">
+      <div className="w-full max-w-[460px] mx-auto bg-white rounded-2xl border border-gray-200/90 p-3 shadow-2xs transition-all">
         {/* Inner Container */}
         <div className="rounded-xl overflow-hidden bg-[#EEF2F7] flex flex-col border border-slate-200/60">
           {/* Top Banner (Solid Royal Blue #1E5ABB) */}
@@ -1110,19 +1134,24 @@ export const TemplateConfigBoard: React.FC<TemplateConfigBoardProps> = ({
 
           {/* 2-Column Split: Left Editor, Right Live Phone Mockup */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-            {/* Left Column: Field Editor */}
-            <div className="lg:col-span-7 space-y-3">
-              <div className="flex items-center justify-between pb-1">
-                <span className="text-xs font-bold text-gray-700">
-                  已配置字段列表 ({designerFields.length})
-                </span>
+            {/* Left Column: Field Editor in Enclosed Card Container */}
+            <div className="lg:col-span-7 bg-white rounded-2xl p-4 border border-gray-200/90 shadow-2xs flex flex-col">
+              {/* Header aligned with right column */}
+              <div className="flex items-center justify-between pb-3.5 border-b border-gray-100 mb-4">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-gray-800">
+                  <Layers className="w-3.5 h-3.5 text-[#1E5ABB]" />
+                  <span>已配置字段列表</span>
+                  <span className="px-1.5 py-0.5 bg-blue-50 text-[#1E5ABB] text-[10px] font-bold rounded border border-blue-200">
+                    {designerFields.length}
+                  </span>
+                </div>
                 <button
                   type="button"
                   onClick={() => {
                     setDesignerFields(isActivation ? [...standardActivationFields] : [...standardReportFields]);
                     showToast('已恢复为标准模板预设字段');
                   }}
-                  className="flex items-center gap-1.5 text-xs text-[#1890ff] hover:text-blue-700 font-medium px-2.5 py-1 rounded-md bg-blue-50/80 border border-blue-200/80 transition-colors cursor-pointer"
+                  className="flex items-center gap-1.5 text-xs text-[#1E5ABB] hover:text-blue-700 font-medium px-2.5 py-1 rounded-md bg-blue-50/80 border border-blue-200/80 transition-colors cursor-pointer"
                 >
                   <Wand2 className="w-3.5 h-3.5" />
                   <span>使用标准模板预设</span>
@@ -1134,12 +1163,30 @@ export const TemplateConfigBoard: React.FC<TemplateConfigBoardProps> = ({
                 {designerFields.map((field, idx) => (
                   <div
                     key={field.id}
-                    className="border border-gray-200 rounded-xl p-3.5 bg-white space-y-3 shadow-2xs hover:border-blue-300 transition-colors"
+                    draggable
+                    onDragStart={e => {
+                      setDraggingFieldIndex(idx);
+                      e.dataTransfer.effectAllowed = 'move';
+                    }}
+                    onDragOver={e => {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = 'move';
+                    }}
+                    onDrop={() => handleDropDesignerField(idx)}
+                    onDragEnd={() => setDraggingFieldIndex(null)}
+                    className={`border rounded-xl p-3.5 bg-white space-y-3 shadow-2xs hover:border-blue-300 transition-all ${
+                      draggingFieldIndex === idx
+                        ? 'border-blue-400 bg-blue-50/60 opacity-60 scale-[0.99]'
+                        : 'border-gray-200'
+                    }`}
                   >
                     {/* Row 1: Drag & Type & Label & Required & Delete */}
                     <div className="flex items-center gap-2">
-                      <div className="flex items-center text-gray-400 font-mono text-[11px] select-none shrink-0">
-                        <GripVertical className="w-3.5 h-3.5 text-gray-300" />
+                      <div
+                        className="flex items-center text-gray-400 hover:text-blue-600 font-mono text-[11px] select-none shrink-0 cursor-grab active:cursor-grabbing p-1 -m-1 rounded hover:bg-gray-100 transition-colors"
+                        title="按住拖拽以调整字段排序"
+                      >
+                        <GripVertical className="w-3.5 h-3.5 text-gray-400" />
                         <span>{idx + 1}</span>
                       </div>
 
@@ -1320,7 +1367,7 @@ export const TemplateConfigBoard: React.FC<TemplateConfigBoardProps> = ({
               <button
                 type="button"
                 onClick={handleAddField}
-                className="w-full py-2.5 border-2 border-dashed border-blue-200 hover:border-blue-400 text-[#1890ff] hover:bg-blue-50/50 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                className="w-full mt-3 py-2.5 border-2 border-dashed border-blue-200 hover:border-blue-400 text-[#1E5ABB] hover:bg-blue-50/50 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
                 <span>添加字段</span>
@@ -1442,9 +1489,9 @@ export const TemplateConfigBoard: React.FC<TemplateConfigBoardProps> = ({
       {/* ================================================================= */}
       <div className="bg-white rounded-xl border border-gray-200/80 shadow-2xs flex flex-col lg:flex-row min-h-[760px] overflow-hidden">
         {/* ================================================================= */}
-        {/* COLUMN 1: 模板目录 (Left Column, ~340px) */}
+        {/* COLUMN 1: 模板目录 (Left Column, ~260px) */}
         {/* ================================================================= */}
-        <div className="w-full lg:w-[340px] shrink-0 border-b lg:border-b-0 lg:border-r border-gray-200/80 flex flex-col bg-white">
+        <div className="w-full lg:w-[260px] shrink-0 border-b lg:border-b-0 lg:border-r border-gray-200/80 flex flex-col bg-white">
           {/* Header */}
           <div className="h-[52px] px-3.5 border-b border-gray-200/80 flex items-center justify-between shrink-0 bg-white">
             <div className="flex items-center gap-1.5">
@@ -1454,7 +1501,7 @@ export const TemplateConfigBoard: React.FC<TemplateConfigBoardProps> = ({
                 {currentCategoryTemplates.length}
               </span>
             </div>
-            <span className="text-[11px] text-gray-400">点击切换右侧预览</span>
+            <span className="text-[11px] text-gray-400">切换预览</span>
           </div>
 
           {/* Template Cards List */}
@@ -1473,26 +1520,11 @@ export const TemplateConfigBoard: React.FC<TemplateConfigBoardProps> = ({
                       : 'border-gray-200/90 hover:border-blue-200 bg-white'
                   }`}
                 >
-                  {/* Row 1: Title & Tag & Status Switch (Strictly single-line, no wrapping) */}
+                  {/* Row 1: Title & Status Switch */}
                   <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-1.5 min-w-0 flex-nowrap">
-                      <span className="text-xs font-bold text-gray-900 truncate whitespace-nowrap">
-                        {tpl.name}
-                      </span>
-                      {!isGlobalScope && (
-                        tpl.isDefault ? (
-                          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 bg-gray-100 text-gray-600 text-[10px] font-bold rounded border border-gray-200 shrink-0 whitespace-nowrap">
-                            <Lock className="w-2.5 h-2.5 text-gray-400" />
-                            系统默认
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 bg-emerald-50 text-emerald-700 text-[10px] font-bold rounded border border-emerald-200 shrink-0 whitespace-nowrap">
-                            <Sparkles className="w-2.5 h-2.5 text-emerald-600" />
-                            自定义
-                          </span>
-                        )
-                      )}
-                    </div>
+                    <span className="text-xs font-bold text-gray-900 truncate" title={tpl.name}>
+                      {tpl.name}
+                    </span>
 
                     {/* Enable Toggle Switch */}
                     <button
@@ -1514,25 +1546,44 @@ export const TemplateConfigBoard: React.FC<TemplateConfigBoardProps> = ({
                     </button>
                   </div>
 
-                  {/* Row 2: Description & Update time */}
-                  <div className="space-y-1">
+                  {/* Row 2: Tag (系统默认/自定义) & Update Time */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {!isGlobalScope && (
+                      tpl.isDefault ? (
+                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-gray-100 text-gray-600 text-[10px] font-bold rounded border border-gray-200 shrink-0 whitespace-nowrap">
+                          <Lock className="w-2.5 h-2.5 text-gray-400" />
+                          系统默认
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-bold rounded border border-emerald-200 shrink-0 whitespace-nowrap">
+                          <Sparkles className="w-2.5 h-2.5 text-emerald-600" />
+                          自定义
+                        </span>
+                      )
+                    )}
+                    <span className="text-[10px] text-gray-400 font-mono">
+                      {tpl.updateTime}
+                    </span>
+                  </div>
+
+                  {/* Row 3: Description */}
+                  <div>
                     <p className="text-[11px] text-gray-500 line-clamp-1 leading-relaxed" title={tpl.description}>
                       {tpl.description || '暂无描述信息'}
                     </p>
-                    <div className="text-[10px] text-gray-400 font-mono">
-                      {tpl.updateTime}
-                    </div>
                   </div>
 
-                  {/* Row 3: Footer Actions */}
+                  {/* Row 4: Footer Actions */}
                   <div className="pt-2 border-t border-gray-100 flex items-center justify-between text-xs">
                     {isSelected ? (
                       <span className="text-[#1890ff] text-[11px] font-bold flex items-center gap-1">
                         <span className="w-1.5 h-1.5 rounded-full bg-[#1890ff]" />
-                        <span>正在右侧预览 &gt;</span>
+                        <span>正在预览</span>
                       </span>
                     ) : (
-                      <span className="text-gray-400 text-[11px]">点击查看右侧预览</span>
+                      <span className="text-gray-400 text-[11px] hover:text-gray-600 transition-colors">
+                        点击预览
+                      </span>
                     )}
 
                     <div className="flex items-center gap-2 text-gray-500">
@@ -1635,9 +1686,9 @@ export const TemplateConfigBoard: React.FC<TemplateConfigBoardProps> = ({
         </div>
 
         {/* ================================================================= */}
-        {/* COLUMN 3: 其他业务配置 (Right Column, ~380px) */}
+        {/* COLUMN 3: 其他业务配置 (Right Column, ~310px) */}
         {/* ================================================================= */}
-        <div className="w-full lg:w-[380px] shrink-0 border-t lg:border-t-0 lg:border-l border-gray-200/80 flex flex-col bg-white">
+        <div className="w-full lg:w-[310px] shrink-0 border-t lg:border-t-0 lg:border-l border-gray-200/80 flex flex-col bg-white">
           {/* Header */}
           <div className="h-[52px] px-4 border-b border-gray-200/80 flex items-center justify-between shrink-0 bg-white">
             <div className="flex items-center gap-1.5 text-xs font-bold text-gray-800">
@@ -1647,20 +1698,34 @@ export const TemplateConfigBoard: React.FC<TemplateConfigBoardProps> = ({
               <span>其他业务配置</span>
             </div>
 
-            {/* Dynamic Save Configuration Button */}
-            <button
-              type="button"
-              onClick={handleSaveOtherConfig}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
-                isOtherConfigDirty
-                  ? 'bg-[#1890ff] hover:bg-blue-600 text-white shadow-2xs'
-                  : 'border border-gray-200 hover:bg-gray-50 text-gray-600 bg-white'
-              }`}
-              title={isOtherConfigDirty ? '配置已修改，点击保存生效' : '配置已是最新状态'}
-            >
-              <Save className={`w-3.5 h-3.5 ${isOtherConfigDirty ? 'text-white' : 'text-gray-400'}`} />
-              <span>保存配置</span>
-            </button>
+            <div className="flex items-center gap-1.5">
+              {/* Revert / Undo Changes Button - Display only when changes exist */}
+              {isOtherConfigDirty && (
+                <button
+                  type="button"
+                  onClick={handleUndoOtherConfig}
+                  className="p-1.5 rounded-lg text-xs text-amber-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 cursor-pointer shadow-2xs transition-all flex items-center justify-center animate-in fade-in zoom-in-95 duration-150"
+                  title="一键撤回未保存的更改"
+                >
+                  <Undo2 className="w-3.5 h-3.5" />
+                </button>
+              )}
+
+              {/* Dynamic Save Configuration Button */}
+              <button
+                type="button"
+                onClick={handleSaveOtherConfig}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
+                  isOtherConfigDirty
+                    ? 'bg-[#1890ff] hover:bg-blue-600 text-white shadow-2xs'
+                    : 'border border-gray-200 hover:bg-gray-50 text-gray-600 bg-white'
+                }`}
+                title={isOtherConfigDirty ? '配置已修改，点击保存生效' : '配置已是最新状态'}
+              >
+                <Save className={`w-3.5 h-3.5 ${isOtherConfigDirty ? 'text-white' : 'text-gray-400'}`} />
+                <span>保存配置</span>
+              </button>
+            </div>
           </div>
 
           {/* Right Body */}
@@ -1745,7 +1810,7 @@ export const TemplateConfigBoard: React.FC<TemplateConfigBoardProps> = ({
                         <div className="space-y-1.5">
                           <div className="text-[11px] font-medium text-gray-500">分级得分标准</div>
                           <div className="grid grid-cols-2 gap-1.5">
-                            {selectedScoreRule.grades.slice(0, 4).map((g, idx) => (
+                            {selectedScoreRule.grades.map((g, idx) => (
                               <div
                                 key={idx}
                                 className="px-2 py-1 bg-amber-50 text-amber-900 border border-amber-200/90 rounded text-[11px] font-medium text-center truncate"
@@ -1754,11 +1819,6 @@ export const TemplateConfigBoard: React.FC<TemplateConfigBoardProps> = ({
                               </div>
                             ))}
                           </div>
-                          {selectedScoreRule.grades[4] && (
-                            <div className="px-2 py-1 bg-amber-50 text-amber-900 border border-amber-200/90 rounded text-[11px] font-medium text-center">
-                              {selectedScoreRule.grades[4].name}：{selectedScoreRule.grades[4].score}分
-                            </div>
-                          )}
                         </div>
 
                         {/* 打分时机 */}
@@ -1850,15 +1910,15 @@ export const TemplateConfigBoard: React.FC<TemplateConfigBoardProps> = ({
                         </div>
 
                         {/* Nodes List */}
-                        <div className="space-y-2">
+                        <div className="space-y-1.5">
                           {selectedFlow.nodes.map((node) => (
                             <div
                               key={node.order}
-                              className="bg-white rounded-lg border border-[#efe7fa] px-3 py-2 flex items-center justify-between shadow-2xs"
+                              className="bg-white rounded-lg border border-[#efe7fa] px-2.5 py-1.5 flex items-center justify-between shadow-2xs gap-2"
                             >
                               {/* Left: Number circle & node name */}
-                              <div className="flex items-center gap-2 min-w-0">
-                                <span className="w-4.5 h-4.5 rounded-full bg-[#873bf5] text-white font-bold text-[10px] flex items-center justify-center shrink-0">
+                              <div className="flex items-center gap-1.5 min-w-0">
+                                <span className="w-4 h-4 rounded-full bg-[#873bf5] text-white font-bold text-[10px] flex items-center justify-center shrink-0">
                                   {node.order}
                                 </span>
                                 <span className="font-semibold text-xs text-gray-800 truncate tracking-tight">
@@ -1867,14 +1927,14 @@ export const TemplateConfigBoard: React.FC<TemplateConfigBoardProps> = ({
                               </div>
 
                               {/* Right: Role pill & duration */}
-                              <div className="flex items-center gap-1.5 shrink-0 ml-2">
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#fbf7ff] text-[#873bf5] border border-[#f0e4ff] text-[11px] font-medium">
-                                  <User className="w-3 h-3 text-[#873bf5]" />
+                              <div className="flex items-center gap-1 shrink-0">
+                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-[#fbf7ff] text-[#873bf5] border border-[#f0e4ff] text-[10px] font-medium whitespace-nowrap">
+                                  <User className="w-2.5 h-2.5 text-[#873bf5]" />
                                   <span>{node.role}</span>
                                 </span>
 
-                                <span className="inline-flex items-center gap-1 text-[11px] text-gray-400 font-normal">
-                                  <Clock className="w-3 h-3 text-gray-400 stroke-[1.75]" />
+                                <span className="inline-flex items-center gap-0.5 text-[10px] text-gray-400 font-normal whitespace-nowrap">
+                                  <Clock className="w-2.5 h-2.5 text-gray-400 stroke-[1.75]" />
                                   <span>{node.duration}</span>
                                 </span>
                               </div>

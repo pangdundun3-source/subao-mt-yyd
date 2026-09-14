@@ -1156,6 +1156,32 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
   };
   const activeV8Module = V8_NAV_TO_MODULE[activeNav];
   const [showValueAddedBanner, setShowValueAddedBanner] = React.useState(true);
+  const [draggingFieldIdx, setDraggingFieldIdx] = React.useState<number | null>(null);
+  const [draggingLevelIdx, setDraggingLevelIdx] = React.useState<number | null>(null);
+
+  const handleDropField = (targetIdx: number) => {
+    if (draggingFieldIdx === null || draggingFieldIdx === targetIdx || !editingTemplate) {
+      setDraggingFieldIdx(null);
+      return;
+    }
+    const currentFields = [...(editingTemplate.fields || [])];
+    const [moved] = currentFields.splice(draggingFieldIdx, 1);
+    currentFields.splice(targetIdx, 0, moved);
+    setEditingTemplate({ ...editingTemplate, fields: currentFields });
+    setDraggingFieldIdx(null);
+  };
+
+  const handleDropLevel = (targetIdx: number) => {
+    if (draggingLevelIdx === null || draggingLevelIdx === targetIdx || !editingScoringRuleGroup) {
+      setDraggingLevelIdx(null);
+      return;
+    }
+    const currentLevels = [...editingScoringRuleGroup.levels];
+    const [moved] = currentLevels.splice(draggingLevelIdx, 1);
+    currentLevels.splice(targetIdx, 0, moved);
+    setEditingScoringRuleGroup({ ...editingScoringRuleGroup, levels: currentLevels });
+    setDraggingLevelIdx(null);
+  };
   const v8StorageKey = isGlobalScope
     ? 'mt_global_v8_business_config'
     : `mt_inst_v8_business_config_${institution?.id ?? 'new'}`;
@@ -1692,14 +1718,13 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
                             </div>
                           </div>
 
-                          {/* Core Summary: Score, Level Count & Active Status */}
+                          {/* Core Summary: Score & Level Count */}
                           <div className="mt-2.5 flex items-center gap-2 text-xs text-gray-500">
                             <span>总分 <strong className="font-semibold text-gray-900">{group.totalScore || 100}</strong> 分</span>
                             <span className="text-gray-300">·</span>
                             <span>{group.levels.length} 个打分等级</span>
-                            <span className="text-gray-300">·</span>
-                            <span className={isCardActive ? 'text-emerald-600 font-medium' : 'text-gray-400'}>
-                              {isCardActive ? '已生效' : '未启用'}
+                            <span className="text-[11px] text-gray-400 font-mono tracking-tight ml-auto shrink-0">
+                              {group.updateTime || '2023-10-24 10:00:00'}
                             </span>
                           </div>
 
@@ -2861,11 +2886,29 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
                       return (
                         <div
                           key={field.id}
-                          className="bg-white rounded-lg p-3 border border-gray-200 shadow-2xs hover:border-blue-200 transition-all space-y-2 group"
+                          draggable
+                          onDragStart={(e) => {
+                            setDraggingFieldIdx(idx);
+                            e.dataTransfer.effectAllowed = 'move';
+                          }}
+                          onDragOver={(e) => {
+                            e.preventDefault();
+                            e.dataTransfer.dropEffect = 'move';
+                          }}
+                          onDrop={() => handleDropField(idx)}
+                          onDragEnd={() => setDraggingFieldIdx(null)}
+                          className={`rounded-lg p-3 border shadow-2xs transition-all space-y-2 group ${
+                            draggingFieldIdx === idx
+                              ? 'border-blue-400 bg-blue-50/70 opacity-60 scale-[0.99]'
+                              : 'bg-white border-gray-200 hover:border-blue-200'
+                          }`}
                         >
                           <div className="flex items-center justify-between gap-2">
                             <div className="flex items-center gap-2 flex-1 min-w-0">
-                              <span className="material-symbols-outlined text-gray-400 text-[18px] cursor-grab">
+                              <span
+                                className="material-symbols-outlined text-gray-400 hover:text-blue-600 text-[18px] cursor-grab active:cursor-grabbing select-none"
+                                title="按住拖拽以调整字段排序"
+                              >
                                 drag_indicator
                               </span>
                               <span className="text-[11px] font-mono text-gray-400">
@@ -3547,11 +3590,29 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
                   {editingScoringRuleGroup.levels.map((lvl, idx) => (
                     <div
                       key={lvl.id}
-                      className="bg-white border border-gray-200 rounded-lg p-2.5 flex items-center gap-3 shadow-2xs"
+                      draggable
+                      onDragStart={(e) => {
+                        setDraggingLevelIdx(idx);
+                        e.dataTransfer.effectAllowed = 'move';
+                      }}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = 'move';
+                      }}
+                      onDrop={() => handleDropLevel(idx)}
+                      onDragEnd={() => setDraggingLevelIdx(null)}
+                      className={`border rounded-lg p-2.5 flex items-center gap-3 shadow-2xs transition-all ${
+                        draggingLevelIdx === idx
+                          ? 'border-blue-400 bg-blue-50/70 opacity-60 scale-[0.99]'
+                          : 'bg-white border-gray-200 hover:border-blue-200'
+                      }`}
                     >
                       {/* Drag handle & Index */}
-                      <div className="flex items-center gap-1 text-gray-400 select-none pl-1">
-                        <span className="material-symbols-outlined text-[16px] text-gray-300">
+                      <div
+                        className="flex items-center gap-1 text-gray-400 hover:text-blue-600 select-none pl-1 cursor-grab active:cursor-grabbing"
+                        title="按住拖拽以调整等级排序"
+                      >
+                        <span className="material-symbols-outlined text-[16px] text-gray-400">
                           drag_indicator
                         </span>
                         <span className="font-mono text-xs text-gray-400 w-6">#{idx + 1}</span>

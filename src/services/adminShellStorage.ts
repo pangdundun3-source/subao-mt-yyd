@@ -40,7 +40,7 @@ const remove = (key: string) => {
 export const adminShellStorage = {
   readActiveTab: (): ActiveTab => {
     const saved = read(STORAGE_KEYS.activeTab);
-    return activeTabs.includes(saved as ActiveTab) ? (saved as ActiveTab) : 'system';
+    return activeTabs.includes(saved as ActiveTab) ? (saved as ActiveTab) : 'institutions';
   },
 
   saveActiveTab: (tab: ActiveTab) => write(STORAGE_KEYS.activeTab, tab),
@@ -69,7 +69,11 @@ export const adminShellStorage = {
     write(STORAGE_KEYS.selectedInstitutionId, String(id));
   },
 
-  readIsEditingInstitution: () => read(STORAGE_KEYS.isEditingInstitution) === 'true',
+  readIsEditingInstitution: () => {
+    const saved = read(STORAGE_KEYS.isEditingInstitution);
+    if (saved === null) return true;
+    return saved === 'true';
+  },
 
   saveIsEditingInstitution: (isEditing: boolean) => {
     if (isEditing) {
