@@ -454,6 +454,8 @@ interface BusinessConfigProps {
   valueAddedAllOperable?: boolean;
   /** 隐藏增值业务卡片上的“已开通/未开通”状态徽标（全局配置维度不需要该状态展示） */
   hideValueAddedStatusBadge?: boolean;
+  /** 是否为平台全局配置作用域 */
+  isGlobalScope?: boolean;
 }
 
 export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
@@ -463,7 +465,9 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
   fallbackStorageKey,
   valueAddedAllOperable = false,
   hideValueAddedStatusBadge = false,
+  isGlobalScope: propIsGlobalScope,
 }) => {
+  const isGlobalScope = propIsGlobalScope ?? hideValueAddedStatusBadge;
   // Currently active configuration module in the left column
   const [activeModule, setActiveModule] = useState<string>(() => {
     if (initialModule && initialModule !== 'evaluation_rule' && initialModule !== 'stats_metric') {
@@ -875,6 +879,8 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
 
   const [searchQuery, setSearchQuery] = useState('');
   const [showValueAddedBanner, setShowValueAddedBanner] = useState(true);
+  const [showAuditSyncNotice, setShowAuditSyncNotice] = useState(true);
+  const [showDictSyncNotice, setShowDictSyncNotice] = useState(true);
   const [templateTypeFilter, setTemplateTypeFilter] = useState<'all' | '报送' | '激活'>('报送');
   const [metricNameInput, setMetricNameInput] = useState('');
   const [metricNameQuery, setMetricNameQuery] = useState('');
@@ -2191,8 +2197,8 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
 
   // Handle Delete
   const handleDelete = (item: ConfigModuleItem) => {
-    if (item.isDefault) {
-      alert('系统默认配置项不可删除！');
+    if (!isGlobalScope && item.isDefault) {
+      alert('系统默认配置项受平台全局管控，机构端不可删除！');
       return;
     }
     if (confirm(`确定要删除配置项“${item.name}”吗？`)) {
@@ -2235,7 +2241,7 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
             : targetMeta.description
       );
     } else if (activeModule === 'audit_score') {
-      setFormName('自定义百分制打分规则组');
+      setFormName(isGlobalScope ? '百分制打分规则组' : '自定义百分制打分规则组');
       setFormDesc('按审核结果命中一个评分等级，设为启用后替代现有打分标准');
       setFormTotalScore(100);
       setFormLevelCount(5);
@@ -2295,8 +2301,8 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
   };
 
   const openEditModal = (item: ConfigModuleItem) => {
-    if (item.isDefault && activeModule !== 'evaluation_rule' && activeModule !== 'login_method') {
-      alert('系统默认模板不支持删除和修改！仅提供查看功能。如需个性化格式，请新建“自定义”模板。');
+    if (!isGlobalScope && item.isDefault && activeModule !== 'evaluation_rule' && activeModule !== 'login_method') {
+      alert('系统默认配置受平台全局统一管控，机构端仅提供查看功能。如需个性化格式，请新建“自定义”规则。');
       openPreviewItem(item);
       return;
     }
@@ -2777,25 +2783,6 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-1.5 relative">
                   <h3 className="text-sm font-bold text-gray-800">{currentModuleLabel}</h3>
-                  {activeModule === 'audit_flow' && (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => showConfigToast('审核流程仅支持配置到一级机构，一级机构下的子机构默认继承上级流程，不支持单独配置。')}
-                        title="审核流程仅支持配置到一级机构，一级机构下的子机构默认继承上级流程，不支持单独配置。"
-                        className="w-4 h-4 rounded-full border border-amber-200 bg-amber-50 text-amber-600 hover:bg-amber-100 hover:border-amber-300 flex items-center justify-center cursor-pointer transition-colors"
-                        aria-label="审核流程配置规则说明"
-                      >
-                        <Info className="w-3 h-3" />
-                      </button>
-                      {configToastMessage && (
-                        <div className="absolute left-full top-1/2 ml-2 z-[80] w-[360px] -translate-y-1/2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-bold text-amber-800 shadow-lg animate-in fade-in zoom-in-95">
-                          <span className="absolute -left-1 top-1/2 h-2 w-2 -translate-y-1/2 rotate-45 border-b border-l border-amber-200 bg-amber-50" />
-                          <span className="leading-relaxed">{configToastMessage}</span>
-                        </div>
-                      )}
-                    </>
-                  )}
                 </div>
 
                 <div className="flex items-center space-x-3">
@@ -2832,25 +2819,99 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
               </div>
             )}
 
-            {/* Value Added Read-Only Info Banner */}
+            {/* Value Added Info Banner */}
             {activeModule === 'value_added' && showValueAddedBanner && (
-              <div className="bg-[#fffbe6] border border-[#ffe58f] rounded-lg p-3.5 flex items-start justify-between gap-3 text-xs shadow-2xs">
-                <div className="flex items-start space-x-2.5 min-w-0">
-                  <Info className="w-4 h-4 text-[#faad14] shrink-0 mt-0.5" />
+              isGlobalScope ? (
+                <div className="bg-blue-50/70 border border-blue-200/80 rounded-xl p-3.5 flex items-start justify-between gap-2.5 text-xs shadow-2xs">
+                  <div className="flex items-start gap-2.5 min-w-0">
+                    <Info className="w-4 h-4 text-[#1890ff] shrink-0 mt-0.5" />
+                    <div className="space-y-0.5 min-w-0">
+                      <span className="font-bold text-blue-900 block">
+                        全平台增值业务运营管控提示
+                      </span>
+                      <p className="text-gray-700 text-[11px] leading-relaxed">
+                        本模块面向平台运营人员统一管控。在全局配置中启用增值业务后，机构在添加或编辑时才能进行管理与开通；如果在此处禁用该增值业务，机构端将不会出现对应业务选项。
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowValueAddedBanner(false)}
+                    className="p-1 rounded text-gray-400 hover:text-gray-700 hover:bg-blue-100/70 transition-colors cursor-pointer shrink-0"
+                    title="关闭提示"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <div className="bg-[#fffbe6] border border-[#ffe58f] rounded-lg p-3.5 flex items-start justify-between gap-3 text-xs shadow-2xs">
+                  <div className="flex items-start space-x-2.5 min-w-0">
+                    <Info className="w-4 h-4 text-[#faad14] shrink-0 mt-0.5" />
+                    <div className="space-y-0.5 min-w-0">
+                      <span className="font-bold text-[#d48806] block">
+                        增值业务运营管控说明
+                      </span>
+                      <p className="text-gray-700 text-[11px] leading-relaxed">
+                        本模块面向平台运营人员统一管控。在全局配置中开启增值业务后，机构在添加或编辑时才能进行管理与开通；如果在此处未开启该增值业务，机构端将不会出现对应业务选项。
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowValueAddedBanner(false)}
+                    className="p-1 rounded text-gray-400 hover:text-gray-700 hover:bg-amber-100/70 transition-colors cursor-pointer shrink-0"
+                    title="关闭说明"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )
+            )}
+
+            {/* Global Scope Sync Notice for Audit Score / Audit Flow */}
+            {isGlobalScope && showAuditSyncNotice && (activeModule === 'audit_score' || activeModule === 'audit_flow') && (
+              <div className="bg-blue-50/70 border border-blue-200/80 rounded-xl p-3.5 flex items-start justify-between gap-2.5 text-xs shadow-2xs">
+                <div className="flex items-start gap-2.5 min-w-0">
+                  <Info className="w-4 h-4 text-[#1890ff] shrink-0 mt-0.5" />
                   <div className="space-y-0.5 min-w-0">
-                    <span className="font-bold text-[#d48806] block">
-                      增值业务运营管控说明
+                    <span className="font-bold text-blue-900 block">
+                      全平台内置{activeModule === 'audit_score' ? '打分规则' : '审核流程'}母版管控提示
                     </span>
                     <p className="text-gray-700 text-[11px] leading-relaxed">
-                      本模块面向平台运营人员统一管控。在全局配置中开启增值业务后，机构在添加或编辑时才能进行管理与开通；如果在此处未开启该增值业务，机构端将不会出现对应业务选项。
+                      此处配置并启用的{activeModule === 'audit_score' ? '审核打分规则' : '审核层级与流程'}将作为系统内置规则直接同步至全平台所有机构的内置规则库中。受平台全局统一管控，各机构端仅可调用生效，不支持自行修改或删除。
                     </p>
                   </div>
                 </div>
                 <button
                   type="button"
-                  onClick={() => setShowValueAddedBanner(false)}
-                  className="p-1 rounded text-gray-400 hover:text-gray-700 hover:bg-amber-100/70 transition-colors cursor-pointer shrink-0"
-                  title="关闭说明"
+                  onClick={() => setShowAuditSyncNotice(false)}
+                  className="p-1 rounded text-gray-400 hover:text-gray-700 hover:bg-blue-100/70 transition-colors cursor-pointer shrink-0"
+                  title="关闭提示"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
+            {/* Global Scope Sync Notice for Data Dict */}
+            {isGlobalScope && showDictSyncNotice && activeModule === 'data_dict' && (
+              <div className="bg-blue-50/70 border border-blue-200/80 rounded-xl p-3.5 flex items-start justify-between gap-2.5 text-xs shadow-2xs">
+                <div className="flex items-start gap-2.5 min-w-0">
+                  <Info className="w-4 h-4 text-[#1890ff] shrink-0 mt-0.5" />
+                  <div className="space-y-0.5 min-w-0">
+                    <span className="font-bold text-blue-900 block">
+                      全平台内置数据字典母版管控提示
+                    </span>
+                    <p className="text-gray-700 text-[11px] leading-relaxed">
+                      此处配置并启用的数据字典项（驳回原因、人员标签、预警类型等）将作为系统内置母版标准同步至全平台所有机构。受平台全局统一管控，各机构端仅可引用生效，不支持自行修改或删除系统内置字典项。
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowDictSyncNotice(false)}
+                  className="p-1 rounded text-gray-400 hover:text-gray-700 hover:bg-blue-100/70 transition-colors cursor-pointer shrink-0"
+                  title="关闭提示"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -3098,18 +3159,20 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
                                     </td>
                                     <td className="py-3 px-4 align-top max-w-44">
                                       <div className="flex flex-col gap-1 min-w-0">
-                                        <div className="flex items-center gap-2 min-w-0">
+                                         <div className="flex items-center gap-2 min-w-0">
                                           <span className="font-bold text-gray-900 truncate min-w-0" title={item.name}>{item.name}</span>
-                                          {item.isDefault ? (
-                                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] bg-gray-100 text-gray-600 font-bold rounded border border-gray-200 shrink-0 whitespace-nowrap">
-                                              <Lock className="w-2.5 h-2.5 text-gray-400" />
-                                              系统默认
-                                            </span>
-                                          ) : (
-                                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] bg-emerald-50 text-emerald-700 font-bold rounded border border-emerald-200 shrink-0 whitespace-nowrap">
-                                              <Sparkles className="w-2.5 h-2.5 text-emerald-600" />
-                                              自定义
-                                            </span>
+                                          {!isGlobalScope && (
+                                            item.isDefault ? (
+                                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] bg-gray-100 text-gray-600 font-bold rounded border border-gray-200 shrink-0 whitespace-nowrap">
+                                                <Lock className="w-2.5 h-2.5 text-gray-400" />
+                                                系统默认
+                                              </span>
+                                            ) : (
+                                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] bg-emerald-50 text-emerald-700 font-bold rounded border border-emerald-200 shrink-0 whitespace-nowrap">
+                                                <Sparkles className="w-2.5 h-2.5 text-emerald-600" />
+                                                自定义
+                                              </span>
+                                            )
                                           )}
                                         </div>
                                       </div>
@@ -3156,7 +3219,7 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
                                         >
                                           <Eye className="w-3.5 h-3.5" />
                                         </button>
-                                        {item.isDefault ? (
+                                         {!isGlobalScope && item.isDefault ? (
                                           <button
                                             type="button"
                                             disabled
@@ -3175,7 +3238,7 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
                                             <Edit3 className="w-3.5 h-3.5" />
                                           </button>
                                         )}
-                                        {item.isDefault ? (
+                                        {!isGlobalScope && item.isDefault ? (
                                           <button
                                             type="button"
                                             disabled
@@ -3235,16 +3298,18 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
                                 <h3 className="font-bold text-sm text-gray-900 group-hover:text-[#1890ff] transition-colors truncate">
                                   {item.name}
                                 </h3>
-                                {item.isDefault ? (
-                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[11px] bg-gray-100 text-gray-600 font-medium rounded border border-gray-200/80 shrink-0">
-                                    <Lock className="w-3 h-3 text-gray-400" />
-                                    <span>系统默认</span>
-                                  </span>
-                                ) : (
-                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[11px] bg-blue-50 text-[#1890ff] font-medium rounded border border-blue-200/80 shrink-0">
-                                    <Sparkles className="w-3 h-3 text-[#1890ff]" />
-                                    <span>自定义</span>
-                                  </span>
+                                {!isGlobalScope && (
+                                  item.isDefault ? (
+                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[11px] bg-gray-100 text-gray-600 font-medium rounded border border-gray-200/80 shrink-0">
+                                      <Lock className="w-3 h-3 text-gray-400" />
+                                      <span>系统默认</span>
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[11px] bg-blue-50 text-[#1890ff] font-medium rounded border border-blue-200/80 shrink-0">
+                                      <Sparkles className="w-3 h-3 text-[#1890ff]" />
+                                      <span>自定义</span>
+                                    </span>
+                                  )
                                 )}
                               </div>
 
@@ -3312,7 +3377,7 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
                               className="flex items-center gap-1"
                               onClick={e => e.stopPropagation()}
                             >
-                              {!item.isDefault ? (
+                              {isGlobalScope || !item.isDefault ? (
                                 <>
                                   <button
                                     type="button"
@@ -3347,7 +3412,7 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
               </div>
             ) : activeModule === 'report_template' ? (
               <TemplateConfigBoard
-                isGlobalScope={hideValueAddedStatusBadge}
+                isGlobalScope={isGlobalScope}
                 onSaveNotice={(msg) => showConfigToast(msg)}
                 onNavigateToWorkflow={() => setActiveModule('audit_flow')}
               />
@@ -3524,16 +3589,18 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
                                 <h3 className="font-bold text-sm text-gray-900 group-hover:text-[#1890ff] transition-colors truncate" title={item.name}>
                                   {item.name}
                                 </h3>
-                                {item.isDefault ? (
-                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[11px] bg-gray-100 text-gray-600 font-medium rounded border border-gray-200/80 shrink-0">
-                                    <Lock className="w-3 h-3 text-gray-400" />
-                                    <span>系统默认</span>
-                                  </span>
-                                ) : (
-                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[11px] bg-blue-50 text-[#1890ff] font-medium rounded border border-blue-200/80 shrink-0">
-                                    <Sparkles className="w-3 h-3 text-[#1890ff]" />
-                                    <span>自定义</span>
-                                  </span>
+                                {!isGlobalScope && (
+                                  item.isDefault ? (
+                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[11px] bg-gray-100 text-gray-600 font-medium rounded border border-gray-200/80 shrink-0">
+                                      <Lock className="w-3 h-3 text-gray-400" />
+                                      <span>系统默认</span>
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[11px] bg-blue-50 text-[#1890ff] font-medium rounded border border-blue-200/80 shrink-0">
+                                      <Sparkles className="w-3 h-3 text-[#1890ff]" />
+                                      <span>自定义</span>
+                                    </span>
+                                  )
                                 )}
                               </div>
 
@@ -3604,7 +3671,7 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
                               className="flex items-center gap-1"
                               onClick={e => e.stopPropagation()}
                             >
-                              {!item.isDefault ? (
+                              {isGlobalScope || !item.isDefault ? (
                                 <>
                                   <button
                                     type="button"
@@ -3798,7 +3865,11 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
                                         ? 'bg-[#1890ff] text-white pl-2.5 pr-6.5'
                                         : 'bg-gray-200 text-gray-500 pl-6.5 pr-2.5 hover:bg-gray-300'
                                     }`}
-                                    title={item.status === '启用' ? '点击切换为未开通' : '点击切换为已开通'}
+                                    title={
+                                      isGlobalScope
+                                        ? (item.status === '启用' ? '点击切换为禁用' : '点击切换为启用')
+                                        : (item.status === '启用' ? '点击切换为未开通' : '点击切换为已开通')
+                                    }
                                   >
                                     <span
                                       className={`pointer-events-none absolute top-0.5 bottom-0.5 w-5 h-5 rounded-full bg-white shadow-xs transition-all duration-200 ease-in-out ${
@@ -3806,7 +3877,9 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
                                       }`}
                                     />
                                     <span className="leading-none whitespace-nowrap">
-                                      {item.status === '启用' ? '已开通' : '未开通'}
+                                      {isGlobalScope
+                                        ? (item.status === '启用' ? '启用' : '禁用')
+                                        : (item.status === '启用' ? '已开通' : '未开通')}
                                     </span>
                                   </button>
                                 ) : (
@@ -3896,16 +3969,18 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
                                   </span>
                                 )}
 
-                                {item.isDefault ? (
-                                  <span className="inline-flex items-center space-x-1 px-1.5 py-0.5 text-[10px] bg-gray-100 text-gray-600 font-bold rounded border border-gray-200 shrink-0">
-                                    <Lock className="w-2.5 h-2.5 text-gray-400" />
-                                    <span>系统默认</span>
-                                  </span>
-                                ) : (
-                                  <span className="inline-flex items-center space-x-1 px-1.5 py-0.5 text-[10px] bg-emerald-50 text-emerald-700 font-bold rounded border border-emerald-200 shrink-0">
-                                    <Sparkles className="w-2.5 h-2.5 text-emerald-600" />
-                                    <span>自定义</span>
-                                  </span>
+                                {!isGlobalScope && (
+                                  item.isDefault ? (
+                                    <span className="inline-flex items-center space-x-1 px-1.5 py-0.5 text-[10px] bg-gray-100 text-gray-600 font-bold rounded border border-gray-200 shrink-0">
+                                      <Lock className="w-2.5 h-2.5 text-gray-400" />
+                                      <span>系统默认</span>
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center space-x-1 px-1.5 py-0.5 text-[10px] bg-emerald-50 text-emerald-700 font-bold rounded border border-emerald-200 shrink-0">
+                                      <Sparkles className="w-2.5 h-2.5 text-emerald-600" />
+                                      <span>自定义</span>
+                                    </span>
+                                  )
                                 )}
                               </div>
                               {item.description && (
@@ -4261,16 +4336,18 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
                       <div className="text-sm font-bold text-gray-800 break-words">
                         {selectedAuditFlow.name}
                       </div>
-                      {selectedAuditFlow.isDefault ? (
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] bg-gray-100 text-gray-600 font-bold rounded border border-gray-200 shrink-0 whitespace-nowrap">
-                          <Lock className="w-2.5 h-2.5 text-gray-400" />
-                          <span>系统默认</span>
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] bg-emerald-50 text-emerald-700 font-bold rounded border border-emerald-200 shrink-0 whitespace-nowrap">
-                          <Sparkles className="w-2.5 h-2.5 text-emerald-600" />
-                          <span>自定义</span>
-                        </span>
+                      {!isGlobalScope && (
+                        selectedAuditFlow.isDefault ? (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] bg-gray-100 text-gray-600 font-bold rounded border border-gray-200 shrink-0 whitespace-nowrap">
+                            <Lock className="w-2.5 h-2.5 text-gray-400" />
+                            <span>系统默认</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] bg-emerald-50 text-emerald-700 font-bold rounded border border-emerald-200 shrink-0 whitespace-nowrap">
+                            <Sparkles className="w-2.5 h-2.5 text-emerald-600" />
+                            <span>自定义</span>
+                          </span>
+                        )
                       )}
                     </div>
 
@@ -4299,16 +4376,16 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
                   <div className="px-5 py-3 border-t border-gray-200 flex items-center justify-end shrink-0">
                     <button
                       type="button"
-                      disabled={selectedAuditFlow.isDefault}
+                      disabled={!isGlobalScope && selectedAuditFlow.isDefault}
                       onClick={() => {
                         const item = selectedAuditFlow;
                         setSelectedAuditFlowId(null);
                         openEditModal(item);
                       }}
-                      className={selectedAuditFlow.isDefault
+                      className={(!isGlobalScope && selectedAuditFlow.isDefault)
                         ? 'inline-flex items-center gap-1 px-3 py-1.5 text-xs text-gray-300 bg-gray-50 border border-gray-200 cursor-not-allowed rounded'
                         : 'inline-flex items-center gap-1 px-3 py-1.5 text-xs text-[#1E5ABB] border border-blue-200 hover:bg-blue-50 rounded cursor-pointer'}
-                      title={selectedAuditFlow.isDefault ? '系统默认流程仅支持查看' : '编辑审核流程'}
+                      title={(!isGlobalScope && selectedAuditFlow.isDefault) ? '系统默认流程仅支持查看' : '编辑审核流程'}
                     >
                       <Edit3 className="w-3.5 h-3.5" />
                       <span>编辑</span>
@@ -4339,16 +4416,18 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
                 <div className="flex items-center gap-2 min-w-0">
                   <GitBranch className="w-4 h-4 text-[#1E5ABB] shrink-0" />
                   <span className="text-sm font-bold text-gray-800 truncate">{auditFlowPreviewItem.name}</span>
-                  {auditFlowPreviewItem.isDefault ? (
-                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] bg-gray-100 text-gray-600 font-bold rounded border border-gray-200 shrink-0 whitespace-nowrap">
-                      <Lock className="w-2.5 h-2.5 text-gray-400" />
-                      <span>系统默认</span>
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] bg-emerald-50 text-emerald-700 font-bold rounded border border-emerald-200 shrink-0 whitespace-nowrap">
-                      <Sparkles className="w-2.5 h-2.5 text-emerald-600" />
-                      <span>自定义</span>
-                    </span>
+                  {!isGlobalScope && (
+                    auditFlowPreviewItem.isDefault ? (
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] bg-gray-100 text-gray-600 font-bold rounded border border-gray-200 shrink-0 whitespace-nowrap">
+                        <Lock className="w-2.5 h-2.5 text-gray-400" />
+                        <span>系统默认</span>
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] bg-emerald-50 text-emerald-700 font-bold rounded border border-emerald-200 shrink-0 whitespace-nowrap">
+                        <Sparkles className="w-2.5 h-2.5 text-emerald-600" />
+                        <span>自定义</span>
+                      </span>
+                    )
                   )}
                 </div>
                 <button
@@ -4534,16 +4613,18 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
                             <span className={`px-1.5 py-0.5 text-[10px] rounded border font-bold ${getDictCategoryBadge(previewItem.dictCategory)}`}>
                               {dictMeta.fullLabel}
                             </span>
-                            {previewItem.isDefault ? (
-                              <span className="inline-flex items-center space-x-1 px-1.5 py-0.5 text-[10px] bg-gray-100 text-gray-600 font-bold rounded border border-gray-200">
-                                <Lock className="w-2.5 h-2.5 text-gray-400" />
-                                <span>系统默认</span>
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center space-x-1 px-1.5 py-0.5 text-[10px] bg-emerald-50 text-emerald-700 font-bold rounded border border-emerald-200">
-                                <Sparkles className="w-2.5 h-2.5 text-emerald-600" />
-                                <span>自定义</span>
-                              </span>
+                            {!isGlobalScope && (
+                              previewItem.isDefault ? (
+                                <span className="inline-flex items-center space-x-1 px-1.5 py-0.5 text-[10px] bg-gray-100 text-gray-600 font-bold rounded border border-gray-200">
+                                  <Lock className="w-2.5 h-2.5 text-gray-400" />
+                                  <span>系统默认</span>
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center space-x-1 px-1.5 py-0.5 text-[10px] bg-emerald-50 text-emerald-700 font-bold rounded border border-emerald-200">
+                                  <Sparkles className="w-2.5 h-2.5 text-emerald-600" />
+                                  <span>自定义</span>
+                                </span>
+                              )
                             )}
                           </div>
                         </div>
@@ -4960,23 +5041,32 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
             </div>
 
             <div className="px-5 py-3 border-t border-gray-100 bg-gray-50/60 flex items-center justify-end gap-2 shrink-0">
-              {activeModule === 'audit_score' ? (
-                <button
-                  type="button"
-                  disabled={previewItem.isDefault}
-                  onClick={() => {
-                    const item = previewItem;
-                    setPreviewItem(null);
-                    openEditModal(item);
-                  }}
-                  className={previewItem.isDefault
-                    ? 'inline-flex items-center gap-1 px-3 py-1.5 text-xs text-gray-300 bg-gray-50 border border-gray-200 cursor-not-allowed rounded'
-                    : 'inline-flex items-center gap-1 px-3 py-1.5 text-xs text-[#1E5ABB] border border-blue-200 hover:bg-blue-50 rounded cursor-pointer'}
-                  title={previewItem.isDefault ? '系统默认规则仅支持查看' : '编辑审核打分规则'}
-                >
-                  <Edit3 className="w-3.5 h-3.5" />
-                  <span>编辑</span>
-                </button>
+              {activeModule === 'audit_score' || activeModule === 'data_dict' ? (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPreviewItem(null)}
+                    className="px-4 py-1.5 border border-gray-300 rounded text-gray-600 hover:bg-gray-50 cursor-pointer text-xs"
+                  >
+                    关闭
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!isGlobalScope && previewItem.isDefault}
+                    onClick={() => {
+                      const item = previewItem;
+                      setPreviewItem(null);
+                      openEditModal(item);
+                    }}
+                    className={(!isGlobalScope && previewItem.isDefault)
+                      ? 'inline-flex items-center gap-1 px-3 py-1.5 text-xs text-gray-300 bg-gray-50 border border-gray-200 cursor-not-allowed rounded'
+                      : 'inline-flex items-center gap-1 px-3 py-1.5 text-xs text-[#1E5ABB] border border-blue-200 hover:bg-blue-50 rounded cursor-pointer font-bold'}
+                    title={(!isGlobalScope && previewItem.isDefault) ? '系统默认项仅支持查看' : '编辑此配置项'}
+                  >
+                    <Edit3 className="w-3.5 h-3.5" />
+                    <span>编辑</span>
+                  </button>
+                </div>
               ) : (
                 <>
                   <button

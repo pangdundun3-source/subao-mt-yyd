@@ -1256,6 +1256,7 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
               fallbackStorageKey={v8FallbackStorageKey}
               valueAddedAllOperable
               hideValueAddedStatusBadge={isGlobalScope}
+              isGlobalScope={isGlobalScope}
             />
           )}
 

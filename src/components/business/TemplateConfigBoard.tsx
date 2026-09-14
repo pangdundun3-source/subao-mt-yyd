@@ -36,6 +36,7 @@ import {
   ExternalLink,
   ChevronDown,
   Clock,
+  X,
   Layers
 } from 'lucide-react';
 
@@ -338,6 +339,7 @@ export const TemplateConfigBoard: React.FC<TemplateConfigBoardProps> = ({
 
   // Active top tab: 报送模板 vs 激活模板
   const [topTab, setTopTab] = useState<TemplateType>('报送');
+  const [showSyncNotice, setShowSyncNotice] = useState(true);
 
   // Currently previewed template ID
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>(() => {
@@ -513,11 +515,11 @@ export const TemplateConfigBoard: React.FC<TemplateConfigBoardProps> = ({
   const handleDeleteTemplate = (id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     const target = templates.find(t => t.id === id);
-    if (target?.isDefault) {
-      alert('系统默认模板不支持删除！');
+    if (!isGlobalScope && target?.isDefault) {
+      alert('系统默认模板受平台全局统一管控，机构端不支持删除！');
       return;
     }
-    if (confirm(`确认删除自定义模板「${target?.name}」吗？`)) {
+    if (confirm(`确认删除模板「${target?.name}」吗？`)) {
       const updated = templates.filter(t => t.id !== id);
       saveTemplates(updated);
       showToast('模板已删除');
@@ -1365,46 +1367,74 @@ export const TemplateConfigBoard: React.FC<TemplateConfigBoardProps> = ({
         </div>
       )}
 
-      {/* Top Segmented Tabs & Action Button */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-2.5 rounded-xl border border-gray-200/80 shadow-2xs">
-        {/* Left Segmented Pill Tabs */}
-        <div className="inline-flex items-center gap-1 p-1 bg-gray-100/90 rounded-lg border border-gray-200/60">
-          <button
-            type="button"
-            onClick={() => setTopTab('报送')}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-xs font-bold transition-all cursor-pointer ${
-              topTab === '报送'
-                ? 'bg-white text-[#1890ff] shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            <FileText className={`w-3.5 h-3.5 ${topTab === '报送' ? 'text-[#1890ff]' : 'text-gray-500'}`} />
-            <span>报送模板</span>
-          </button>
+      {/* Top Segmented Tabs, Action Button & Notice Block */}
+      <div className="bg-white p-2.5 rounded-xl border border-gray-200/80 shadow-2xs space-y-2.5">
+        {/* Navigation Tabs and Add Button Bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          {/* Left Segmented Pill Tabs */}
+          <div className="inline-flex items-center gap-1 p-1 bg-gray-100/90 rounded-lg border border-gray-200/60">
+            <button
+              type="button"
+              onClick={() => setTopTab('报送')}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-xs font-bold transition-all cursor-pointer ${
+                topTab === '报送'
+                  ? 'bg-white text-[#1890ff] shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <FileText className={`w-3.5 h-3.5 ${topTab === '报送' ? 'text-[#1890ff]' : 'text-gray-500'}`} />
+              <span>报送模板</span>
+            </button>
 
+            <button
+              type="button"
+              onClick={() => setTopTab('激活')}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-xs font-bold transition-all cursor-pointer ${
+                topTab === '激活'
+                  ? 'bg-white text-[#1890ff] shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <Zap className={`w-3.5 h-3.5 ${topTab === '激活' ? 'text-[#1890ff]' : 'text-gray-500'}`} />
+              <span>激活模板</span>
+            </button>
+          </div>
+
+          {/* Right Action Button */}
           <button
             type="button"
-            onClick={() => setTopTab('激活')}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-xs font-bold transition-all cursor-pointer ${
-              topTab === '激活'
-                ? 'bg-white text-[#1890ff] shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
+            onClick={() => handleOpenDesigner('add')}
+            className="flex items-center gap-1.5 px-4 py-2 bg-[#1890ff] hover:bg-blue-600 text-white rounded-lg text-xs font-bold shadow-2xs transition-colors cursor-pointer shrink-0"
           >
-            <Zap className={`w-3.5 h-3.5 ${topTab === '激活' ? 'text-[#1890ff]' : 'text-gray-500'}`} />
-            <span>激活模板</span>
+            <Plus className="w-4 h-4" />
+            <span>{isActivationMode ? '新增激活模板' : '新增报送模板'}</span>
           </button>
         </div>
 
-        {/* Right Action Button */}
-        <button
-          type="button"
-          onClick={() => handleOpenDesigner('add')}
-          className="flex items-center gap-1.5 px-4 py-2 bg-[#1890ff] hover:bg-blue-600 text-white rounded-lg text-xs font-bold shadow-2xs transition-colors cursor-pointer shrink-0"
-        >
-          <Plus className="w-4 h-4" />
-          <span>{isActivationMode ? '新增激活模板' : '新增报送模板'}</span>
-        </button>
+        {/* Global Scope Sync Notice */}
+        {isGlobalScope && showSyncNotice && (
+          <div className="bg-blue-50/70 border border-blue-200/80 rounded-lg p-3 flex items-start justify-between gap-2.5 text-xs">
+            <div className="flex items-start gap-2.5 min-w-0">
+              <Info className="w-4 h-4 text-[#1890ff] shrink-0 mt-0.5" />
+              <div className="space-y-0.5 min-w-0">
+                <span className="font-bold text-blue-900 block text-xs">
+                  全平台内置模板母版管控提示
+                </span>
+                <p className="text-gray-700 text-[11px] leading-relaxed">
+                  此处新增、配置并启用的{topTab}模板将自动作为系统内置母版同步至全平台所有机构的内置模板库中。受平台全局统一管控，各机构端仅可调用与选用，不支持机构端自行修改或删除。
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowSyncNotice(false)}
+              className="p-1 rounded text-gray-400 hover:text-gray-700 hover:bg-blue-100/70 transition-colors cursor-pointer shrink-0"
+              title="关闭提示"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* ================================================================= */}
@@ -1449,16 +1479,18 @@ export const TemplateConfigBoard: React.FC<TemplateConfigBoardProps> = ({
                       <span className="text-xs font-bold text-gray-900 truncate whitespace-nowrap">
                         {tpl.name}
                       </span>
-                      {tpl.isDefault ? (
-                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 bg-gray-100 text-gray-600 text-[10px] font-bold rounded border border-gray-200 shrink-0 whitespace-nowrap">
-                          <Lock className="w-2.5 h-2.5 text-gray-400" />
-                          系统默认
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 bg-emerald-50 text-emerald-700 text-[10px] font-bold rounded border border-emerald-200 shrink-0 whitespace-nowrap">
-                          <Sparkles className="w-2.5 h-2.5 text-emerald-600" />
-                          自定义
-                        </span>
+                      {!isGlobalScope && (
+                        tpl.isDefault ? (
+                          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 bg-gray-100 text-gray-600 text-[10px] font-bold rounded border border-gray-200 shrink-0 whitespace-nowrap">
+                            <Lock className="w-2.5 h-2.5 text-gray-400" />
+                            系统默认
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 bg-emerald-50 text-emerald-700 text-[10px] font-bold rounded border border-emerald-200 shrink-0 whitespace-nowrap">
+                            <Sparkles className="w-2.5 h-2.5 text-emerald-600" />
+                            自定义
+                          </span>
+                        )
                       )}
                     </div>
 
@@ -1521,13 +1553,13 @@ export const TemplateConfigBoard: React.FC<TemplateConfigBoardProps> = ({
                           handleOpenDesigner('edit', tpl);
                         }}
                         className="hover:text-[#1890ff] flex items-center gap-0.5 text-[11px] cursor-pointer"
-                        title={tpl.isDefault ? '查看详情' : '编辑模板'}
+                        title={!isGlobalScope && tpl.isDefault ? '查看详情' : '编辑模板'}
                       >
-                        <Edit3 className="w-3 h-3" />
-                        <span>{tpl.isDefault ? '详情' : '编辑'}</span>
+                        <Edit3 className="w-3.5 h-3.5" />
+                        <span>{!isGlobalScope && tpl.isDefault ? '详情' : '编辑'}</span>
                       </button>
 
-                      {!tpl.isDefault && (
+                      {(isGlobalScope || !tpl.isDefault) && (
                         <button
                           type="button"
                           onClick={e => handleDeleteTemplate(tpl.id, e)}
@@ -1559,7 +1591,7 @@ export const TemplateConfigBoard: React.FC<TemplateConfigBoardProps> = ({
               <span className="px-1.5 py-0.2 bg-emerald-50 text-emerald-700 text-[10px] font-bold rounded border border-emerald-200 shrink-0">
                 {activeTemplate?.status}
               </span>
-              {activeTemplate?.isDefault && (
+              {!isGlobalScope && activeTemplate?.isDefault && (
                 <span className="px-1.5 py-0.2 bg-gray-100 text-gray-600 text-[10px] font-bold rounded border border-gray-200 shrink-0">
                   系统默认
                 </span>
