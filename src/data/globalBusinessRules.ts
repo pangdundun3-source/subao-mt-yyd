@@ -424,7 +424,7 @@ export const initialGlobalBusinessRules: InstitutionBusinessRules = {
     },
   ],
 
-  // 3. 数据字典维护
+  // 3. 数据字典管理
   dictItems: [
     // 审核驳回理由 (reject_reason)
     {
@@ -699,7 +699,7 @@ export const initialGlobalBusinessRules: InstitutionBusinessRules = {
     ],
   },
 
-  // 6. 审核层级/流程
+  // 6. 审核流程配置
   workflowType: 'two_level',
   enableFastTrack: true,
   autoApproveKeywords: ['【例行公开】', '【天气早报】', '【节气海报】', '【科普专栏】'],

@@ -456,6 +456,8 @@ interface BusinessConfigProps {
   hideValueAddedStatusBadge?: boolean;
   /** 是否为平台全局配置作用域 */
   isGlobalScope?: boolean;
+  /** 模块切换回调（供外部父级导航联动） */
+  onModuleChange?: (moduleId: string) => void;
 }
 
 export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
@@ -466,6 +468,7 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
   valueAddedAllOperable = false,
   hideValueAddedStatusBadge = false,
   isGlobalScope: propIsGlobalScope,
+  onModuleChange,
 }) => {
   const isGlobalScope = propIsGlobalScope ?? hideValueAddedStatusBadge;
   // Currently active configuration module in the left column
@@ -486,12 +489,12 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
     }
   }, [initialModule]);
 
-  // Module items list definition (Renamed reject_reason to data_dict: 数据字典维护)
+  // Module items list definition (Renamed reject_reason to data_dict: 数据字典管理)
   const moduleList = [
     { id: 'report_template', label: '模版配置' },
+    { id: 'audit_flow', label: '审核流程配置' },
     { id: 'audit_score', label: '审核打分规则' },
-    { id: 'data_dict', label: '数据字典维护' },
-    { id: 'audit_flow', label: '审核层级/流程' },
+    { id: 'data_dict', label: '数据字典管理' },
     { id: 'login_method', label: '登录验证方式' },
     { id: 'value_added', label: '增值业务配置' }
   ];
@@ -2893,7 +2896,7 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
                       全平台内置{activeModule === 'audit_score' ? '打分规则' : '审核流程'}母版管控提示
                     </span>
                     <p className="text-gray-700 text-[11px] leading-relaxed">
-                      此处配置并启用的{activeModule === 'audit_score' ? '审核打分规则' : '审核层级与流程'}将作为系统内置规则直接同步至全平台所有机构的内置规则库中。受平台全局统一管控，各机构端仅可调用生效，不支持自行修改或删除。
+                      此处配置并启用的{activeModule === 'audit_score' ? '审核打分规则' : '审核流程配置'}将作为系统内置规则直接同步至全平台所有机构的内置规则库中。受平台全局统一管控，各机构端仅可调用生效，不支持自行修改或删除。
                     </p>
                   </div>
                 </div>
@@ -3425,7 +3428,14 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
               <TemplateConfigBoard
                 isGlobalScope={isGlobalScope}
                 onSaveNotice={(msg) => showConfigToast(msg)}
-                onNavigateToWorkflow={() => setActiveModule('audit_flow')}
+                onNavigateToWorkflow={() => {
+                  setActiveModule('audit_flow');
+                  onModuleChange?.('audit_flow');
+                }}
+                onNavigateToScoring={() => {
+                  setActiveModule('audit_score');
+                  onModuleChange?.('audit_score');
+                }}
               />
             ) : activeModule === 'evaluation_rule' ? (
               <div className="space-y-3">

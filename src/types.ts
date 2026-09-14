@@ -371,7 +371,7 @@ export interface InstitutionBusinessRules {
   zeroToleranceViolation: boolean;
   scoringRuleGroups?: ScoringRuleGroup[];
 
-  // 3. 数据字典维护 (Data Dictionary Maintenance)
+  // 3. 数据字典管理 (Data Dictionary Management)
   dictItems: DictItem[];
 
   // 4. 考核规则 (Assessment Rules)
@@ -382,7 +382,7 @@ export interface InstitutionBusinessRules {
   // 5. 统计指标 (Statistical Metrics)
   metricsFormula: MetricFormulaConfig;
 
-  // 6. 审核层级/流程 (Review Level / Process)
+  // 6. 审核流程配置 (Review Process Configuration)
   workflowType: 'one_level' | 'two_level' | 'three_level' | 'custom';
   reviewNodes: ReviewLevelNode[];
   enableFastTrack: boolean;

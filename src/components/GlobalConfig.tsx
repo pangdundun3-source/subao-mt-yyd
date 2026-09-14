@@ -15,9 +15,6 @@ export const GlobalConfig: React.FC<GlobalConfigProps> = ({ onShowToast }) => {
     noticeDays,
     maxTrialDays,
     autoDisableExpired,
-    smsNotification,
-    emailNotification,
-    systemNoticeText,
     savedSuccess,
   } = state;
   const {
@@ -25,9 +22,6 @@ export const GlobalConfig: React.FC<GlobalConfigProps> = ({ onShowToast }) => {
     setNoticeDays,
     setMaxTrialDays,
     setAutoDisableExpired,
-    setSmsNotification,
-    setEmailNotification,
-    setSystemNoticeText,
     handleSaveSystemPolicy,
     handleSaveGlobalRules,
     showToast,
@@ -120,7 +114,7 @@ export const GlobalConfig: React.FC<GlobalConfigProps> = ({ onShowToast }) => {
             <div>
               <h2 className="text-base font-bold text-gray-900">平台系统运维参数与全局策略</h2>
               <p className="text-xs text-gray-400 mt-0.5">
-                配置机构服务生命周期、通知告警策略与面向客户端的信息播报
+                配置机构服务生命周期与到期自动关停策略
               </p>
             </div>
           </div>
@@ -183,45 +177,6 @@ export const GlobalConfig: React.FC<GlobalConfigProps> = ({ onShowToast }) => {
                 <span className="text-xs text-gray-500 ml-3">
                   {autoDisableExpired ? '已开启 (服务到期后自动停用接口与服务)' : '已关闭'}
                 </span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-4 items-center">
-              <label className="text-xs font-semibold text-gray-700">通知告警通道</label>
-              <div className="col-span-2 space-y-2">
-                <label className="flex items-center text-xs text-gray-700 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={smsNotification}
-                    onChange={(e) => setSmsNotification(e.target.checked)}
-                    className="rounded border-gray-300 text-[#1890ff] focus:ring-[#1890ff] mr-2"
-                  />
-                  开启销售手机短信提醒
-                </label>
-                <label className="flex items-center text-xs text-gray-700 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={emailNotification}
-                    onChange={(e) => setEmailNotification(e.target.checked)}
-                    className="rounded border-gray-300 text-[#1890ff] focus:ring-[#1890ff] mr-2"
-                  />
-                  开启系统管理员邮件日报
-                </label>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-4 items-start">
-              <label className="text-xs font-semibold text-gray-700 pt-2">客户端系统公告</label>
-              <div className="col-span-2">
-                <textarea
-                  rows={3}
-                  value={systemNoticeText}
-                  onChange={(e) => setSystemNoticeText(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg p-3 text-xs focus:outline-none focus:border-[#1890ff] bg-white"
-                />
-                <p className="text-[11px] text-gray-400 mt-1">
-                  此内容将向所有已登录客户端管理员的顶部通知栏播报。
-                </p>
               </div>
             </div>
 

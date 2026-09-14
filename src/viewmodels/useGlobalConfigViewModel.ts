@@ -8,7 +8,27 @@ export type GlobalToastType = 'success' | 'warning' | 'info';
 export const useGlobalConfigViewModel = (
   onShowToast?: (msg: string, type?: GlobalToastType) => void
 ) => {
-  const [activeGlobalTab, setActiveGlobalTab] = useState<GlobalConfigTab>('business_rules');
+  const [activeGlobalTab, setActiveGlobalTabState] = useState<GlobalConfigTab>(() => {
+    try {
+      const saved = localStorage.getItem('global_config_active_tab');
+      if (saved === 'business_rules' || saved === 'system_policy') {
+        return saved;
+      }
+    } catch {
+      // ignore
+    }
+    return 'system_policy';
+  });
+
+  const setActiveGlobalTab = (tab: GlobalConfigTab) => {
+    setActiveGlobalTabState(tab);
+    try {
+      localStorage.setItem('global_config_active_tab', tab);
+    } catch {
+      // ignore
+    }
+  };
+
   const [internalToast, setInternalToast] = useState<{
     message: string;
     type: GlobalToastType;
@@ -16,11 +36,6 @@ export const useGlobalConfigViewModel = (
   const [noticeDays, setNoticeDays] = useState(30);
   const [maxTrialDays, setMaxTrialDays] = useState(15);
   const [autoDisableExpired, setAutoDisableExpired] = useState(true);
-  const [smsNotification, setSmsNotification] = useState(true);
-  const [emailNotification, setEmailNotification] = useState(true);
-  const [systemNoticeText, setSystemNoticeText] = useState(
-    '【系统通知】全量媒体速报大数据服务升级完毕，目前运行正常。'
-  );
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   const showToast = (message: string, type: GlobalToastType = 'info') => {
@@ -51,9 +66,6 @@ export const useGlobalConfigViewModel = (
       noticeDays,
       maxTrialDays,
       autoDisableExpired,
-      smsNotification,
-      emailNotification,
-      systemNoticeText,
       savedSuccess,
     },
     actions: {
@@ -61,9 +73,6 @@ export const useGlobalConfigViewModel = (
       setNoticeDays,
       setMaxTrialDays,
       setAutoDisableExpired,
-      setSmsNotification,
-      setEmailNotification,
-      setSystemNoticeText,
       handleSaveSystemPolicy,
       handleSaveGlobalRules,
       showToast,

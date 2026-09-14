@@ -427,7 +427,7 @@ export const defaultInstitutionBusinessRules: InstitutionBusinessRules = {
     },
   ],
 
-  // 3. 数据字典维护
+  // 3. 数据字典管理
   dictItems: [
     // 审核驳回理由 (reject_reason)
     {
@@ -643,7 +643,7 @@ export const defaultInstitutionBusinessRules: InstitutionBusinessRules = {
     ],
   },
 
-  // 6. 审核层级/流程
+  // 6. 审核流程配置
   workflowType: 'two_level',
   enableFastTrack: true,
   autoApproveKeywords: ['例行日常晨报', '每日天气快讯', '节假日温馨提示'],
@@ -985,18 +985,18 @@ const RULE_NAV_ITEMS: NavItem[] = [
     badge: '4套',
   },
   {
+    key: 'workflow',
+    label: '审核流程配置',
+    icon: 'account_tree',
+    description: '一审/二审/三审流程节点、审批人与绿色通道',
+    badge: '两级',
+  },
+  {
     key: 'scoring',
     label: '审核打分规则',
     icon: 'fact_check',
     description: '审核打分规则组、互斥等级方案与适用范围',
     badge: '规则组',
-  },
-  {
-    key: 'workflow',
-    label: '审核层级/流程',
-    icon: 'account_tree',
-    description: '一审/二审/三审流程节点、审批人与绿色通道',
-    badge: '两级',
   },
   {
     key: 'qr_code',
@@ -1014,7 +1014,7 @@ const RULE_NAV_ITEMS: NavItem[] = [
   },
   {
     key: 'dictionary',
-    label: '数据字典维护',
+    label: '数据字典管理',
     icon: 'menu_book',
     description: '稿件分类、敏感等级、处置状态与部门枚举',
     badge: '4类',
@@ -1283,6 +1283,19 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
               valueAddedAllOperable
               hideValueAddedStatusBadge={isGlobalScope}
               isGlobalScope={isGlobalScope}
+              onModuleChange={(mod) => {
+                const MODULE_TO_V8_NAV: Record<string, BusinessRuleNavKey> = {
+                  report_template: 'templates',
+                  audit_score: 'scoring',
+                  data_dict: 'dictionary',
+                  audit_flow: 'workflow',
+                  value_added: 'value_added',
+                };
+                const targetNav = MODULE_TO_V8_NAV[mod];
+                if (targetNav) {
+                  setActiveNav(targetNav);
+                }
+              }}
             />
           )}
 
@@ -1780,13 +1793,13 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
           )}
 
           {/* ========================================================= */}
-          {/* 3. 数据字典维护 (Data Dictionary Maintenance) */}
+          {/* 3. 数据字典管理 (Data Dictionary Management) */}
           {/* ========================================================= */}
           {activeNav === '__v8_3' && (
             <div className="space-y-4">
               {/* Header: Title on Left */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <h2 className="text-base font-bold text-gray-900">数据字典维护</h2>
+                <h2 className="text-base font-bold text-gray-900">数据字典管理</h2>
               </div>
 
               {/* Sub Tabs Bar and Add Action Button */}
@@ -1996,7 +2009,7 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
           )}
 
           {/* ========================================================= */}
-          {/* 6. 审核层级/流程 (Review Level / Process) */}
+          {/* 6. 审核流程配置 (Review Process Configuration) */}
           {/* ========================================================= */}
           {activeNav === '__v8_6' && (
             <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-2xs space-y-6">
@@ -2006,7 +2019,7 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
                     <span className="material-symbols-outlined text-[#1890ff] text-[20px]">
                       account_tree
                     </span>
-                    <span>审核层级/流程</span>
+                    <span>审核流程配置</span>
                   </h3>
                   <p className="text-xs text-gray-500 mt-1">
                     设定机构采编发布的初审、复审、终审签发层级与转审退回、应急加急流转规则。

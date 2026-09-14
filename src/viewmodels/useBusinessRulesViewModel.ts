@@ -83,7 +83,7 @@ export const useBusinessRulesViewModel = ({
     ];
     return saved && validKeys.includes(saved as BusinessRuleNavKey)
       ? (saved as BusinessRuleNavKey)
-      : (isGlobalScope ? 'other' : 'scoring');
+      : 'workflow';
   });
 
   useEffect(() => {

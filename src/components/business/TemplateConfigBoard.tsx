@@ -94,6 +94,7 @@ interface TemplateConfigBoardProps {
   isGlobalScope?: boolean;
   onSaveNotice?: (msg: string) => void;
   onNavigateToWorkflow?: () => void;
+  onNavigateToScoring?: () => void;
 }
 
 export interface ScoringRuleOptionItem {
@@ -314,7 +315,8 @@ export const TemplateConfigBoard: React.FC<TemplateConfigBoardProps> = ({
   institutionId,
   isGlobalScope = false,
   onSaveNotice,
-  onNavigateToWorkflow
+  onNavigateToWorkflow,
+  onNavigateToScoring
 }) => {
   const storageKey = `v8_template_board_data_${institutionId ?? 'global'}`;
 
@@ -736,7 +738,16 @@ export const TemplateConfigBoard: React.FC<TemplateConfigBoardProps> = ({
     if (onNavigateToWorkflow) {
       onNavigateToWorkflow();
     } else {
-      showToast('已直达审核流程模型管理');
+      showToast('已直达审核流程配置维护模块');
+    }
+  };
+
+  // Jump to scoring rules management model
+  const handleManageScoringRules = () => {
+    if (onNavigateToScoring) {
+      onNavigateToScoring();
+    } else {
+      showToast('已直达审核打分规则维护模块');
     }
   };
 
@@ -1868,11 +1879,11 @@ export const TemplateConfigBoard: React.FC<TemplateConfigBoardProps> = ({
                       <div className="text-center pt-1">
                         <button
                           type="button"
-                          onClick={() => showToast('已直达打分规则库维护模块')}
-                          className="text-xs text-[#1890ff] hover:underline flex items-center justify-center gap-1 mx-auto cursor-pointer font-medium"
+                          onClick={handleManageScoringRules}
+                          className="text-xs text-[#1890ff] hover:underline flex items-center justify-center gap-1 mx-auto cursor-pointer font-medium group"
                         >
                           <span>管理打分规则库</span>
-                          <ExternalLink className="w-3 h-3" />
+                          <ExternalLink className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
                         </button>
                       </div>
                     </div>
