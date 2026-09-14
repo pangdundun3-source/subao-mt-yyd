@@ -40,14 +40,14 @@ const remove = (key: string) => {
 export const adminShellStorage = {
   readActiveTab: (): ActiveTab => {
     const saved = read(STORAGE_KEYS.activeTab);
-    return activeTabs.includes(saved as ActiveTab) ? (saved as ActiveTab) : 'institutions';
+    return activeTabs.includes(saved as ActiveTab) ? (saved as ActiveTab) : 'system';
   },
 
   saveActiveTab: (tab: ActiveTab) => write(STORAGE_KEYS.activeTab, tab),
 
   readSystemSubTab: (): SystemSubModule => {
     const saved = read(STORAGE_KEYS.systemSubTab);
-    return systemSubTabs.includes(saved as SystemSubModule) ? (saved as SystemSubModule) : 'logs';
+    return systemSubTabs.includes(saved as SystemSubModule) ? (saved as SystemSubModule) : 'accounts';
   },
 
   saveSystemSubTab: (tab: SystemSubModule) => write(STORAGE_KEYS.systemSubTab, tab),

@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import ReactECharts from 'echarts-for-react';
+import { Building2, Users, Send, Zap } from 'lucide-react';
 import {
   OrgTreeNode,
   mockPlatformOrgTreeData,
@@ -164,123 +165,144 @@ export const PlatformInstitutionsHub: React.FC<PlatformInstitutionsHubProps> = (
       {/* ========================================== */}
       {/* Header Banner: Title & Global Actions */}
       {/* ========================================== */}
-      <div className="bg-white rounded-2xl border border-gray-200/90 p-5 sm:p-6 shadow-xs">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse" />
-                全网运行总枢纽
-              </span>
-              <span className="text-xs text-gray-400">· 实时数据监控</span>
-            </div>
-            <h1 className="text-xl font-bold text-gray-900 tracking-tight">
-              全平台机构运营监控中心
-            </h1>
-            <p className="text-xs sm:text-sm text-gray-500 max-w-3xl">
-              汇聚全网 18 家纳管机构与 142 个下属二级分中心/基层网格速报站。请在下方选择任意机构，点击
-              <span className="font-semibold text-blue-600">「进入机构监控中心」</span>
-              下钻查看该机构专属的组织树拓扑、人员效能与审核流转看板。
-            </p>
+      <div className="bg-white rounded-2xl border border-gray-200/90 p-5 sm:p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse" />
+              全网运行总枢纽
+            </span>
+            <span className="text-xs text-gray-400">· 实时数据监控</span>
           </div>
+          <h1 className="text-xl font-bold text-gray-900 tracking-tight">
+            全平台机构运营监控中心
+          </h1>
+        </div>
 
-          <div className="flex items-center gap-2.5 shrink-0 self-start md:self-auto">
-            <button
-              id="refresh_platform_ops_btn"
-              onClick={handleRefresh}
-              className="inline-flex items-center gap-1.5 px-3 py-2 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 rounded-xl text-xs font-medium transition-all shadow-2xs active:scale-95 cursor-pointer"
+        <div className="flex items-center gap-2.5 shrink-0 self-start md:self-auto">
+          <button
+            id="refresh_platform_ops_btn"
+            onClick={handleRefresh}
+            className="inline-flex items-center gap-1.5 px-3 py-2 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 rounded-xl text-xs font-medium transition-all shadow-2xs active:scale-95 cursor-pointer"
+          >
+            <svg
+              className={`w-3.5 h-3.5 text-gray-500 ${isRefreshing ? 'animate-spin' : ''}`}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
             >
-              <svg
-                className={`w-3.5 h-3.5 text-gray-500 ${isRefreshing ? 'animate-spin' : ''}`}
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                />
-              </svg>
-              <span>{isRefreshing ? '刷新中...' : '刷新数据'}</span>
-            </button>
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              />
+            </svg>
+            <span>{isRefreshing ? '刷新中...' : '刷新数据'}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* ========================================== */}
+      {/* 4 Global Statistical Cards */}
+      {/* ========================================== */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Card 1: 全网签约接入机构 */}
+        <div className="bg-white rounded-xl border border-gray-200/90 p-5 shadow-2xs flex flex-col justify-between hover:shadow-xs transition-shadow">
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium text-gray-700">全网签约接入机构</span>
+              <div className="w-8 h-8 rounded-lg bg-blue-50 text-[#1890ff] flex items-center justify-center shrink-0">
+                <Building2 className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="flex items-baseline gap-1.5 mb-5">
+              <span className="text-2xl sm:text-3xl font-bold font-mono text-gray-900">28</span>
+              <span className="text-xs text-gray-500 font-medium">家客户机构</span>
+            </div>
+          </div>
+          <div className="flex items-center justify-between pt-3.5 border-t border-gray-100 text-xs text-gray-500">
+            <div>
+              正式 <span className="font-bold text-gray-900 ml-0.5">21 家</span>
+            </div>
+            <div className="w-px h-3 bg-gray-200" />
+            <div>
+              试用 <span className="font-bold text-gray-900 ml-0.5">7 家</span>
+            </div>
           </div>
         </div>
 
-        {/* Global Key Metrics 6 Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 pt-5 mt-5 border-t border-gray-100">
-          <div className="p-3 bg-blue-50/50 rounded-xl border border-blue-100/60">
-            <div className="text-[11px] font-medium text-blue-800">全平台纳管机构</div>
-            <div className="flex items-baseline gap-1 mt-1">
-              <span className="text-xl font-bold font-mono text-blue-900">
-                {platformStats.totalInstitutions}
-              </span>
-              <span className="text-[10px] text-blue-700">家</span>
+        {/* Card 2: 全网在岗人员 */}
+        <div className="bg-white rounded-xl border border-gray-200/90 p-5 shadow-2xs flex flex-col justify-between hover:shadow-xs transition-shadow">
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium text-gray-700">全网在岗人员</span>
+              <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                <Users className="w-4 h-4" />
+              </div>
             </div>
-            <div className="text-[10px] text-blue-600/80 mt-0.5">
-              正式 {platformStats.officialCount} · 试用 {platformStats.trialCount}
-            </div>
-          </div>
-
-          <div className="p-3 bg-indigo-50/50 rounded-xl border border-indigo-100/60">
-            <div className="text-[11px] font-medium text-indigo-800">子级分支与网格站</div>
-            <div className="flex items-baseline gap-1 mt-1">
-              <span className="text-xl font-bold font-mono text-indigo-900">
-                {platformStats.totalSubBranches}
-              </span>
-              <span className="text-[10px] text-indigo-700">个</span>
-            </div>
-            <div className="text-[10px] text-indigo-600/80 mt-0.5">覆盖 18+ 市县与高校</div>
-          </div>
-
-          <div className="p-3 bg-violet-50/50 rounded-xl border border-violet-100/60">
-            <div className="text-[11px] font-medium text-violet-800">在岗采编/审核人员</div>
-            <div className="flex items-baseline gap-1 mt-1">
-              <span className="text-xl font-bold font-mono text-violet-900">
-                {platformStats.totalPersonnel.toLocaleString()}
-              </span>
-              <span className="text-[10px] text-violet-700">人</span>
-            </div>
-            <div className="text-[10px] text-violet-600/80 mt-0.5">
-              今日活跃 {platformStats.activePersonnel.toLocaleString()} 人
+            <div className="flex items-baseline gap-1.5 mb-5">
+              <span className="text-2xl sm:text-3xl font-bold font-mono text-gray-900">610</span>
+              <span className="text-xs text-gray-500 font-medium">人 (今日活跃 433)</span>
             </div>
           </div>
-
-          <div className="p-3 bg-emerald-50/50 rounded-xl border border-emerald-100/60">
-            <div className="text-[11px] font-medium text-emerald-800">今日上报事件总量</div>
-            <div className="flex items-baseline gap-1 mt-1">
-              <span className="text-xl font-bold font-mono text-emerald-900">
-                {platformStats.totalTodayReports.toLocaleString()}
-              </span>
-              <span className="text-[10px] text-emerald-700">件</span>
+          <div className="flex items-center justify-between pt-3.5 border-t border-gray-100 text-xs text-gray-500">
+            <div>
+              全网活跃度 <span className="font-bold text-emerald-600 ml-0.5">71.0%</span>
             </div>
-            <div className="text-[10px] text-emerald-600/80 mt-0.5">
-              办结 {platformStats.totalReviewedToday.toLocaleString()} 件
+            <div className="w-px h-3 bg-gray-200" />
+            <div>
+              较上期环比 <span className="font-bold text-emerald-600 ml-0.5">+8.6%</span>
             </div>
           </div>
+        </div>
 
-          <div className="p-3 bg-amber-50/50 rounded-xl border border-amber-100/60">
-            <div className="text-[11px] font-medium text-amber-800">待审核/流转中工单</div>
-            <div className="flex items-baseline gap-1 mt-1">
-              <span className="text-xl font-bold font-mono text-amber-900">
-                {platformStats.totalPendingReview}
-              </span>
-              <span className="text-[10px] text-amber-700">件</span>
+        {/* Card 3: 今日全网报送流通量 */}
+        <div className="bg-white rounded-xl border border-gray-200/90 p-5 shadow-2xs flex flex-col justify-between hover:shadow-xs transition-shadow">
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium text-gray-700">今日全网报送流通量</span>
+              <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
+                <Send className="w-4 h-4" />
+              </div>
             </div>
-            <div className="text-[10px] text-amber-600/80 mt-0.5">初审与终审池流转中</div>
+            <div className="flex items-baseline gap-1.5 mb-5">
+              <span className="text-2xl sm:text-3xl font-bold font-mono text-gray-900">1226</span>
+              <span className="text-xs text-gray-500 font-medium">件 (已采纳 1028)</span>
+            </div>
           </div>
-
-          <div className="p-3 bg-cyan-50/50 rounded-xl border border-cyan-100/60">
-            <div className="text-[11px] font-medium text-cyan-800">综合平均处理时效</div>
-            <div className="flex items-baseline gap-1 mt-1">
-              <span className="text-xl font-bold font-mono text-cyan-900">
-                {platformStats.avgReviewSpeed}
-              </span>
-              <span className="text-[10px] text-cyan-700">分钟</span>
+          <div className="flex items-center justify-between pt-3.5 border-t border-gray-100 text-xs text-gray-500">
+            <div>
+              待审积压 <span className="font-bold text-amber-600 ml-0.5">67 件</span>
             </div>
-            <div className="text-[10px] text-cyan-600/80 mt-0.5">
-              通过率 {platformStats.avgPassRate}%
+            <div className="w-px h-3 bg-gray-200" />
+            <div>
+              人均报送 <span className="font-bold text-[#1890ff] ml-0.5">2.0 件</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Card 4: 全网激活码使用率 */}
+        <div className="bg-white rounded-xl border border-gray-200/90 p-5 shadow-2xs flex flex-col justify-between hover:shadow-xs transition-shadow">
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium text-gray-700">全网激活码使用率</span>
+              <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                <Zap className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="flex items-baseline gap-1.5 mb-5">
+              <span className="text-2xl sm:text-3xl font-bold font-mono text-gray-900">58.8%</span>
+              <span className="text-xs text-gray-500 font-medium">(224,720 / 382,000)</span>
+            </div>
+          </div>
+          <div className="flex items-center justify-between pt-3.5 border-t border-gray-100 text-xs text-gray-500">
+            <div>
+              已激活账号 <span className="font-bold text-gray-900 ml-0.5">224,720</span>
+            </div>
+            <div className="w-px h-3 bg-gray-200" />
+            <div>
+              剩余待激活码 <span className="font-bold text-emerald-600 ml-0.5">157,280</span>
             </div>
           </div>
         </div>
@@ -394,20 +416,6 @@ export const PlatformInstitutionsHub: React.FC<PlatformInstitutionsHubProps> = (
               <option value="试用">试用机构</option>
             </select>
 
-            {/* Health Filter */}
-            <select
-              id="health_filter_select"
-              value={selectedHealth}
-              onChange={(e) => setSelectedHealth(e.target.value)}
-              aria-label="运行健康状态筛选"
-              className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer"
-            >
-              <option value="ALL">全部健康状态</option>
-              <option value="healthy">优良运行</option>
-              <option value="busy">高频/待审较多</option>
-              <option value="alert">预警关注</option>
-            </select>
-
             {/* Sort Filter */}
             <select
               id="sort_by_select"
@@ -417,52 +425,10 @@ export const PlatformInstitutionsHub: React.FC<PlatformInstitutionsHubProps> = (
               className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer"
             >
               <option value="todayReports">按今日上报量降序</option>
-              <option value="personnel">按在编人员降序</option>
+              <option value="personnel">按在岗人员降序</option>
               <option value="pending">按待审积压降序</option>
-              <option value="quota">按二维码占用率降序</option>
+              <option value="quota">按激活码使用率降序</option>
             </select>
-
-            {/* View Mode Toggle */}
-            <div className="flex items-center bg-gray-100 p-0.5 rounded-xl border border-gray-200/80">
-              <button
-                id="view_mode_grid_btn"
-                onClick={() => setViewMode('grid')}
-                className={`p-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
-                  viewMode === 'grid'
-                    ? 'bg-white text-blue-600 shadow-2xs font-bold'
-                    : 'text-gray-500 hover:text-gray-800'
-                }`}
-                title="卡片矩阵视图"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
-                  />
-                </svg>
-              </button>
-              <button
-                id="view_mode_table_btn"
-                onClick={() => setViewMode('table')}
-                className={`p-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
-                  viewMode === 'table'
-                    ? 'bg-white text-blue-600 shadow-2xs font-bold'
-                    : 'text-gray-500 hover:text-gray-800'
-                }`}
-                title="明细列表视图"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 6h16M4 12h16M4 18h16"
-                  />
-                </svg>
-              </button>
-            </div>
           </div>
         </div>
 
@@ -474,329 +440,118 @@ export const PlatformInstitutionsHub: React.FC<PlatformInstitutionsHubProps> = (
               <span className="ml-1 text-blue-600">（匹配关键词: "{searchQuery}"）</span>
             )}
           </div>
-          <div className="text-gray-400">点击任意机构卡片或「进入监控」即可下钻对应机构</div>
+          <div className="text-gray-400">点击任意机构行或「进入监控」即可下钻对应机构</div>
         </div>
       </div>
 
       {/* ========================================== */}
-      {/* Institutions View: GRID (Cards Matrix) */}
-      {/* ========================================== */}
-      {viewMode === 'grid' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5">
-          {filteredInstitutions.map((inst) => {
-            const subCount = inst.children ? inst.children.length : 0;
-            const quotaPercent = Math.round((inst.qrUsed / inst.qrLimit) * 100);
-
-            return (
-              <div
-                key={inst.id}
-                id={`inst_card_${inst.id}`}
-                onClick={() => onSelectInstitution(inst)}
-                className="group bg-white rounded-2xl border border-gray-200/90 hover:border-blue-300 p-5 shadow-xs hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col justify-between relative overflow-hidden"
-              >
-                {/* Top Health & Status Badges */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-gray-100 text-gray-700 font-mono">
-                        {inst.code}
-                      </span>
-                      <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-blue-50 text-blue-700">
-                        {inst.industry}
-                      </span>
-                      <span
-                        className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                          inst.statusType === '正式'
-                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                            : 'bg-amber-50 text-amber-700 border border-amber-200'
-                        }`}
-                      >
-                        {inst.statusType}版
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-1">
-                      <span
-                        className={`w-2 h-2 rounded-full ${
-                          inst.healthStatus === 'healthy'
-                            ? 'bg-emerald-500'
-                            : inst.healthStatus === 'busy'
-                            ? 'bg-amber-500 animate-pulse'
-                            : 'bg-rose-500 animate-ping'
-                        }`}
-                      />
-                      <span
-                        className={`text-[11px] font-medium ${
-                          inst.healthStatus === 'healthy'
-                            ? 'text-emerald-700'
-                            : inst.healthStatus === 'busy'
-                            ? 'text-amber-700'
-                            : 'text-rose-700'
-                        }`}
-                      >
-                        {inst.healthStatus === 'healthy'
-                          ? '优良运行'
-                          : inst.healthStatus === 'busy'
-                          ? '待审高频'
-                          : '预警关注'}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Institution Name & Leader */}
-                  <div>
-                    <h3 className="text-sm font-bold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2 leading-snug">
-                      {inst.name}
-                    </h3>
-                    <div className="flex items-center gap-3 text-xs text-gray-500 mt-1.5">
-                      <span className="flex items-center gap-1">
-                        <svg
-                          className="w-3.5 h-3.5 text-gray-400"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                          />
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                          />
-                        </svg>
-                        {inst.region}
-                      </span>
-                      <span>·</span>
-                      <span className="flex items-center gap-1">
-                        <svg
-                          className="w-3.5 h-3.5 text-gray-400"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                          />
-                        </svg>
-                        {inst.leader} ({inst.leaderPhone})
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* 3 Core Metric Badges */}
-                  <div className="grid grid-cols-3 gap-2 p-2.5 bg-gray-50/80 rounded-xl border border-gray-100 text-center">
-                    <div>
-                      <div className="text-[10px] text-gray-400">下辖子分支</div>
-                      <div className="text-xs font-bold text-gray-900 mt-0.5">
-                        {subCount > 0 ? `${subCount} 个二级部` : '直管网格'}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-[10px] text-gray-400">在岗人员</div>
-                      <div className="text-xs font-bold text-indigo-700 mt-0.5">
-                        {inst.totalPersonnel} 人
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-[10px] text-gray-400">今日上报</div>
-                      <div className="text-xs font-bold text-blue-600 mt-0.5">
-                        {inst.todayReports} 件
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* QR Quota Progress */}
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between text-[11px]">
-                      <span className="text-gray-500">二维码配额占用</span>
-                      <span className="font-mono text-gray-700 font-medium">
-                        {inst.qrUsed} / {inst.qrLimit} ({quotaPercent}%)
-                      </span>
-                    </div>
-                    <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all duration-300 ${
-                          quotaPercent > 90
-                            ? 'bg-rose-500'
-                            : quotaPercent > 75
-                            ? 'bg-amber-500'
-                            : 'bg-blue-500'
-                        }`}
-                        style={{ width: `${Math.min(quotaPercent, 100)}%` }}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Card Footer: Pending Review & Enter Button */}
-                <div className="pt-4 mt-4 border-t border-gray-100 flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold ${
-                        inst.pendingReview > 5
-                          ? 'bg-amber-100 text-amber-800'
-                          : 'bg-gray-100 text-gray-600'
-                      }`}
-                    >
-                      待审 {inst.pendingReview} 件
-                    </span>
-                    <span className="text-[11px] text-gray-400">
-                      通过率 {inst.passRate}%
-                    </span>
-                  </div>
-
-                  <button
-                    id={`enter_inst_btn_${inst.id}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onSelectInstitution(inst);
-                    }}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-2xs group-hover:shadow-sm transition-all duration-150 active:scale-95 cursor-pointer"
-                  >
-                    <span>进入机构监控</span>
-                    <svg className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* ========================================== */}
       {/* Institutions View: TABLE (Detailed List) */}
       {/* ========================================== */}
-      {viewMode === 'table' && (
-        <div className="bg-white rounded-2xl border border-gray-200/90 shadow-xs overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-gray-50 border-b border-gray-200 text-gray-600 font-semibold select-none">
-                <tr>
-                  <th className="py-3.5 px-4">机构名称 / 编码</th>
-                  <th className="py-3.5 px-3">所属行业</th>
-                  <th className="py-3.5 px-3">地域 / 负责人</th>
-                  <th className="py-3.5 px-3 text-center">子级分支</th>
-                  <th className="py-3.5 px-3 text-center">在岗人员</th>
-                  <th className="py-3.5 px-3 text-center">二维码占用</th>
-                  <th className="py-3.5 px-3 text-center">今日上报</th>
-                  <th className="py-3.5 px-3 text-center">待审核</th>
-                  <th className="py-3.5 px-3 text-center">通过率</th>
-                  <th className="py-3.5 px-3 text-center">健康状态</th>
-                  <th className="py-3.5 px-4 text-right">操作</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 text-gray-700">
-                {filteredInstitutions.map((inst) => {
-                  const subCount = inst.children ? inst.children.length : 0;
-                  const quotaPercent = Math.round((inst.qrUsed / inst.qrLimit) * 100);
+      <div className="bg-white rounded-2xl border border-gray-200/90 shadow-xs overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-gray-50 border-b border-gray-200 text-gray-600 font-semibold select-none">
+              <tr>
+                <th className="py-3.5 px-4">机构名称 / 签约类型</th>
+                <th className="py-3.5 px-3">所属行业</th>
+                <th className="py-3.5 px-3">地域 / 负责人</th>
+                <th className="py-3.5 px-3 text-center">在岗人员 (活跃度)</th>
+                <th className="py-3.5 px-3 text-center">激活码使用率 (已用/总额)</th>
+                <th className="py-3.5 px-3 text-center">今日上报 (已采纳)</th>
+                <th className="py-3.5 px-3 text-center">待审积压</th>
+                <th className="py-3.5 px-4 text-right">操作</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 text-gray-700">
+              {filteredInstitutions.map((inst) => {
+                const quotaPercent = Math.round((inst.qrUsed / inst.qrLimit) * 100);
+                const activityRate = Math.round(
+                  (inst.activePersonnel / (inst.totalPersonnel || 1)) * 100
+                );
+                const remainingCodes = Math.max(0, inst.qrLimit - inst.qrUsed);
 
-                  return (
-                    <tr
-                      key={inst.id}
-                      onClick={() => onSelectInstitution(inst)}
-                      className="hover:bg-blue-50/30 transition-colors cursor-pointer"
-                    >
-                      <td className="py-3.5 px-4">
-                        <div className="font-bold text-gray-900 hover:text-blue-600 transition-colors">
+                return (
+                  <tr
+                    key={inst.id}
+                    onClick={() => onSelectInstitution(inst)}
+                    className="hover:bg-blue-50/30 transition-colors cursor-pointer"
+                  >
+                    <td className="py-3.5 px-4">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="font-bold text-gray-900 hover:text-blue-600 transition-colors">
                           {inst.name}
-                        </div>
-                        <div className="text-[10px] text-gray-400 font-mono mt-0.5">
-                          {inst.code} · {inst.statusType}版
-                        </div>
-                      </td>
-                      <td className="py-3.5 px-3">
-                        <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 text-[11px] font-medium">
-                          {inst.industry}
                         </span>
-                      </td>
-                      <td className="py-3.5 px-3">
-                        <div className="text-gray-800 font-medium">{inst.leader}</div>
-                        <div className="text-[10px] text-gray-400">{inst.region}</div>
-                      </td>
-                      <td className="py-3.5 px-3 text-center font-mono font-medium">
-                        {subCount > 0 ? `${subCount} 个` : '直管'}
-                      </td>
-                      <td className="py-3.5 px-3 text-center font-mono font-bold text-indigo-700">
-                        {inst.totalPersonnel}
-                      </td>
-                      <td className="py-3.5 px-3 text-center font-mono">
-                        <div className="text-[11px]">
-                          {inst.qrUsed} / {inst.qrLimit}
-                        </div>
-                        <div className="text-[10px] text-gray-400">{quotaPercent}%</div>
-                      </td>
-                      <td className="py-3.5 px-3 text-center font-mono font-bold text-blue-600">
-                        {inst.todayReports}
-                      </td>
-                      <td className="py-3.5 px-3 text-center font-mono">
                         <span
-                          className={`px-2 py-0.5 rounded-full font-bold text-[11px] ${
-                            inst.pendingReview > 5
-                              ? 'bg-amber-100 text-amber-800'
-                              : 'bg-gray-100 text-gray-600'
-                          }`}
-                        >
-                          {inst.pendingReview}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-3 text-center font-mono font-bold text-emerald-600">
-                        {inst.passRate}%
-                      </td>
-                      <td className="py-3.5 px-3 text-center">
-                        <span
-                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                            inst.healthStatus === 'healthy'
+                          className={`px-1.5 py-0.2 rounded text-[10px] font-bold shrink-0 ${
+                            inst.statusType === '正式'
                               ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                              : inst.healthStatus === 'busy'
-                              ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                              : 'bg-rose-50 text-rose-700 border border-rose-200'
+                              : 'bg-amber-50 text-amber-700 border border-amber-200'
                           }`}
                         >
-                          <span
-                            className={`w-1.5 h-1.5 rounded-full ${
-                              inst.healthStatus === 'healthy'
-                                ? 'bg-emerald-500'
-                                : inst.healthStatus === 'busy'
-                                ? 'bg-amber-500'
-                                : 'bg-rose-500'
-                            }`}
-                          />
-                          {inst.healthStatus === 'healthy'
-                            ? '优良'
-                            : inst.healthStatus === 'busy'
-                            ? '繁忙'
-                            : '预警'}
+                          {inst.statusType}
                         </span>
-                      </td>
-                      <td className="py-3.5 px-4 text-right">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onSelectInstitution(inst);
-                          }}
-                          className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[11px] font-semibold transition-all cursor-pointer shadow-2xs"
-                        >
-                          进入监控 ➔
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                      </div>
+                    </td>
+                    <td className="py-3.5 px-3">
+                      <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 text-[11px] font-medium">
+                        {inst.industry}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-3">
+                      <div className="text-gray-800 font-medium">{inst.leader}</div>
+                      <div className="text-[10px] text-gray-400">{inst.region}</div>
+                    </td>
+                    <td className="py-3.5 px-3 text-center font-mono">
+                      <div className="font-bold text-indigo-700 text-xs">
+                        {inst.totalPersonnel} 人
+                      </div>
+                      <div className="text-[10px] text-gray-400">
+                        活跃 {inst.activePersonnel} ({activityRate}%)
+                      </div>
+                    </td>
+                    <td className="py-3.5 px-3 text-center font-mono">
+                      <div className="font-bold text-amber-600 text-xs">{quotaPercent}%</div>
+                      <div className="text-[10px] text-gray-400">
+                        {inst.qrUsed} / {inst.qrLimit} (余{remainingCodes})
+                      </div>
+                    </td>
+                    <td className="py-3.5 px-3 text-center font-mono">
+                      <div className="font-bold text-blue-600 text-xs">
+                        {inst.todayReports} 件
+                      </div>
+                      <div className="text-[10px] text-gray-400">
+                        已采纳 {inst.reviewedToday} 件
+                      </div>
+                    </td>
+                    <td className="py-3.5 px-3 text-center font-mono">
+                      <span
+                        className={`px-2 py-0.5 rounded-full font-bold text-[11px] ${
+                          inst.pendingReview > 5
+                            ? 'bg-amber-100 text-amber-800'
+                            : 'bg-gray-100 text-gray-600'
+                        }`}
+                      >
+                        {inst.pendingReview} 件
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-4 text-right">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSelectInstitution(inst);
+                        }}
+                        className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[11px] font-semibold transition-all cursor-pointer shadow-2xs"
+                      >
+                        进入监控 ➔
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
-      )}
+      </div>
     </div>
   );
 };

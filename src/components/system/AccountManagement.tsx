@@ -232,16 +232,15 @@ export const AccountManagement: React.FC<AccountManagementProps> = ({ onShowToas
                 <th className="py-3 px-4 font-semibold text-gray-700">登录账号</th>
                 <th className="py-3 px-4 font-semibold text-gray-700">所属部门</th>
                 <th className="py-3 px-4 font-semibold text-gray-700">角色与权限</th>
-                <th className="py-3 px-4 font-semibold text-gray-700">数据范围</th>
                 <th className="py-3 px-4 font-semibold text-gray-700">状态</th>
-                <th className="py-3 px-4 font-semibold text-gray-700">最后登录</th>
+                <th className="py-3 px-4 font-semibold text-gray-700">创建时间</th>
                 <th className="py-3 px-4 font-semibold text-gray-700 text-right">操作</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {filteredAccounts.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="py-12 text-center text-gray-400">
+                  <td colSpan={8} className="py-12 text-center text-gray-400">
                     <span className="material-symbols-outlined text-[40px] text-gray-300 mb-2">
                       person_search
                     </span>
@@ -303,31 +302,10 @@ export const AccountManagement: React.FC<AccountManagementProps> = ({ onShowToas
 
                       {/* Role & Permissions Badge */}
                       <td className="py-3.5 px-4">
-                        <div className="flex flex-col gap-1 items-start">
-                          <span
-                            className={`px-2 py-0.5 rounded text-[11px] border font-medium ${acc.roleBadgeColor}`}
-                          >
-                            {acc.roleName}
-                          </span>
-                          <button
-                            onClick={() => setViewingPermissionsAccount(acc)}
-                            className="text-[11px] text-[#1890ff] hover:underline flex items-center gap-0.5"
-                          >
-                            <span className="material-symbols-outlined text-[13px]">
-                              visibility
-                            </span>
-                            权限清单
-                          </button>
-                        </div>
-                      </td>
-
-                      {/* Data Scope */}
-                      <td className="py-3.5 px-4">
                         <span
-                          className="text-[11px] text-gray-600 line-clamp-2 max-w-[150px]"
-                          title={acc.dataScopeDesc}
+                          className={`px-2 py-0.5 rounded text-[11px] border font-medium ${acc.roleBadgeColor}`}
                         >
-                          {acc.dataScopeDesc}
+                          {acc.roleName}
                         </span>
                       </td>
 
@@ -365,19 +343,9 @@ export const AccountManagement: React.FC<AccountManagementProps> = ({ onShowToas
                         </button>
                       </td>
 
-                      {/* Last Login */}
-                      <td className="py-3.5 px-4 text-gray-500">
-                        <div className="font-mono text-[11px] text-gray-700">
-                          {acc.lastLoginTime}
-                        </div>
-                        <div className="text-[11px] text-gray-400 flex items-center gap-1 mt-0.5">
-                          <span>{acc.lastLoginIp}</span>
-                          {acc.lastLoginLocation !== '--' && (
-                            <span className="text-gray-500 font-sans">
-                              · {acc.lastLoginLocation}
-                            </span>
-                          )}
-                        </div>
+                      {/* Created At */}
+                      <td className="py-3.5 px-4 text-gray-700 font-mono text-[11px]">
+                        {acc.createdAt || '2025-01-10 09:00:00'}
                       </td>
 
                       {/* Actions */}
@@ -590,82 +558,6 @@ export const AccountManagement: React.FC<AccountManagementProps> = ({ onShowToas
                     </option>
                   ))}
                 </select>
-              </div>
-
-              {/* Data Scope */}
-              <div>
-                <label className="block font-medium text-gray-700 mb-1">
-                  数据访问权限范围
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  <label
-                    className={`p-2.5 border rounded-lg cursor-pointer flex flex-col gap-1 transition-all ${
-                      formState.dataScope === 'all'
-                        ? 'border-[#1890ff] bg-blue-50/50 text-[#1890ff]'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <input
-                        type="radio"
-                        name="dataScope"
-                        checked={formState.dataScope === 'all'}
-                        onChange={() => setFormState({ ...formState, dataScope: 'all' })}
-                        className="text-[#1890ff]"
-                      />
-                      <span className="font-semibold text-gray-800">全网所有机构</span>
-                    </div>
-                    <span className="text-[11px] text-gray-500">
-                      拥有全平台所有正式及试用机构查看与操作权
-                    </span>
-                  </label>
-
-                  <label
-                    className={`p-2.5 border rounded-lg cursor-pointer flex flex-col gap-1 transition-all ${
-                      formState.dataScope === 'formal_only'
-                        ? 'border-[#1890ff] bg-blue-50/50 text-[#1890ff]'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <input
-                        type="radio"
-                        name="dataScope"
-                        checked={formState.dataScope === 'formal_only'}
-                        onChange={() =>
-                          setFormState({ ...formState, dataScope: 'formal_only' })
-                        }
-                        className="text-[#1890ff]"
-                      />
-                      <span className="font-semibold text-gray-800">仅正式签约机构</span>
-                    </div>
-                    <span className="text-[11px] text-gray-500">
-                      仅可访问已正式签约生效的付费机构
-                    </span>
-                  </label>
-
-                  <label
-                    className={`p-2.5 border rounded-lg cursor-pointer flex flex-col gap-1 transition-all ${
-                      formState.dataScope === 'regional'
-                        ? 'border-[#1890ff] bg-blue-50/50 text-[#1890ff]'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <input
-                        type="radio"
-                        name="dataScope"
-                        checked={formState.dataScope === 'regional'}
-                        onChange={() => setFormState({ ...formState, dataScope: 'regional' })}
-                        className="text-[#1890ff]"
-                      />
-                      <span className="font-semibold text-gray-800">按所属大区隔离</span>
-                    </div>
-                    <span className="text-[11px] text-gray-500">
-                      仅可管理其所在区域内的客户机构
-                    </span>
-                  </label>
-                </div>
               </div>
 
               <div>

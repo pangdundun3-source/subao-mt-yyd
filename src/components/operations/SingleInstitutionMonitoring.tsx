@@ -293,17 +293,8 @@ export const SingleInstitutionMonitoring: React.FC<SingleInstitutionMonitoringPr
               }`}
             />
 
-            <span className="truncate text-xs" title={node.name}>
+            <span className="truncate text-xs font-medium" title={node.name}>
               {node.name}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-1.5 shrink-0 ml-2">
-            <span className="text-[10px] text-gray-400 font-mono">
-              {node.totalPersonnel}人
-            </span>
-            <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-blue-100 text-blue-800 font-mono">
-              {node.todayReports}件
             </span>
           </div>
         </div>
@@ -348,9 +339,6 @@ export const SingleInstitutionMonitoring: React.FC<SingleInstitutionMonitoringPr
               <h1 className="text-lg sm:text-xl font-bold text-gray-900 tracking-tight">
                 {institution.name}
               </h1>
-              <span className="px-2 py-0.5 rounded text-xs font-mono font-semibold bg-gray-100 text-gray-700">
-                {institution.code}
-              </span>
               <span className="px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700">
                 {institution.industry}
               </span>
@@ -362,30 +350,6 @@ export const SingleInstitutionMonitoring: React.FC<SingleInstitutionMonitoringPr
                 }`}
               >
                 {institution.statusType}版
-              </span>
-              <span
-                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold ${
-                  institution.healthStatus === 'healthy'
-                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                    : institution.healthStatus === 'busy'
-                    ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                    : 'bg-rose-50 text-rose-700 border border-rose-200'
-                }`}
-              >
-                <span
-                  className={`w-1.5 h-1.5 rounded-full ${
-                    institution.healthStatus === 'healthy'
-                      ? 'bg-emerald-500'
-                      : institution.healthStatus === 'busy'
-                      ? 'bg-amber-500 animate-pulse'
-                      : 'bg-rose-500'
-                  }`}
-                />
-                {institution.healthStatus === 'healthy'
-                  ? '优良运行'
-                  : institution.healthStatus === 'busy'
-                  ? '待审高频'
-                  : '预警关注'}
               </span>
             </div>
 
@@ -495,7 +459,7 @@ export const SingleInstitutionMonitoring: React.FC<SingleInstitutionMonitoringPr
           </div>
 
           <div className="p-3 bg-violet-50/50 rounded-xl border border-violet-100/60">
-            <div className="text-[11px] font-medium text-violet-800">二维码配额使用</div>
+            <div className="text-[11px] font-medium text-violet-800">激活码配额使用</div>
             <div className="flex items-baseline gap-1 mt-1">
               <span className="text-xl font-bold font-mono text-violet-900">
                 {activeNodeStats.qrUsed}
@@ -503,7 +467,7 @@ export const SingleInstitutionMonitoring: React.FC<SingleInstitutionMonitoringPr
               <span className="text-[10px] text-violet-700">/ {activeNodeStats.qrLimit}</span>
             </div>
             <div className="text-[10px] text-violet-600/80 mt-0.5">
-              占用率 {Math.round((activeNodeStats.qrUsed / activeNodeStats.qrLimit) * 100)}%
+              使用率 {Math.round((activeNodeStats.qrUsed / activeNodeStats.qrLimit) * 100)}%
             </div>
           </div>
 
@@ -587,381 +551,228 @@ export const SingleInstitutionMonitoring: React.FC<SingleInstitutionMonitoringPr
             </div>
 
             {/* Tree Nodes List */}
-            <div className="mt-3 space-y-1 max-h-[520px] overflow-y-auto pr-1">
+            <div className="mt-3 space-y-1 max-h-[360px] overflow-y-auto pr-1">
               {renderSubTreeNode(institution, 0)}
             </div>
 
             <div className="pt-3 mt-3 border-t border-gray-100 text-[11px] text-gray-400 flex items-center justify-between">
               <span>点击树节点可在右侧下钻查看</span>
-              <span className="font-mono text-blue-600">{activeNodeStats.scopeName.slice(0, 10)}...</span>
+              <span className="font-mono text-blue-600 truncate max-w-[120px]" title={activeNodeStats.scopeName}>
+                {activeNodeStats.scopeName}
+              </span>
+            </div>
+          </div>
+
+          {/* Personnel & Role Tags Card */}
+          <div className="bg-white rounded-2xl border border-gray-200/90 p-4 shadow-xs space-y-3">
+            <div className="flex items-center justify-between pb-2.5 border-b border-gray-100">
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-4 bg-indigo-600 rounded-full" />
+                <h3 className="text-xs font-bold text-gray-900">下辖在岗人员与角色标签</h3>
+              </div>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700">
+                {relevantPersonnel.length} 人在岗
+              </span>
+            </div>
+
+            <div className="text-[11px] text-gray-500 flex items-center justify-between">
+              <span className="text-gray-400">当前归属：</span>
+              <span className="font-semibold text-gray-800 truncate max-w-[180px]" title={activeNode.name}>
+                {activeNode.name}
+              </span>
+            </div>
+
+            {/* Quick Personnel Search */}
+            <div className="relative">
+              <input
+                type="text"
+                value={personnelSearch}
+                onChange={(e) => setPersonnelSearch(e.target.value)}
+                placeholder="搜索姓名、角色、电话..."
+                className="w-full pl-7 pr-3 py-1.2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+              />
+              <svg
+                className="w-3.5 h-3.5 text-gray-400 absolute left-2 top-1/2 -translate-y-1/2"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+
+            {/* Personnel Cards Scrollable List */}
+            <div className="space-y-2 max-h-[380px] overflow-y-auto pr-1">
+              {relevantPersonnel.length === 0 ? (
+                <div className="py-8 text-center text-xs text-gray-400">
+                  暂无匹配的人员信息
+                </div>
+              ) : (
+                relevantPersonnel.map((p) => {
+                  const roleStyle =
+                    p.role.includes('负责人') || p.role.includes('主任') || p.role.includes('主管')
+                      ? 'bg-purple-50 text-purple-700 border-purple-200/60'
+                      : p.role.includes('终审') || p.role.includes('初审') || p.role.includes('审核')
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200/60'
+                      : p.role.includes('采编') || p.role.includes('记者')
+                      ? 'bg-blue-50 text-blue-700 border-blue-200/60'
+                      : p.role.includes('舆情') || p.role.includes('分析')
+                      ? 'bg-amber-50 text-amber-700 border-amber-200/60'
+                      : p.role.includes('网格')
+                      ? 'bg-rose-50 text-rose-700 border-rose-200/60'
+                      : 'bg-cyan-50 text-cyan-700 border-cyan-200/60';
+
+                  return (
+                    <div
+                      key={p.id}
+                      className="p-2.5 rounded-xl border border-gray-100 bg-gray-50/50 hover:bg-white hover:border-indigo-100 hover:shadow-2xs transition-all space-y-1.5"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold ${p.avatarColor}`}>
+                            {p.name.slice(0, 1)}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-bold text-xs text-gray-900">{p.name}</span>
+                              <span className={`px-1.5 py-0.2 rounded text-[10px] font-medium border ${roleStyle}`}>
+                                {p.role}
+                              </span>
+                            </div>
+                            <div className="text-[10px] text-gray-400 font-mono">{p.phone}</div>
+                          </div>
+                        </div>
+
+                        <span
+                          className={`inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full text-[9px] font-bold ${
+                            p.status === 'online'
+                              ? 'bg-emerald-50 text-emerald-700'
+                              : p.status === 'busy'
+                              ? 'bg-amber-50 text-amber-700'
+                              : 'bg-gray-100 text-gray-500'
+                          }`}
+                        >
+                          <span
+                            className={`w-1 h-1 rounded-full ${
+                              p.status === 'online'
+                                ? 'bg-emerald-500'
+                                : p.status === 'busy'
+                                ? 'bg-amber-500'
+                                : 'bg-gray-400'
+                            }`}
+                          />
+                          {p.status === 'online' ? '在线' : p.status === 'busy' ? '审核中' : '离线'}
+                        </span>
+                      </div>
+
+                      <div className="text-[10px] text-gray-500 truncate" title={p.subBranchName}>
+                        归属：{p.subBranchName}
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-1 pt-1 border-t border-gray-100 text-[10px] text-center">
+                        <div className="bg-white rounded py-0.5 px-1 border border-gray-100">
+                          <span className="text-gray-400 text-[9px]">今日上报 </span>
+                          <span className="font-mono font-bold text-blue-600">{p.todayReports}</span>
+                        </div>
+                        <div className="bg-white rounded py-0.5 px-1 border border-gray-100">
+                          <span className="text-gray-400 text-[9px]">审核 </span>
+                          <span className="font-mono font-bold text-emerald-600">{p.todayReviewed}</span>
+                        </div>
+                        <div className="bg-white rounded py-0.5 px-1 border border-gray-100">
+                          <span className="text-gray-400 text-[9px]">通过率 </span>
+                          <span className="font-mono font-bold text-gray-800">{p.passRate}%</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
         </div>
 
-        {/* Right Column: 4 Tabbed Workspaces */}
+        {/* Right Column: Unified Overview & Sub-branches Matrix */}
         <div className="lg:col-span-8 xl:col-span-9 space-y-4">
-          {/* Sub Navigation Tabs */}
-          <div className="bg-white rounded-2xl border border-gray-200/90 p-2 shadow-xs flex items-center justify-between flex-wrap gap-2">
-            <div className="flex items-center gap-1">
-              {[
-                { id: 'overview', label: '综合运营走势', count: null },
-                { id: 'personnel', label: '人员履职效能', count: relevantPersonnel.length },
-                { id: 'pipeline', label: '上报与审核流转', count: relevantEvents.length },
-                { id: 'matrix', label: '子级机构矩阵对比', count: flatSubBranches.length },
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  id={`tab_btn_${tab.id}`}
-                  onClick={() => setActiveTab(tab.id as any)}
-                  className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
-                    activeTab === tab.id
-                      ? 'bg-blue-600 text-white shadow-xs'
-                      : 'text-gray-600 hover:bg-gray-100/80 hover:text-gray-900'
-                  }`}
-                >
-                  <span>{tab.label}</span>
-                  {tab.count !== null && (
-                    <span
-                      className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
-                        activeTab === tab.id
-                          ? 'bg-blue-500 text-white'
-                          : 'bg-gray-200/80 text-gray-700'
-                      }`}
-                    >
-                      {tab.count}
-                    </span>
-                  )}
-                </button>
-              ))}
+          {/* Top: 24h Trend Chart */}
+          <div className="bg-white rounded-2xl border border-gray-200/90 p-5 shadow-xs">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-4 bg-blue-600 rounded-full" />
+                <h3 className="text-sm font-bold text-gray-900">
+                  今日 24 小时事件上报、审核办结与待审峰值时序图
+                </h3>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-gray-400">
+                  当前下钻：<strong className="text-gray-800">{activeNode.name}</strong>
+                </span>
+                <span className="w-px h-3 bg-gray-200" />
+                <span className="text-xs text-blue-600 font-medium">实时刷新</span>
+              </div>
             </div>
-
-            <div className="text-xs text-gray-400 px-2 hidden sm:block">
-              当前层级：<span className="font-bold text-gray-800">{activeNode.name}</span>
+            <div className="h-[280px]">
+              <ReactECharts
+                option={hourlyTrendChartOption}
+                style={{ height: '100%', width: '100%' }}
+                opts={{ renderer: 'svg' }}
+              />
             </div>
           </div>
 
-          {/* TAB 1: 综合运营走势 */}
-          {activeTab === 'overview' && (
-            <div className="space-y-4">
-              {/* Hourly Trend EChart */}
-              <div className="bg-white rounded-2xl border border-gray-200/90 p-5 shadow-xs">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-4 bg-blue-600 rounded-full" />
-                    <h3 className="text-sm font-bold text-gray-900">
-                      今日 24 小时事件上报、审核办结与待审峰值时序图
-                    </h3>
-                  </div>
-                  <span className="text-xs text-gray-400">实时刷新</span>
-                </div>
-                <div className="h-[260px]">
-                  <ReactECharts
-                    option={hourlyTrendChartOption}
-                    style={{ height: '100%', width: '100%' }}
-                    opts={{ renderer: 'svg' }}
-                  />
-                </div>
+          {/* Bottom: Sub-branches & Grids Matrix */}
+          <div className="bg-white rounded-2xl border border-gray-200/90 p-5 shadow-xs space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-4 bg-blue-600 rounded-full" />
+                <h3 className="text-sm font-bold text-gray-900">
+                  下辖子级机构与基层网格运行指标矩阵
+                </h3>
               </div>
-
-              {/* Two Column Charts: Categories & Sub-branches Ranking */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-white rounded-2xl border border-gray-200/90 p-5 shadow-xs">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-1.5 h-4 bg-indigo-600 rounded-full" />
-                      <h3 className="text-sm font-bold text-gray-900">事件类型上报占比</h3>
-                    </div>
-                  </div>
-                  <div className="h-[220px]">
-                    <ReactECharts
-                      option={categoryPieChartOption}
-                      style={{ height: '100%', width: '100%' }}
-                      opts={{ renderer: 'svg' }}
-                    />
-                  </div>
-                </div>
-
-                <div className="bg-white rounded-2xl border border-gray-200/90 p-5 shadow-xs">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-1.5 h-4 bg-emerald-600 rounded-full" />
-                      <h3 className="text-sm font-bold text-gray-900">下辖各子分支贡献排行</h3>
-                    </div>
-                  </div>
-                  <div className="h-[220px]">
-                    <ReactECharts
-                      option={subBranchesRankingOption}
-                      style={{ height: '100%', width: '100%' }}
-                      opts={{ renderer: 'svg' }}
-                    />
-                  </div>
-                </div>
-              </div>
+              <span className="text-xs text-gray-400">共 {flatSubBranches.length} 个子级节点</span>
             </div>
-          )}
 
-          {/* TAB 2: 人员履职效能 */}
-          {activeTab === 'personnel' && (
-            <div className="bg-white rounded-2xl border border-gray-200/90 p-5 shadow-xs space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-1.5 h-4 bg-indigo-600 rounded-full" />
-                  <h3 className="text-sm font-bold text-gray-900">在岗采编人员与审核专员履职效能</h3>
-                </div>
-                <div className="relative max-w-xs w-full">
-                  <input
-                    type="text"
-                    value={personnelSearch}
-                    onChange={(e) => setPersonnelSearch(e.target.value)}
-                    placeholder="搜索人员姓名、电话、岗位或科室..."
-                    className="w-full pl-8 pr-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                  />
-                  <svg
-                    className="w-3.5 h-3.5 text-gray-400 absolute left-2.5 top-1/2 -translate-y-1/2"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </div>
-              </div>
-
-              {/* Personnel Table */}
-              <div className="border border-gray-200/80 rounded-xl overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
-                    <thead className="bg-gray-50 border-b border-gray-200 text-gray-600 font-semibold select-none">
-                      <tr>
-                        <th className="py-3 px-4">人员姓名</th>
-                        <th className="py-3 px-3">所属岗位角色</th>
-                        <th className="py-3 px-3">所在子机构/科室</th>
-                        <th className="py-3 px-3 text-center">今日上报</th>
-                        <th className="py-3 px-3 text-center">今日审核</th>
-                        <th className="py-3 px-3 text-center">通过率</th>
-                        <th className="py-3 px-3 text-center">平均响应时效</th>
-                        <th className="py-3 px-4 text-right">在线状态</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100 text-gray-700">
-                      {relevantPersonnel.map((p) => (
-                        <tr key={p.id} className="hover:bg-gray-50/80 transition-colors">
+            <div className="border border-gray-200/80 rounded-xl overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-gray-50 border-b border-gray-200 text-gray-600 font-semibold select-none">
+                    <tr>
+                      <th className="py-3 px-4">子机构/网格名称</th>
+                      <th className="py-3 px-4">行业/属性</th>
+                      <th className="py-3 px-4">主管责任人</th>
+                      <th className="py-3 px-4 text-center">在岗人员 / 激活码配额</th>
+                      <th className="py-3 px-4 text-center">今日上报</th>
+                      <th className="py-3 px-4 text-center">待审积压</th>
+                      <th className="py-3 px-4 text-center">审核通过率</th>
+                      <th className="py-3 px-4 text-center">平均时效</th>
+                      <th className="py-3 px-4 text-right">健康评级</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 text-gray-700">
+                    {flatSubBranches.map((sub) => {
+                      const isRowSelected = selectedSubNodeId === sub.id;
+                      return (
+                        <tr
+                          key={sub.id}
+                          onClick={() => setSelectedSubNodeId(sub.id)}
+                          className={`transition-colors cursor-pointer ${
+                            isRowSelected
+                              ? 'bg-blue-50/80 font-medium'
+                              : 'hover:bg-blue-50/30'
+                          }`}
+                        >
                           <td className="py-3 px-4">
                             <div className="flex items-center gap-2">
-                              <div className={`w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold ${p.avatarColor}`}>
-                                {p.name.slice(0, 1)}
-                              </div>
+                              {isRowSelected && (
+                                <span className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0" />
+                              )}
                               <div>
-                                <div className="font-bold text-gray-900">{p.name}</div>
-                                <div className="text-[10px] text-gray-400 font-mono">{p.phone}</div>
+                                <div className={`font-bold ${isRowSelected ? 'text-blue-900' : 'text-gray-900'}`}>
+                                  {sub.name}
+                                </div>
+                                <div className="text-[10px] text-gray-400 font-mono">
+                                  {sub.code} · {sub.region}
+                                </div>
                               </div>
-                            </div>
-                          </td>
-                          <td className="py-3 px-3">
-                            <span className="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 text-[11px] font-medium">
-                              {p.role}
-                            </span>
-                          </td>
-                          <td className="py-3 px-3 text-gray-600">{p.subBranchName}</td>
-                          <td className="py-3 px-3 text-center font-mono font-bold text-blue-600">
-                            {p.todayReports > 0 ? `${p.todayReports} 篇` : '-'}
-                          </td>
-                          <td className="py-3 px-3 text-center font-mono font-bold text-emerald-600">
-                            {p.todayReviewed > 0 ? `${p.todayReviewed} 篇` : '-'}
-                          </td>
-                          <td className="py-3 px-3 text-center font-mono font-bold text-gray-800">
-                            {p.passRate}%
-                          </td>
-                          <td className="py-3 px-3 text-center font-mono text-gray-600">
-                            {p.avgResponseMins} 分钟
-                          </td>
-                          <td className="py-3 px-4 text-right">
-                            <span
-                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                                p.status === 'online'
-                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                  : p.status === 'busy'
-                                  ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                                  : 'bg-gray-100 text-gray-600'
-                              }`}
-                            >
-                              <span
-                                className={`w-1.5 h-1.5 rounded-full ${
-                                  p.status === 'online'
-                                    ? 'bg-emerald-500'
-                                    : p.status === 'busy'
-                                    ? 'bg-amber-500'
-                                    : 'bg-gray-400'
-                                }`}
-                              />
-                              {p.status === 'online'
-                                ? '在线'
-                                : p.status === 'busy'
-                                ? '审核中'
-                                : '离线'}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 3: 上报与审核流转 */}
-          {activeTab === 'pipeline' && (
-            <div className="bg-white rounded-2xl border border-gray-200/90 p-5 shadow-xs space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-1.5 h-4 bg-blue-600 rounded-full" />
-                  <h3 className="text-sm font-bold text-gray-900">采编上报与初审/终审实时流水日志</h3>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <select
-                    value={eventCategoryFilter}
-                    onChange={(e) => setEventCategoryFilter(e.target.value)}
-                    aria-label="事件分类筛选"
-                    className="px-2.5 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-700"
-                  >
-                    <option value="ALL">全部事件分类</option>
-                    <option value="政务发布">政务发布</option>
-                    <option value="舆情快报">舆情快报</option>
-                    <option value="网格巡查">网格巡查</option>
-                    <option value="应急速报">应急速报</option>
-                    <option value="不良举报">不良举报</option>
-                  </select>
-
-                  <select
-                    value={eventStatusFilter}
-                    onChange={(e) => setEventStatusFilter(e.target.value)}
-                    aria-label="工单流转状态筛选"
-                    className="px-2.5 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-700"
-                  >
-                    <option value="ALL">全部流转状态</option>
-                    <option value="approved">已终审通过</option>
-                    <option value="pending_first">待初审</option>
-                    <option value="pending_final">待终审复核</option>
-                    <option value="rejected">已退回修改</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Event Stream Cards */}
-              <div className="space-y-3">
-                {relevantEvents.map((evt) => (
-                  <div
-                    key={evt.id}
-                    className="p-4 rounded-xl border border-gray-100 bg-gray-50/50 hover:bg-white hover:border-gray-200 transition-all space-y-2"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800">
-                            {evt.category}
-                          </span>
-                          <span
-                            className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                              evt.urgency === '高'
-                                ? 'bg-rose-100 text-rose-800'
-                                : evt.urgency === '中'
-                                ? 'bg-amber-100 text-amber-800'
-                                : 'bg-gray-100 text-gray-700'
-                            }`}
-                          >
-                            紧急程度: {evt.urgency}
-                          </span>
-                          <span className="text-xs text-gray-400 font-mono">{evt.id}</span>
-                        </div>
-                        <h4 className="text-sm font-bold text-gray-900">{evt.title}</h4>
-                      </div>
-
-                      <span
-                        className={`shrink-0 px-2.5 py-1 rounded-full text-xs font-bold ${
-                          evt.status === 'approved'
-                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                            : evt.status === 'pending_first'
-                            ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                            : evt.status === 'pending_final'
-                            ? 'bg-purple-50 text-purple-700 border border-purple-200'
-                            : 'bg-rose-50 text-rose-700 border border-rose-200'
-                        }`}
-                      >
-                        {evt.status === 'approved'
-                          ? '✓ 审核通过已发布'
-                          : evt.status === 'pending_first'
-                          ? '⏳ 待初审'
-                          : evt.status === 'pending_final'
-                          ? '⏳ 待终审复核'
-                          : '✕ 驳回修改'}
-                      </span>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500 pt-1">
-                      <span>采编：{evt.reporterName} ({evt.reporterRole})</span>
-                      <span>·</span>
-                      <span>科室：{evt.subBranchName}</span>
-                      <span>·</span>
-                      <span>上报时间：{evt.reportTime}</span>
-                      {evt.reviewerName && (
-                        <>
-                          <span>·</span>
-                          <span className="text-emerald-700 font-medium">
-                            审核人：{evt.reviewerName} (耗时 {evt.durationMins} 分钟)
-                          </span>
-                        </>
-                      )}
-                    </div>
-
-                    {evt.rejectReason && (
-                      <div className="p-2.5 bg-rose-50 rounded-lg text-xs text-rose-700 border border-rose-100 mt-1">
-                        驳回原因：{evt.rejectReason}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* TAB 4: 子级机构矩阵对比 */}
-          {activeTab === 'matrix' && (
-            <div className="bg-white rounded-2xl border border-gray-200/90 p-5 shadow-xs space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-1.5 h-4 bg-blue-600 rounded-full" />
-                  <h3 className="text-sm font-bold text-gray-900">
-                    下辖子级机构与基层网格运行指标矩阵
-                  </h3>
-                </div>
-                <span className="text-xs text-gray-400">共 {flatSubBranches.length} 个子级节点</span>
-              </div>
-
-              <div className="border border-gray-200/80 rounded-xl overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
-                    <thead className="bg-gray-50 border-b border-gray-200 text-gray-600 font-semibold select-none">
-                      <tr>
-                        <th className="py-3 px-4">子机构/网格名称</th>
-                        <th className="py-3 px-4">行业/属性</th>
-                        <th className="py-3 px-4">主管责任人</th>
-                        <th className="py-3 px-4 text-center">人员编制/二维码</th>
-                        <th className="py-3 px-4 text-center">今日上报</th>
-                        <th className="py-3 px-4 text-center">待审积压</th>
-                        <th className="py-3 px-4 text-center">审核通过率</th>
-                        <th className="py-3 px-4 text-center">平均时效</th>
-                        <th className="py-3 px-4 text-right">健康评级</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100 text-gray-700">
-                      {flatSubBranches.map((sub) => (
-                        <tr key={sub.id} className="hover:bg-blue-50/20 transition-colors">
-                          <td className="py-3 px-4">
-                            <div className="font-bold text-gray-900">{sub.name}</div>
-                            <div className="text-[10px] text-gray-400 font-mono">
-                              {sub.code} · {sub.region}
                             </div>
                           </td>
                           <td className="py-3 px-4">
@@ -977,7 +788,7 @@ export const SingleInstitutionMonitoring: React.FC<SingleInstitutionMonitoringPr
                           </td>
                           <td className="py-3 px-4 text-center font-mono">
                             <span className="font-bold text-gray-900">{sub.totalPersonnel}</span>
-                            <span className="text-gray-400 text-[11px]"> / {sub.qrLimit} 额度</span>
+                            <span className="text-gray-400 text-[11px]"> / {sub.qrLimit} 码</span>
                           </td>
                           <td className="py-3 px-4 text-center font-mono font-bold text-blue-600">
                             {sub.todayReports} 件
@@ -1026,13 +837,13 @@ export const SingleInstitutionMonitoring: React.FC<SingleInstitutionMonitoringPr
                             </span>
                           </td>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             </div>
-          )}
+          </div>
         </div>
       </div>
     </div>
