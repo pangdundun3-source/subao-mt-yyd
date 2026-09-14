@@ -992,18 +992,18 @@ const RULE_NAV_ITEMS: NavItem[] = [
     badge: '规则组',
   },
   {
-    key: 'dictionary',
-    label: '数据字典维护',
-    icon: 'menu_book',
-    description: '稿件分类、敏感等级、处置状态与部门枚举',
-    badge: '4类',
-  },
-  {
     key: 'workflow',
     label: '审核层级/流程',
     icon: 'account_tree',
     description: '一审/二审/三审流程节点、审批人与绿色通道',
     badge: '两级',
+  },
+  {
+    key: 'qr_code',
+    label: '激活码配置',
+    icon: 'qr_code_2',
+    description: '当前机构专属激活码名额额度管理、增发记录与绑定人员名单',
+    badge: '名额',
   },
   {
     key: 'value_added',
@@ -1013,11 +1013,11 @@ const RULE_NAV_ITEMS: NavItem[] = [
     badge: '5项',
   },
   {
-    key: 'qr_code',
-    label: '激活码配置',
-    icon: 'qr_code_2',
-    description: '当前机构专属激活码名额额度管理、增发记录与绑定人员名单',
-    badge: '名额',
+    key: 'dictionary',
+    label: '数据字典维护',
+    icon: 'menu_book',
+    description: '稿件分类、敏感等级、处置状态与部门枚举',
+    badge: '4类',
   },
   {
     key: 'other',
@@ -1672,16 +1672,21 @@ export const InstitutionBusinessRulesTab: React.FC<Props> = ({
                                 role="switch"
                                 aria-checked={isCardActive}
                                 onClick={() => toggleScoringRuleGroup(group)}
-                                className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                                  isCardActive ? 'bg-[#1890ff]' : 'bg-gray-200 hover:bg-gray-300'
+                                className={`relative inline-flex h-6 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none cursor-pointer select-none text-[11px] font-medium ${
+                                  isCardActive
+                                    ? 'bg-[#1890ff] text-white pl-2.5 pr-6.5'
+                                    : 'bg-gray-200 text-gray-500 pl-6.5 pr-2.5 hover:bg-gray-300'
                                 }`}
-                                title={isCardActive ? '当前已生效，点击停用' : '点击启用此规则'}
+                                title={isCardActive ? '当前已生效，点击禁用' : '点击启用此规则'}
                               >
                                 <span
-                                  className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-xs ring-0 transition duration-200 ease-in-out ${
-                                    isCardActive ? 'translate-x-4' : 'translate-x-0'
+                                  className={`pointer-events-none absolute top-0.5 bottom-0.5 w-5 h-5 rounded-full bg-white shadow-xs transition-all duration-200 ease-in-out ${
+                                    isCardActive ? 'right-0.5' : 'left-0.5'
                                   }`}
                                 />
+                                <span className="leading-none whitespace-nowrap">
+                                  {isCardActive ? '启用' : '禁用'}
+                                </span>
                               </button>
                             </div>
                           </div>

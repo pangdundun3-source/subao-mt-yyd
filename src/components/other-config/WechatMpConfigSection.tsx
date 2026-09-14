@@ -197,64 +197,68 @@ export const WechatMpConfigSection: React.FC<WechatMpConfigSectionProps> = ({
           </div>
         )}
 
-        {/* 自有公众号卡片列表 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+        {/* 自有公众号卡片列表（适配一行三个卡片） */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
           {customList.map((item) => {
             const isBound = !isPlatformDefaultBound && item.isBound;
             return (
               <div
                 key={item.id}
-                className={`rounded-xl p-4 border transition-all relative ${
+                className={`rounded-xl p-4 border transition-all relative flex flex-col justify-between ${
                   isBound
                     ? 'bg-blue-50/40 border-blue-300 ring-1 ring-blue-300 shadow-xs'
                     : 'bg-white border-gray-200/80 hover:border-gray-300'
                 }`}
               >
-                {/* 状态徽标 */}
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <div
-                      className={`w-8 h-8 rounded-lg flex items-center justify-center text-[16px] ${
-                        isBound ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500'
-                      }`}
-                    >
-                      <span className="material-symbols-outlined text-[18px]">chat</span>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-bold text-gray-900">{item.mpName}</h4>
-                      <div className="text-[11px] text-gray-500 font-mono mt-0.5">
-                        微信号：{item.wechatAccount}
+                {/* 状态徽标与标题 */}
+                <div>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div
+                        className={`w-8 h-8 rounded-lg flex items-center justify-center text-[16px] shrink-0 ${
+                          isBound ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500'
+                        }`}
+                      >
+                        <span className="material-symbols-outlined text-[18px]">chat</span>
+                      </div>
+                      <div className="min-w-0">
+                        <h4 className="text-sm font-bold text-gray-900 truncate" title={item.mpName}>
+                          {item.mpName}
+                        </h4>
+                        <div className="text-[11px] text-gray-500 font-mono mt-0.5 truncate">
+                          微信号：{item.wechatAccount}
+                        </div>
                       </div>
                     </div>
+
+                    {isBound ? (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-0.5 shrink-0 whitespace-nowrap">
+                        <span className="material-symbols-outlined text-[13px]">check</span>
+                        当前生效中
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-medium bg-amber-50 text-amber-800 border border-amber-200 shrink-0 whitespace-nowrap">
+                        待换绑 · 未启用
+                      </span>
+                    )}
                   </div>
 
-                  {isBound ? (
-                    <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1 shrink-0">
-                      <span className="material-symbols-outlined text-[14px]">check</span>
-                      当前生效中 · 已换绑
-                    </span>
-                  ) : (
-                    <span className="px-2.5 py-1 rounded-full text-[11px] font-medium bg-amber-50 text-amber-800 border border-amber-200 shrink-0">
-                      待换绑 · 未启用
-                    </span>
-                  )}
-                </div>
-
-                {/* 参数摘要 */}
-                <div className="mt-3 pt-3 border-t border-gray-100 space-y-1.5 text-xs text-gray-600">
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-400">开发者 AppID</span>
-                    <span className="font-mono text-gray-800 font-medium">{item.appId}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-400">微信原始ID</span>
-                    <span className="font-mono text-gray-800">{item.originalId}</span>
-                  </div>
-                  {item.remark && (
-                    <div className="text-[11px] text-gray-400 truncate pt-0.5">
-                      备注：{item.remark}
+                  {/* 参数摘要 */}
+                  <div className="mt-3 pt-3 border-t border-gray-100 space-y-1.5 text-xs text-gray-600">
+                    <div className="flex justify-between items-center gap-2">
+                      <span className="text-gray-400 shrink-0">开发者 AppID</span>
+                      <span className="font-mono text-gray-800 font-medium truncate" title={item.appId}>{item.appId}</span>
                     </div>
-                  )}
+                    <div className="flex justify-between items-center gap-2">
+                      <span className="text-gray-400 shrink-0">微信原始ID</span>
+                      <span className="font-mono text-gray-800 truncate" title={item.originalId}>{item.originalId}</span>
+                    </div>
+                    {item.remark && (
+                      <div className="text-[11px] text-gray-400 truncate pt-0.5" title={item.remark}>
+                        备注：{item.remark}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* 操作栏 */}

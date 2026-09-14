@@ -2157,23 +2157,6 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
         return prev;
       }
 
-      if (activeModule === 'audit_score' && newStatus === '停用' && list.filter(item => item.status === '启用').length <= 1) {
-        alert('至少需要保留一组启用中的审核打分规则');
-        return prev;
-      }
-
-      // Special constraint for audit_score: Only 1 rule group can be enabled at a time!
-      if (activeModule === 'audit_score' && newStatus === '启用') {
-        return {
-          ...prev,
-          audit_score: list.map(item => ({
-            ...item,
-            status: item.id === id ? '启用' : '停用',
-            updateTime: item.id === id ? new Date().toISOString().replace('T', ' ').substring(0, 19) : item.updateTime
-          }))
-        };
-      }
-
       // 全开放启禁模式增值业务：启禁开关与开通状态联动（启用=已开通 / 停用=未开通）
       if (activeModule === 'value_added' && valueAddedAllOperable) {
         return {
@@ -2617,11 +2600,6 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
         return;
       }
 
-      if (editingItem?.status === '启用' && formScoreStatus === '停用' && enabledScoreCount <= 1) {
-        alert('至少需要保留一组启用中的审核打分规则');
-        return;
-      }
-
       if (editingItem) {
         commitDataStore(prev => ({
           ...prev,
@@ -2640,7 +2618,7 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
                 updateTime: nowStr
               };
             }
-            return isEnabled ? { ...item, status: '停用' as const } : item;
+            return item;
           })
         }));
       } else {
@@ -2660,7 +2638,7 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
         commitDataStore(prev => ({
           ...prev,
           audit_score: [
-            ...(isEnabled ? prev.audit_score.map(item => ({ ...item, status: '停用' as const })) : prev.audit_score),
+            ...prev.audit_score,
             newItem
           ]
         }));
@@ -3230,13 +3208,13 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
                 })()}
               </div>
             ) : activeModule === 'audit_score' ? (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {filteredList.length === 0 ? (
-                  <div className="py-12 text-center text-gray-400 text-xs bg-white rounded-lg border border-gray-100">
+                  <div className="py-12 text-center text-gray-400 text-xs bg-white rounded-xl border border-gray-100 shadow-2xs">
                     暂无匹配的审核打分规则
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3.5">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {filteredList.map(item => {
                       const isEnabled = item.status === '启用';
                       const levels = item.scoreLevels || [];
@@ -3244,28 +3222,34 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
                         <div
                           key={item.id}
                           onClick={() => openPreviewItem(item)}
-                          className={`group bg-white border rounded-xl p-4 transition-all duration-150 cursor-pointer flex flex-col justify-between hover:shadow-xs ${
+                          className={`bg-white rounded-xl border transition-all duration-200 p-4 flex flex-col justify-between group shadow-2xs hover:shadow-md cursor-pointer relative overflow-hidden ${
                             isEnabled
-                              ? 'border-[#1E5ABB]/40 ring-1 ring-[#1E5ABB]/20'
+                              ? 'border-blue-200/90 ring-1 ring-blue-500/10 hover:border-[#1890ff]'
                               : 'border-gray-200 hover:border-gray-300'
                           }`}
                         >
                           <div>
-                            {/* Card Top: Title, Default Badge & Switch */}
-                            <div className="flex items-center justify-between gap-3">
+                            {/* Card Top: Title, Badges & Switch */}
+                            <div className="flex items-center justify-between gap-2.5 pb-3 border-b border-gray-100/90">
                               <div className="flex items-center gap-2 min-w-0">
-                                <h3 className="font-semibold text-sm text-gray-900 group-hover:text-[#1E5ABB] transition-colors truncate">
+                                <h3 className="font-bold text-sm text-gray-900 group-hover:text-[#1890ff] transition-colors truncate">
                                   {item.name}
                                 </h3>
-                                {item.isDefault && (
-                                  <span className="inline-flex items-center px-1.5 py-0.5 text-[10px] bg-gray-100 text-gray-500 rounded font-normal shrink-0">
-                                    默认
+                                {item.isDefault ? (
+                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[11px] bg-gray-100 text-gray-600 font-medium rounded border border-gray-200/80 shrink-0">
+                                    <Lock className="w-3 h-3 text-gray-400" />
+                                    <span>系统默认</span>
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[11px] bg-blue-50 text-[#1890ff] font-medium rounded border border-blue-200/80 shrink-0">
+                                    <Sparkles className="w-3 h-3 text-[#1890ff]" />
+                                    <span>自定义</span>
                                   </span>
                                 )}
                               </div>
 
                               <div
-                                className="shrink-0"
+                                className="shrink-0 flex items-center gap-1.5"
                                 onClick={e => e.stopPropagation()}
                               >
                                 <button
@@ -3273,43 +3257,55 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
                                   role="switch"
                                   aria-checked={isEnabled}
                                   onClick={() => handleToggleStatus(item.id)}
-                                  className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                                    isEnabled ? 'bg-[#1E5ABB]' : 'bg-gray-200 hover:bg-gray-300'
+                                  className={`relative inline-flex h-6 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none cursor-pointer select-none text-[11px] font-medium ${
+                                    isEnabled
+                                      ? 'bg-[#1890ff] text-white pl-2.5 pr-6.5'
+                                      : 'bg-gray-200 text-gray-500 pl-6.5 pr-2.5 hover:bg-gray-300'
                                   }`}
-                                  title={isEnabled ? '当前已生效，点击停用' : '点击启用此打分规则'}
+                                  title={isEnabled ? '当前已生效，点击禁用' : '点击启用此打分规则'}
                                 >
                                   <span
-                                    className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-xs ring-0 transition duration-200 ease-in-out ${
-                                      isEnabled ? 'translate-x-4' : 'translate-x-0'
+                                    className={`pointer-events-none absolute top-0.5 bottom-0.5 w-5 h-5 rounded-full bg-white shadow-xs transition-all duration-200 ease-in-out ${
+                                      isEnabled ? 'right-0.5' : 'left-0.5'
                                     }`}
                                   />
+                                  <span className="leading-none whitespace-nowrap">
+                                    {isEnabled ? '启用' : '禁用'}
+                                  </span>
                                 </button>
                               </div>
                             </div>
 
-                            {/* Core Summary: Score, Level Count & Active Status */}
-                            <div className="mt-2.5 flex items-center gap-2 text-xs text-gray-500">
-                              <span>总分 <strong className="font-semibold text-gray-900">{item.totalScore || 100}</strong> 分</span>
-                              <span className="text-gray-300">·</span>
-                              <span>{levels.length || item.levelCount || 0} 个打分等级</span>
-                              <span className="text-gray-300">·</span>
-                              <span className={isEnabled ? 'text-emerald-600 font-medium' : 'text-gray-400'}>
-                                {isEnabled ? '已启用' : '未启用'}
+                            {/* Key Meta Tag Pills */}
+                            <div className="mt-3 flex items-center flex-wrap gap-2 text-xs">
+                              <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded border border-slate-200 text-[11px] font-medium">
+                                总分 <strong className="font-bold text-gray-900">{item.totalScore || 100}</strong> 分
+                              </span>
+                              <span className="px-2 py-0.5 bg-blue-50 text-[#1890ff] rounded border border-blue-200 text-[11px] font-medium">
+                                {levels.length || item.levelCount || 0} 个打分等级
+                              </span>
+                              <span className={`px-2 py-0.5 rounded border text-[11px] font-medium ${
+                                isEnabled
+                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                  : 'bg-gray-100 text-gray-500 border-gray-200'
+                              }`}>
+                                {isEnabled ? '已启用' : '已禁用'}
                               </span>
                             </div>
 
-                            {/* 1-line Description */}
-                            {item.description && (
-                              <p className="mt-2 text-xs text-gray-400 line-clamp-1" title={item.description}>
-                                {item.description}
+                            {/* Structured Description Box */}
+                            <div className="mt-2.5 rounded-lg bg-gray-50/80 p-3 text-xs text-gray-600 leading-relaxed border border-gray-100 min-h-[66px] flex flex-col justify-center">
+                              <p className="line-clamp-2 text-xs text-gray-600" title={item.description || '暂无规则说明描述'}>
+                                {item.description || '依据预设维度与打分等级进行标准化互斥打分研判。'}
                               </p>
-                            )}
+                            </div>
                           </div>
 
-                          {/* Card Footer: Detail view prompt & Edit/Delete actions */}
+                          {/* Card Footer Action Bar */}
                           <div className="mt-3.5 pt-2.5 border-t border-gray-100 flex items-center justify-between text-xs">
-                            <span className="text-[11px] text-gray-400 group-hover:text-[#1E5ABB] transition-colors">
-                              查看规则详情 →
+                            <span className="text-[11px] text-gray-400 group-hover:text-[#1890ff] transition-colors flex items-center gap-1 font-medium">
+                              <Eye className="w-3.5 h-3.5" />
+                              <span>查看打分规则详情 →</span>
                             </span>
 
                             <div
@@ -3321,7 +3317,7 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
                                   <button
                                     type="button"
                                     onClick={() => openEditModal(item)}
-                                    className="p-1.5 text-gray-400 hover:text-[#1E5ABB] hover:bg-blue-50 rounded transition-colors cursor-pointer"
+                                    className="p-1.5 text-gray-400 hover:text-[#1890ff] hover:bg-blue-50 rounded transition-colors cursor-pointer"
                                     title="编辑规则"
                                   >
                                     <Edit3 className="w-3.5 h-3.5" />
@@ -3336,8 +3332,9 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
                                   </button>
                                 </>
                               ) : (
-                                <span className="text-[11px] text-gray-300 pr-1 select-none">
-                                  系统内置
+                                <span className="text-[11px] text-gray-300 px-1 select-none flex items-center gap-0.5">
+                                  <Lock className="w-3 h-3 text-gray-300" />
+                                  内置
                                 </span>
                               )}
                             </div>
@@ -3468,13 +3465,13 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
               </div>
             ) : activeModule === 'audit_flow' ? (
               <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {filteredList.length === 0 ? (
-                    <div className="col-span-full py-12 text-center text-gray-400 text-xs bg-white rounded-2xl border border-gray-100">
-                      暂无相关审核流程配置
-                    </div>
-                  ) : (
-                    filteredList.map(item => {
+                {filteredList.length === 0 ? (
+                  <div className="py-12 text-center text-gray-400 text-xs bg-white rounded-xl border border-gray-100 shadow-2xs">
+                    暂无相关审核流程配置
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {filteredList.map(item => {
                       const isSelected = selectedAuditFlowId === item.id;
                       const isEnabled = item.status === '启用';
 
@@ -3512,123 +3509,133 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
                         <div
                           key={item.id}
                           onClick={() => setSelectedAuditFlowId(item.id)}
-                          className={`bg-white rounded-2xl border-2 transition-all flex flex-col justify-between p-4 cursor-pointer group shadow-2xs hover:shadow-md ${
+                          className={`bg-white rounded-xl border transition-all duration-200 p-4 flex flex-col justify-between group shadow-2xs hover:shadow-md cursor-pointer relative overflow-hidden ${
                             isSelected
-                              ? 'border-emerald-500 ring-2 ring-emerald-500/20'
+                              ? 'border-[#1890ff] ring-2 ring-[#1890ff]/20 shadow-md'
                               : isEnabled
-                                ? 'border-emerald-400/80 hover:border-emerald-500'
+                                ? 'border-blue-200/90 ring-1 ring-blue-500/10 hover:border-[#1890ff]'
                                 : 'border-gray-200 hover:border-gray-300'
                           }`}
                         >
-                          <div className="space-y-3">
-                            {/* Row 1: Title & Switch Toggle */}
-                            <div className="flex items-center justify-between gap-2">
-                              <h3 className="font-bold text-sm sm:text-[15px] text-gray-900 group-hover:text-emerald-700 transition-colors truncate min-w-0" title={item.name}>
-                                {item.name}
-                              </h3>
-
-                              <button
-                                type="button"
-                                onClick={e => {
-                                  e.stopPropagation();
-                                  handleToggleStatus(item.id);
-                                }}
-                                className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-full cursor-pointer transition-colors shrink-0 ${
-                                  isEnabled
-                                    ? 'bg-[#e6f9ed] text-[#52c41a] hover:bg-emerald-100'
-                                    : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
-                                }`}
-                                title={isEnabled ? '点击停用' : '点击启用'}
-                              >
-                                <span className={`text-xs font-bold ${isEnabled ? 'text-[#52c41a]' : 'text-gray-400'}`}>
-                                  {item.status}
-                                </span>
-                                <div className={`w-7 h-4 flex items-center rounded-full p-0.5 transition-colors ${isEnabled ? 'bg-[#52c41a] justify-end' : 'bg-gray-300 justify-start'}`}>
-                                  <div className="w-3 h-3 bg-white rounded-full shadow-xs"></div>
-                                </div>
-                              </button>
-                            </div>
-
-                            {/* Row 2: Badges & Timestamp */}
-                            <div className="flex items-center justify-between gap-2">
-                              <div className="flex items-center gap-2 flex-wrap">
+                          <div>
+                            {/* Card Top: Title, Badges & Switch */}
+                            <div className="flex items-center justify-between gap-2.5 pb-3 border-b border-gray-100/90">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <h3 className="font-bold text-sm text-gray-900 group-hover:text-[#1890ff] transition-colors truncate" title={item.name}>
+                                  {item.name}
+                                </h3>
                                 {item.isDefault ? (
-                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs bg-gray-100/90 text-gray-500 font-medium rounded border border-gray-200 shrink-0">
+                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[11px] bg-gray-100 text-gray-600 font-medium rounded border border-gray-200/80 shrink-0">
                                     <Lock className="w-3 h-3 text-gray-400" />
                                     <span>系统默认</span>
                                   </span>
                                 ) : (
-                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs bg-emerald-50 text-[#52c41a] font-medium rounded border border-emerald-200 shrink-0">
-                                    <Sparkles className="w-3 h-3 text-[#52c41a]" />
+                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[11px] bg-blue-50 text-[#1890ff] font-medium rounded border border-blue-200/80 shrink-0">
+                                    <Sparkles className="w-3 h-3 text-[#1890ff]" />
                                     <span>自定义</span>
                                   </span>
                                 )}
-
-                                <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded border shrink-0 ${modeBadge.className}`}>
-                                  {modeBadge.label}
-                                </span>
                               </div>
 
-                              <span className="text-xs text-gray-400 font-mono tracking-tight shrink-0">
+                              <div
+                                className="shrink-0 flex items-center gap-1.5"
+                                onClick={e => e.stopPropagation()}
+                              >
+                                <button
+                                  type="button"
+                                  role="switch"
+                                  aria-checked={isEnabled}
+                                  onClick={() => handleToggleStatus(item.id)}
+                                  className={`relative inline-flex h-6 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none cursor-pointer select-none text-[11px] font-medium ${
+                                    isEnabled
+                                      ? 'bg-[#1890ff] text-white pl-2.5 pr-6.5'
+                                      : 'bg-gray-200 text-gray-500 pl-6.5 pr-2.5 hover:bg-gray-300'
+                                  }`}
+                                  title={isEnabled ? '当前已生效，点击禁用' : '点击启用此审核流程'}
+                                >
+                                  <span
+                                    className={`pointer-events-none absolute top-0.5 bottom-0.5 w-5 h-5 rounded-full bg-white shadow-xs transition-all duration-200 ease-in-out ${
+                                      isEnabled ? 'right-0.5' : 'left-0.5'
+                                    }`}
+                                  />
+                                  <span className="leading-none whitespace-nowrap">
+                                    {isEnabled ? '启用' : '禁用'}
+                                  </span>
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Key Meta Tag Pills */}
+                            <div className="mt-3 flex items-center flex-wrap gap-2 text-xs">
+                              <span className={`inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded border shrink-0 ${modeBadge.className}`}>
+                                {modeBadge.label}
+                              </span>
+                              <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded border border-slate-200 text-[11px] font-medium">
+                                {(item.auditNodes || []).length || (item.name.includes('三') ? 3 : item.name.includes('两') ? 2 : 1)} 级审核节点
+                              </span>
+                              <span className={`px-2 py-0.5 rounded border text-[11px] font-medium ${
+                                isEnabled
+                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                  : 'bg-gray-100 text-gray-500 border-gray-200'
+                              }`}>
+                                {isEnabled ? '已启用 (当前流转)' : '已停用 (未指派)'}
+                              </span>
+                              <span className="text-[11px] text-gray-400 font-mono tracking-tight ml-auto shrink-0">
                                 {item.updateTime || '2023-10-05 10:00:00'}
                               </span>
                             </div>
 
-                            {/* Row 3: Description Box */}
-                            <div className="rounded-xl bg-gray-50/90 p-3 text-xs text-gray-500 leading-relaxed min-h-[68px] flex items-center border border-gray-100/40">
-                              <p className="line-clamp-3 text-gray-500" title={item.description}>
+                            {/* Structured Description Box */}
+                            <div className="mt-2.5 rounded-lg bg-gray-50/80 p-3 text-xs text-gray-600 leading-relaxed border border-gray-100 min-h-[66px] flex flex-col justify-center">
+                              <p className="line-clamp-2 text-xs text-gray-600" title={item.description || '本级机构提报后沿组织树逐级向上传递审核，最终由总机构终审并评分。'}>
                                 {item.description || '本级机构提报后沿组织树逐级向上传递审核，最终由总机构终审并评分。'}
                               </p>
                             </div>
                           </div>
 
-                          {/* Row 4: Footer Action Bar */}
-                          <div className="mt-3 pt-2 flex items-center justify-between text-xs text-gray-400">
-                            <span className="text-gray-400 select-none">点击卡片查看配置详情</span>
-                            <div className="flex items-center gap-3">
-                              <button
-                                type="button"
-                                onClick={e => {
-                                  e.stopPropagation();
-                                  setSelectedAuditFlowId(item.id);
-                                }}
-                                className="text-gray-400 hover:text-[#1677ff] cursor-pointer transition-colors p-0.5"
-                                title="查看配置详情"
-                              >
-                                <Eye className="w-4 h-4" />
-                              </button>
-                              <button
-                                type="button"
-                                disabled={item.isDefault}
-                                onClick={e => {
-                                  e.stopPropagation();
-                                  openEditModal(item);
-                                }}
-                                className={item.isDefault ? 'text-gray-300 cursor-not-allowed p-0.5' : 'text-[#1677ff] hover:text-blue-700 cursor-pointer transition-colors p-0.5'}
-                                title={item.isDefault ? '系统默认流程仅支持查看' : '编辑流程'}
-                              >
-                                <Edit3 className="w-4 h-4" />
-                              </button>
-                              <button
-                                type="button"
-                                disabled={item.isDefault}
-                                onClick={e => {
-                                  e.stopPropagation();
-                                  handleDelete(item);
-                                }}
-                                className={item.isDefault ? 'text-gray-300 cursor-not-allowed p-0.5' : 'text-gray-400 hover:text-red-500 cursor-pointer transition-colors p-0.5'}
-                                title={item.isDefault ? '系统默认流程不可删除' : '删除流程'}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
+                          {/* Card Footer Action Bar */}
+                          <div className="mt-3.5 pt-2.5 border-t border-gray-100 flex items-center justify-between text-xs">
+                            <span className="text-[11px] text-gray-400 group-hover:text-[#1890ff] transition-colors flex items-center gap-1 font-medium">
+                              <Eye className="w-3.5 h-3.5" />
+                              <span>查看流程节点设计 →</span>
+                            </span>
+
+                            <div
+                              className="flex items-center gap-1"
+                              onClick={e => e.stopPropagation()}
+                            >
+                              {!item.isDefault ? (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => openEditModal(item)}
+                                    className="p-1.5 text-gray-400 hover:text-[#1890ff] hover:bg-blue-50 rounded transition-colors cursor-pointer"
+                                    title="编辑流程"
+                                  >
+                                    <Edit3 className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDelete(item)}
+                                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors cursor-pointer"
+                                    title="删除流程"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </>
+                              ) : (
+                                <span className="text-[11px] text-gray-300 px-1 select-none flex items-center gap-0.5">
+                                  <Lock className="w-3 h-3 text-gray-300" />
+                                  内置
+                                </span>
+                              )}
                             </div>
                           </div>
                         </div>
                       );
-                    })
-                  )}
-                </div>
-
+                    })}
+                  </div>
+                )}
               </div>
             ) : activeModule === 'login_method' ? (
               <div className="space-y-3">
@@ -3739,99 +3746,106 @@ export const V8BusinessConfigBoard: React.FC<BusinessConfigProps> = ({
                 </div>
               </div>
             ) : activeModule === 'value_added' ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+              <div className="space-y-4">
                 {filteredList.length === 0 ? (
-                  <div className="col-span-full py-8 text-center text-gray-400 text-xs bg-white rounded-lg border border-gray-100">
+                  <div className="py-12 text-center text-gray-400 text-xs bg-white rounded-xl border border-gray-100 shadow-2xs">
                     暂无相关增值业务模块数据
                   </div>
                 ) : (
-                  filteredList.map(item => {
-                    const isActivated = valueAddedAllOperable
-                      ? item.status === '启用'
-                      : item.activatedStatus === '已开通';
-                    const isEnabled = isActivated && item.status === '启用';
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {filteredList.map(item => {
+                      const isActivated = valueAddedAllOperable
+                        ? item.status === '启用'
+                        : item.activatedStatus === '已开通';
+                      const isEnabled = isActivated && item.status === '启用';
 
-                    // 颜色区分：“已开通”使用淡蓝/高亮白底微蓝边框，“未开通”使用灰底与灰色调
-                    const cardClass = isActivated
-                      ? 'bg-gradient-to-b from-blue-50/70 via-blue-50/30 to-white border-2 border-blue-400/80 shadow-xs hover:shadow-sm hover:border-blue-500'
-                      : 'bg-gray-50/90 border border-gray-200 hover:border-gray-300 opacity-90';
+                      return (
+                        <div
+                          key={item.id}
+                          onClick={() => openPreviewItem(item)}
+                          className={`bg-white rounded-xl border transition-all duration-200 p-4 flex flex-col justify-between group shadow-2xs hover:shadow-md cursor-pointer relative overflow-hidden ${
+                            isActivated
+                              ? isEnabled
+                                ? 'border-blue-200/90 ring-1 ring-blue-500/10 hover:border-[#1890ff]'
+                                : 'border-gray-200 hover:border-gray-300'
+                              : 'border-gray-200 bg-gray-50/70 opacity-90 hover:border-gray-300'
+                          }`}
+                        >
+                          <div>
+                            {/* Card Top: Title & Switch */}
+                            <div className="flex items-center justify-between gap-2.5 pb-3 border-b border-gray-100/90">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <h3 className={`font-bold text-sm truncate transition-colors ${
+                                  isActivated ? 'text-gray-900 group-hover:text-[#1890ff]' : 'text-gray-600'
+                                }`}>
+                                  {item.name}
+                                </h3>
+                              </div>
 
-                    return (
-                      <div
-                        key={item.id}
-                        className={`rounded-lg p-3 transition-all flex flex-col justify-between space-y-2 relative overflow-hidden group ${cardClass}`}
-                      >
-                        {/* Decorative subtle background tint for activated cards */}
-                        {isActivated && (
-                          <div className="absolute -top-10 -right-10 w-24 h-24 bg-blue-500/10 rounded-full blur-xl group-hover:bg-blue-500/15 transition-all pointer-events-none" />
-                        )}
-
-                        <div className="space-y-2">
-                          {/* Header: Product Name & Direct Top-Right Control */}
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="min-w-0 flex-1">
-                              <h3 className={`font-bold text-xs truncate flex items-center space-x-1.5 ${
-                                isActivated ? 'text-gray-900 group-hover:text-[#1E5ABB]' : 'text-gray-500'
-                              }`}>
-                                <span>{item.name}</span>
-                              </h3>
-                            </div>
-
-                            {/* Enable / Disable Toggle Switch in Top Right */}
-                            {valueAddedAllOperable || isActivated ? (
-                              <button
-                                onClick={() => handleToggleStatus(item.id)}
-                                title={item.status === '启用' ? '点击设为未开通/停用' : '点击设为已开通/启用'}
-                                className="cursor-pointer focus:outline-none flex items-center space-x-1.5 bg-white/95 hover:bg-white px-2 py-0.5 rounded-full border border-gray-200 shadow-2xs shrink-0 transition-all hover:scale-102"
-                              >
-                                <div
-                                  className={`w-6 h-3 flex items-center rounded-full p-0.5 transition-colors ${
-                                    item.status === '启用' ? 'bg-emerald-500 justify-end' : 'bg-gray-300 justify-start'
-                                  }`}
-                                >
-                                  <div className="w-2 h-2 bg-white rounded-full shadow-2xs"></div>
-                                </div>
-                                <span className={`text-[10px] font-bold ${item.status === '启用' ? 'text-emerald-700' : 'text-gray-500'}`}>
-                                  {item.status === '启用' ? '已开通' : '未开通'}
-                                </span>
-                              </button>
-                            ) : (
+                              {/* Switch or Lock Badge */}
                               <div
-                                className="flex items-center space-x-1 bg-gray-100 px-2 py-0.5 rounded-full border border-gray-200 text-gray-400 text-[10px] font-medium cursor-not-allowed shrink-0"
-                                title="未开通业务不可进行启禁操作"
+                                className="shrink-0 flex items-center gap-1.5"
+                                onClick={e => e.stopPropagation()}
                               >
-                                <Lock className="w-2.5 h-2.5 text-gray-400" />
-                                <span>未开通</span>
+                                {valueAddedAllOperable || isActivated ? (
+                                  <button
+                                    type="button"
+                                    role="switch"
+                                    aria-checked={item.status === '启用'}
+                                    onClick={() => handleToggleStatus(item.id)}
+                                    className={`relative inline-flex h-6 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none cursor-pointer select-none text-[11px] font-medium ${
+                                      item.status === '启用'
+                                        ? 'bg-[#1890ff] text-white pl-2.5 pr-6.5'
+                                        : 'bg-gray-200 text-gray-500 pl-6.5 pr-2.5 hover:bg-gray-300'
+                                    }`}
+                                    title={item.status === '启用' ? '点击切换为未开通' : '点击切换为已开通'}
+                                  >
+                                    <span
+                                      className={`pointer-events-none absolute top-0.5 bottom-0.5 w-5 h-5 rounded-full bg-white shadow-xs transition-all duration-200 ease-in-out ${
+                                        item.status === '启用' ? 'right-0.5' : 'left-0.5'
+                                      }`}
+                                    />
+                                    <span className="leading-none whitespace-nowrap">
+                                      {item.status === '启用' ? '已开通' : '未开通'}
+                                    </span>
+                                  </button>
+                                ) : (
+                                  <div
+                                    className="inline-flex items-center gap-1 bg-gray-100 px-2 py-0.5 rounded-full border border-gray-200 text-gray-400 text-[11px] font-medium cursor-not-allowed shrink-0"
+                                    title="未开通业务不可进行启禁操作"
+                                  >
+                                    <Lock className="w-3 h-3 text-gray-400" />
+                                    <span>未开通</span>
+                                  </div>
+                                )}
                               </div>
-                            )}
-                          </div>
-
-                          {/* Product Function Introduction */}
-                          <div className="space-y-1 pt-0.5">
-                            <div className="text-[10px] font-bold text-gray-700 flex items-center space-x-1">
-                              <FileText className={`w-3 h-3 ${isActivated ? 'text-blue-600' : 'text-gray-400'}`} />
-                              <span className={isActivated ? 'text-blue-600' : 'text-gray-400'}>产品功能介绍</span>
                             </div>
-                            <p className={`text-[11px] leading-relaxed p-2 rounded-md border font-sans ${
-                              isActivated ? 'bg-white text-gray-700 border-blue-200/60 shadow-2xs' : 'bg-gray-100/70 text-gray-400 border-gray-200'
-                            }`}>
-                              {item.name === '报送首发重复识别'
-                                ? '通过抓取报送链接的文章原文比对判断内容是否重复，并结合提交时间线智能判定首发，避免多头报送与重复审核计分。'
-                                : (item.description || '暂无产品功能介绍说明')}
-                            </p>
 
-                            {/* Contact Sales Notice - Only shown for non-activated products (非全开放启禁模式) */}
-                            {!isActivated && !valueAddedAllOperable && (
-                              <div className="mt-1 text-[10px] text-amber-800 font-medium flex items-center space-x-1 bg-amber-50/90 px-2.5 py-1 rounded-md border border-amber-200/80">
-                                <Info className="w-3 h-3 text-amber-600 shrink-0" />
-                                <span>如需开通请联系对应的销售人员</span>
-                              </div>
-                            )}
+                            {/* Structured Description Box */}
+                            <div className="mt-2.5 rounded-lg bg-gray-50/80 p-3 text-xs text-gray-600 leading-relaxed border border-gray-100 min-h-[66px] flex flex-col justify-center">
+                              <p className="line-clamp-2 text-xs text-gray-600" title={
+                                item.name === '报送首发重复识别'
+                                  ? '通过抓取报送链接的文章原文比对判断内容是否重复，并结合提交时间线智能判定首发，避免多头报送与重复审核计分。'
+                                  : (item.description || '暂无产品功能介绍说明')
+                              }>
+                                {item.name === '报送首发重复识别'
+                                  ? '通过抓取报送链接的文章原文比对判断内容是否重复，并结合提交时间线智能判定首发，避免多头报送与重复审核计分。'
+                                  : (item.description || '暂无产品功能介绍说明')}
+                              </p>
+
+                              {/* Contact Sales Notice - Only shown for non-activated products */}
+                              {!isActivated && !valueAddedAllOperable && (
+                                <div className="mt-1.5 text-[10px] text-amber-800 font-medium flex items-center gap-1 bg-amber-50/90 px-2 py-0.5 rounded border border-amber-200/80">
+                                  <Info className="w-3 h-3 text-amber-600 shrink-0" />
+                                  <span>如需开通请联系对应商务/销售人员</span>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    );
-                  })
+                      );
+                    })}
+                  </div>
                 )}
               </div>
             ) : (

@@ -75,15 +75,15 @@ export const useBusinessRulesViewModel = ({
     const validKeys: BusinessRuleNavKey[] = [
       'templates',
       'scoring',
-      'dictionary',
       'workflow',
-      'value_added',
       'qr_code',
+      'value_added',
+      'dictionary',
       'other',
     ];
     return saved && validKeys.includes(saved as BusinessRuleNavKey)
       ? (saved as BusinessRuleNavKey)
-      : 'other';
+      : 'scoring';
   });
 
   useEffect(() => {
